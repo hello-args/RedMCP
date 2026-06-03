@@ -6,7 +6,7 @@ set -euo pipefail
 #
 # Usage:
 #   ./scripts/enable-branch-protection.sh
-#   ./scripts/enable-branch-protection.sh hello-args/RedMCP
+#   ./scripts/enable-branch-protection.sh hello-args/MCPVault
 
 REPO="${1:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
 RULESET_FILE="$(cd "$(dirname "$0")/.." && pwd)/.github/rulesets/main.json"

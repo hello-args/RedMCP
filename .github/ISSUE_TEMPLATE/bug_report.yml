@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a bug in RedMCP
+description: Report a bug in MCPAudit
 title: "[Bug]: "
 labels: ["bug", "triage"]
 body:
@@ -15,14 +15,14 @@ body:
     attributes:
       label: Steps to reproduce
       placeholder: |
-        1. Run `redmcp scan ...`
+        1. Run `mcpaudit scan ...`
         2. See error
     validations:
       required: true
   - type: input
     id: version
     attributes:
-      label: RedMCP version
+      label: MCPAudit version
       placeholder: 0.1.0
   - type: input
     id: python

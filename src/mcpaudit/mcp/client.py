@@ -6,7 +6,7 @@ import ast
 import re
 from pathlib import Path
 
-from redmcp.mcp.models import MCPServerInfo, MCPTool
+from mcpaudit.mcp.models import MCPServerInfo, MCPTool
 
 TOOL_DECORATOR_PATTERN = re.compile(
     r"@(?:\w+\.)?tool\s*\([^)]*\)\s*\n\s*(?:async\s+)?def\s+(\w+)\s*\(",

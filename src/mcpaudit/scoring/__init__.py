@@ -1,5 +1,5 @@
 """Risk scoring engine."""
 
-from redmcp.scoring.engine import RiskScoringEngine
+from mcpaudit.scoring.engine import RiskScoringEngine
 
 __all__ = ["RiskScoringEngine"]

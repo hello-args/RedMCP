@@ -7,9 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Renamed project from RedMCP to MCPAudit (`mcpaudit` package and CLI)
+
 ### Added
 - Initial project scaffold with `uv`, `src/` layout, and `pyproject.toml`
-- CLI: `redmcp scan`, `redmcp report`, `redmcp fuzz`, `redmcp pentest` (stubs)
+- CLI: `mcpaudit scan`, `mcpaudit report`, `mcpaudit fuzz`, `mcpaudit pentest` (stubs)
 - Analyzers: permissions, prompt injection, tool abuse, data leakage, jailbreak, attack chains
 - Risk scoring engine and HTML report generation
 - Example vulnerable MCP server and pytest suite

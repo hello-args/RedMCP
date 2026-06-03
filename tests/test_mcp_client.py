@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from redmcp.mcp.client import MCPClient
+from mcpaudit.mcp.client import MCPClient
 
 
 def test_discover_tools_from_example_server(example_server_path: Path) -> None:

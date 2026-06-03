@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from redmcp.reporting.models import Finding, RiskScore, Severity
+from mcpaudit.reporting.models import Finding, RiskScore, Severity
 
 SEVERITY_WEIGHTS = {
     Severity.CRITICAL: 25,

@@ -6,13 +6,13 @@ from pathlib import Path
 
 from jinja2 import Template
 
-from redmcp.reporting.models import ScanReport
+from mcpaudit.reporting.models import ScanReport
 
 HTML_TEMPLATE = Template("""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>RedMCP Security Report</title>
+  <title>MCPAudit Security Report</title>
   <style>
     body { font-family: system-ui, sans-serif; margin: 2rem; color: #1a1a1a; }
     h1 { color: #c0392b; }
@@ -26,7 +26,7 @@ HTML_TEMPLATE = Template("""<!DOCTYPE html>
   </style>
 </head>
 <body>
-  <h1>RedMCP Security Report</h1>
+  <h1>MCPAudit Security Report</h1>
   <p class="meta">Target: {{ report.target }} · Scanned: {{ report.scanned_at }}</p>
   <p class="score">Score: {{ report.score.overall }}/100</p>
   <p>

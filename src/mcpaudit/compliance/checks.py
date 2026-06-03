@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from redmcp.reporting.models import Finding, Severity
+from mcpaudit.reporting.models import Finding, Severity
 
 OWASP_LLM_CONTROLS = [
     "LLM01 Prompt Injection",

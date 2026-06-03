@@ -8,7 +8,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from redmcp.mcp.models import MCPServerInfo
+from mcpaudit.mcp.models import MCPServerInfo
 
 
 class Severity(StrEnum):

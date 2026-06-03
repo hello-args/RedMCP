@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 
 class ScanConfig(BaseModel):
-    """Configuration for a RedMCP security scan."""
+    """Configuration for a MCPAudit security scan."""
 
     target: Path
     output: Path | None = None

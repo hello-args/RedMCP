@@ -2,9 +2,9 @@
 
 from pathlib import Path
 
-from redmcp.core.config import ScanConfig
-from redmcp.core.scanner import Scanner
-from redmcp.reporting.models import Severity
+from mcpaudit.core.config import ScanConfig
+from mcpaudit.core.scanner import Scanner
+from mcpaudit.reporting.models import Severity
 
 
 def test_scan_finds_critical_issues(example_server_path: Path) -> None:

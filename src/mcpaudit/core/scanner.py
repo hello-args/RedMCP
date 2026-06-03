@@ -7,18 +7,18 @@ from datetime import UTC, datetime
 from rich.console import Console
 from rich.table import Table
 
-from redmcp import __version__
-from redmcp.analyzers.attack_chains import AttackChainAnalyzer
-from redmcp.analyzers.data_leakage import DataLeakageAnalyzer
-from redmcp.analyzers.jailbreak import JailbreakAnalyzer
-from redmcp.analyzers.permissions import PermissionAnalyzer
-from redmcp.analyzers.prompt_injection import PromptInjectionAnalyzer
-from redmcp.analyzers.tool_abuse import ToolAbuseAnalyzer
-from redmcp.compliance.checks import ComplianceChecker
-from redmcp.core.config import ScanConfig
-from redmcp.mcp.client import MCPClient
-from redmcp.reporting.models import Finding, ScanReport, ScanSummary
-from redmcp.scoring.engine import RiskScoringEngine
+from mcpaudit import __version__
+from mcpaudit.analyzers.attack_chains import AttackChainAnalyzer
+from mcpaudit.analyzers.data_leakage import DataLeakageAnalyzer
+from mcpaudit.analyzers.jailbreak import JailbreakAnalyzer
+from mcpaudit.analyzers.permissions import PermissionAnalyzer
+from mcpaudit.analyzers.prompt_injection import PromptInjectionAnalyzer
+from mcpaudit.analyzers.tool_abuse import ToolAbuseAnalyzer
+from mcpaudit.compliance.checks import ComplianceChecker
+from mcpaudit.core.config import ScanConfig
+from mcpaudit.mcp.client import MCPClient
+from mcpaudit.reporting.models import Finding, ScanReport, ScanSummary
+from mcpaudit.scoring.engine import RiskScoringEngine
 
 console = Console()
 
@@ -67,7 +67,7 @@ class Scanner:
     def print_summary(self, report: ScanReport) -> None:
         """Render a human-readable summary to the terminal."""
         console.print()
-        console.rule("[bold red]RedMCP Security Report[/bold red]")
+        console.rule("[bold red]MCPAudit Security Report[/bold red]")
         console.print(f"Target: [cyan]{report.target}[/cyan]")
         console.print(f"Overall Score: [bold]{report.score.overall}/100[/bold]")
         console.print()

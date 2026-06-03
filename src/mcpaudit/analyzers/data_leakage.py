@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import re
 
-from redmcp.analyzers.base import BaseAnalyzer
-from redmcp.mcp.models import MCPServerInfo
-from redmcp.reporting.models import Finding, Severity
+from mcpaudit.analyzers.base import BaseAnalyzer
+from mcpaudit.mcp.models import MCPServerInfo
+from mcpaudit.reporting.models import Finding, Severity
 
 SECRET_PATTERNS: list[tuple[str, re.Pattern[str], Severity]] = [
     ("OpenAI API Key", re.compile(r"sk-[A-Za-z0-9]{20,}"), Severity.CRITICAL),

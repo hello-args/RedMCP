@@ -1,4 +1,4 @@
-name: RedMCP Security Scan
+name: MCPAudit Security Scan
 description: Scan an MCP server for security vulnerabilities
 branding:
   icon: shield
@@ -17,22 +17,22 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Install RedMCP
+    - name: Install MCPAudit
       shell: bash
-      run: pip install redmcp
+      run: pip install mcpaudit
 
     - name: Run security scan
       shell: bash
       run: |
         ARGS="${{ inputs.target }}"
         if [ "${{ inputs.fail-on-critical }}" = "true" ]; then
-          redmcp scan "$ARGS" --fail-on-critical -o redmcp-report.json
+          mcpaudit scan "$ARGS" --fail-on-critical -o mcpaudit-report.json
         else
-          redmcp scan "$ARGS" -o redmcp-report.json
+          mcpaudit scan "$ARGS" -o mcpaudit-report.json
         fi
 
     - name: Upload report
       uses: actions/upload-artifact@v4
       with:
-        name: redmcp-report
-        path: redmcp-report.json
+        name: mcpaudit-report
+        path: mcpaudit-report.json

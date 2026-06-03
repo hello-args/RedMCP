@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from redmcp.analyzers.base import BaseAnalyzer
-from redmcp.mcp.models import MCPServerInfo, MCPTool
-from redmcp.reporting.models import Finding, Severity
+from mcpaudit.analyzers.base import BaseAnalyzer
+from mcpaudit.mcp.models import MCPServerInfo, MCPTool
+from mcpaudit.reporting.models import Finding, Severity
 
 TRAVERSAL_PAYLOADS = [
     "../../etc/passwd",

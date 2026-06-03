@@ -1,11 +1,11 @@
 [project]
-name = "redmcp"
+name = "mcpaudit"
 version = "0.1.0"
 description = "Offensive security testing framework for Model Context Protocol (MCP) servers"
 readme = "README.md"
 license = { text = "Apache-2.0" }
 authors = [
-    { name = "RedMCP Contributors" },
+    { name = "MCPAudit Contributors" },
 ]
 requires-python = ">=3.11"
 keywords = ["mcp", "security", "red-team", "prompt-injection", "llm", "ai-agents"]
@@ -45,14 +45,14 @@ mcp = [
 ]
 
 [project.scripts]
-redmcp = "redmcp.cli.main:run"
+mcpaudit = "mcpaudit.cli.main:run"
 
 [project.urls]
-Homepage = "https://github.com/redmcp/redmcp"
-Documentation = "https://github.com/redmcp/redmcp#readme"
-Repository = "https://github.com/redmcp/redmcp"
-Issues = "https://github.com/redmcp/redmcp/issues"
-Changelog = "https://github.com/redmcp/redmcp/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/hello-args/MCPVault"
+Documentation = "https://github.com/hello-args/MCPVault#readme"
+Repository = "https://github.com/hello-args/MCPVault"
+Issues = "https://github.com/hello-args/MCPVault/issues"
+Changelog = "https://github.com/hello-args/MCPVault/blob/main/CHANGELOG.md"
 
 [build-system]
 requires = ["hatchling"]
@@ -75,10 +75,10 @@ src = ["src", "tests"]
 select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["redmcp"]
+known-first-party = ["mcpaudit"]
 
 [tool.coverage.run]
-source = ["redmcp"]
+source = ["mcpaudit"]
 branch = true
 
 [tool.coverage.report]

@@ -1,11 +1,11 @@
-"""Intentionally vulnerable MCP server for RedMCP demos and tests."""
+"""Intentionally vulnerable MCP server for MCPAudit demos and tests."""
 
 from pathlib import Path
 
 
 def create_app():
     """Create a FastMCP-style app stub for static analysis demos."""
-    # This example uses decorator patterns RedMCP's static parser recognizes.
+    # This example uses decorator patterns MCPAudit's static parser recognizes.
     mcp = type("MCP", (), {"tool": staticmethod(lambda **kw: lambda f: f)})()
 
     @mcp.tool()

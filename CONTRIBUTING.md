@@ -1,4 +1,4 @@
-# Contributing to RedMCP
+# Contributing to MCPAudit
 
 Thank you for helping make MCP security testing accessible to everyone.
 
@@ -20,7 +20,7 @@ uv run ruff check .
 uv run ruff format src tests
 
 # Try the CLI locally
-uv run redmcp scan examples/vulnerable-mcp-server/server.py
+uv run mcpaudit scan examples/vulnerable-mcp-server/server.py
 ```
 
 ## Pull Request Guidelines
@@ -39,7 +39,7 @@ Pull requests to `main` require the **test** CI check to pass.
 **Option A — Script**
 
 ```bash
-./scripts/enable-branch-protection.sh hello-args/RedMCP
+./scripts/enable-branch-protection.sh hello-args/MCPAudit
 ```
 
 **Option B — GitHub UI**
@@ -54,9 +54,9 @@ The ruleset definition lives in `.github/rulesets/main.json`.
 
 ## Adding a New Analyzer
 
-1. Create a module under `src/redmcp/analyzers/`
+1. Create a module under `src/mcpaudit/analyzers/`
 2. Subclass `BaseAnalyzer` and implement `analyze()`
-3. Register it in `src/redmcp/core/scanner.py`
+3. Register it in `src/mcpaudit/core/scanner.py`
 4. Add tests under `tests/`
 
 ## Code of Conduct
@@ -65,4 +65,4 @@ This project follows the [Contributor Covenant](CODE_OF_CONDUCT.md).
 
 ## Questions?
 
-Open a [GitHub Discussion](https://github.com/redmcp/redmcp/discussions) or issue.
+Open a [GitHub Discussion](https://github.com/hello-args/MCPVault/discussions) or issue.

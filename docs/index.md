@@ -1,4 +1,4 @@
-# RedMCP Documentation
+# MCPAudit Documentation
 
 ## Guides
 
