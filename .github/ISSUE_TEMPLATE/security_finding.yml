@@ -1,0 +1,19 @@
+name: Security Finding
+description: Report a false positive or missed vulnerability pattern
+title: "[Security]: "
+labels: ["security", "triage"]
+body:
+  - type: textarea
+    id: finding
+    attributes:
+      label: Finding details
+      description: Describe the false positive or missed pattern.
+    validations:
+      required: true
+  - type: textarea
+    id: mcp-server
+    attributes:
+      label: MCP server context
+      description: Minimal repro server or tool definition (redact secrets).
+    validations:
+      required: true
