@@ -16,7 +16,7 @@ Thank you for helping make MCP security testing accessible to everyone.
 uv run pytest
 
 # Lint & format
-uv run ruff check src tests
+uv run ruff check .
 uv run ruff format src tests
 
 # Try the CLI locally
@@ -29,6 +29,28 @@ uv run redmcp scan examples/vulnerable-mcp-server/server.py
 - Add tests for new behavior
 - Update `CHANGELOG.md` under `[Unreleased]` for user-facing changes
 - Follow existing code style (ruff enforces this in CI)
+
+## Branch Protection
+
+Pull requests to `main` require the **test** CI check to pass.
+
+### Enable on GitHub (one-time, repo admin)
+
+**Option A — Script**
+
+```bash
+./scripts/enable-branch-protection.sh hello-args/RedMCP
+```
+
+**Option B — GitHub UI**
+
+1. Go to **Settings → Rules → Rulesets → New branch ruleset**
+2. Target: default branch (`main`)
+3. Add rule: **Require status checks to pass**
+4. Required check: `test`
+5. Save and enable enforcement
+
+The ruleset definition lives in `.github/rulesets/main.json`.
 
 ## Adding a New Analyzer
 
