@@ -16,3 +16,5 @@ class ScanConfig(BaseModel):
     enable_jailbreak: bool = True
     enable_attack_chains: bool = True
     timeout_seconds: int = Field(default=120, ge=1)
+    theme: str = "cyber"
+    no_progress: bool = False

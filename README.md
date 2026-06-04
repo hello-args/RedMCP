@@ -1,5 +1,10 @@
 # MCPAudit
 
+![Python](https://img.shields.io/badge/python-3.11+-blue)
+![License](https://img.shields.io/badge/license-Apache%202.0-green)
+![Status](https://img.shields.io/badge/status-alpha-orange)
+![Security](https://img.shields.io/badge/focus-MCP%20Security-red)
+
 **Offensive security testing framework for Model Context Protocol (MCP) servers.**
 
 Make MCP security testing as easy as running a linter.
@@ -7,6 +12,35 @@ Make MCP security testing as easy as running a linter.
 ```bash
 mcpaudit scan ./server.py
 ```
+
+## Demo
+
+Scan the included vulnerable MCP server:
+
+```bash
+uv run mcpaudit scan examples/vulnerable-mcp-server/server.py
+```
+
+```
+$ mcpaudit scan examples/vulnerable-mcp-server/server.py
+[✓] Discovering tools...
+[✓] Mapping permissions...
+[✓] Detecting attack chains...
+[✓] Generating report...
+
+==================== MCPAudit Security Report ====================
+Overall Score:   5/100 (CRITICAL)
+Risk Index:      100/100
+Scoring basis:   3 Critical, 7 High, 2 Medium (12 scorable findings)
+Formula:         3×25 + 7×10 + 2×3 = 151 → round(100 × e^(-151/50)) = 5
+
+Severity Summary          Top Findings
+● Critical    4           [1] CRITICAL Destructive tool: delete_all_users
+● High        7           [2] CRITICAL Read → exfiltration attack chain possible
+● Medium      2           ...
+```
+
+> **Tip:** Record a terminal GIF of the scan above and add it here as `docs/assets/scan-demo.gif` for maximum README impact.
 
 ## Problem
 
@@ -22,7 +56,8 @@ MCP servers expose databases, APIs, file systems, cloud resources, and SaaS tool
 | Data Leakage Detection | ✅ Alpha | Scans for secrets and sensitive references |
 | Agent Jailbreak Testing | 🚧 Planned | Resistance scoring against jailbreak suites |
 | Multi-Step Attack Chains | ✅ Alpha | Identifies dangerous tool combinations |
-| Risk Scoring Engine | ✅ Alpha | CVSS-inspired security score (0–100) |
+| Risk Scoring Engine | ✅ Alpha | Security score + risk index (exponential decay) |
+| Terminal UI | ✅ Alpha | Rich dashboard, themes (`cyber`, `minimal`, `github`) |
 | Compliance Checks | ✅ Alpha | OWASP LLM Top 10 & MCP best practices |
 | CI/CD Integration | 🚧 Planned | GitHub Action for pipeline gates |
 | HTML Reports | ✅ Alpha | `mcpaudit report` → `security-report.html` |
@@ -39,8 +74,8 @@ MCP servers expose databases, APIs, file systems, cloud resources, and SaaS tool
 ### Install
 
 ```bash
-git clone https://github.com/hello-args/MCPVault.git
-cd MCPVault
+git clone https://github.com/MCP-Audit/MCPAudit.git
+cd MCPAudit
 uv sync --all-extras
 ```
 
@@ -61,6 +96,13 @@ uv run mcpaudit report report.json -o security-report.html
 
 ```bash
 uv run mcpaudit scan ./server.py --fail-on-critical
+```
+
+### Themes
+
+```bash
+uv run mcpaudit scan ./server.py --theme cyber    # default
+uv run mcpaudit scan ./server.py --theme minimal --no-progress
 ```
 
 ## Architecture

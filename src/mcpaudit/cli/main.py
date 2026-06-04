@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 from typing import Annotated
 
@@ -12,6 +13,9 @@ from mcpaudit import __version__
 from mcpaudit.core.config import ScanConfig
 from mcpaudit.core.scanner import Scanner
 from mcpaudit.reporting.html import write_html_report
+from mcpaudit.ui.progress import print_scan_command, run_with_progress
+from mcpaudit.ui.report_renderer import ReportRenderer
+from mcpaudit.ui.theme import ThemeName, get_theme
 
 app = typer.Typer(
     name="mcpaudit",
@@ -51,16 +55,66 @@ def scan(
         bool,
         typer.Option("--fail-on-critical", help="Exit with code 1 if critical findings exist"),
     ] = False,
+    theme: Annotated[
+        str,
+        typer.Option(
+            "--theme",
+            help="Terminal theme: cyber, minimal, github",
+            case_sensitive=False,
+        ),
+    ] = ThemeName.CYBER.value,
+    no_progress: Annotated[
+        bool,
+        typer.Option("--no-progress", help="Skip pre-report progress animation"),
+    ] = False,
 ) -> None:
     """Run a full security scan against an MCP server."""
-    config = ScanConfig(target=target, output=output, fail_on_critical=fail_on_critical)
+    try:
+        resolved_theme = get_theme(theme)
+    except ValueError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+    config = ScanConfig(
+        target=target,
+        output=output,
+        fail_on_critical=fail_on_critical,
+        theme=resolved_theme.name.value,
+        no_progress=no_progress,
+    )
     scanner = Scanner(config)
-    report = scanner.run()
-    scanner.print_summary(report)
+    command = f"mcpaudit scan {target}"
+    renderer = ReportRenderer(resolved_theme, console=console)
+    term_width = renderer._terminal_width()
+
+    print_scan_command(console, resolved_theme, command, terminal_width=term_width)
+
+    def _execute_scan():
+        return scanner.run()
+
+    started = time.perf_counter()
+    report = run_with_progress(
+        _execute_scan,
+        theme=resolved_theme,
+        console=console,
+        enabled=not no_progress,
+        terminal_width=term_width,
+    )
+    duration = time.perf_counter() - started
+
+    if not no_progress:
+        console.print()
+
+    renderer.render(
+        report,
+        command=command,
+        duration_seconds=duration,
+        analyzers_run=scanner.analyzers_run_count(),
+    )
 
     if output:
         output.write_text(report.model_dump_json(indent=2))
-        console.print(f"[green]Report written to[/green] {output}")
+        renderer.render_saved_notice(str(output))
 
     if fail_on_critical and report.summary.critical > 0:
         raise typer.Exit(code=1)
@@ -76,13 +130,24 @@ def report(
         Path,
         typer.Option("--output", "-o", help="HTML report path"),
     ] = Path("security-report.html"),
+    theme: Annotated[
+        str,
+        typer.Option("--theme", help="Terminal theme: cyber, minimal, github"),
+    ] = ThemeName.CYBER.value,
 ) -> None:
     """Generate an HTML security report from scan results."""
     from mcpaudit.reporting.models import ScanReport
 
+    try:
+        resolved_theme = get_theme(theme)
+    except ValueError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
     data = ScanReport.model_validate_json(input_file.read_text())
     write_html_report(data, output)
-    console.print(f"[green]HTML report written to[/green] {output}")
+    renderer = ReportRenderer(resolved_theme, console=console)
+    renderer.render_saved_notice(str(output))
 
 
 @app.command()

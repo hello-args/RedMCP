@@ -18,22 +18,28 @@ MCPAudit performs static analysis on Python MCP servers, discovering `@tool` dec
 
 ## Example output
 
-```
-────────────────────── MCPAudit Security Report ──────────────────────
-Target: examples/vulnerable-mcp-server/server.py
-Overall Score: 42/100
+```text
+[✓] Discovering tools...
+[✓] Mapping permissions...
+[✓] Detecting attack chains...
+[✓] Generating report...
 
-        Findings by Severity
-┏━━━━━━━━━━┳━━━━━━━┓
-┃ Severity ┃ Count ┃
-┡━━━━━━━━━━╇━━━━━━━┩
-│ Critical │     3 │
-│ High     │     4 │
-...
+==================== MCPAudit Security Report ====================
+Overall Score:   5/100 (CRITICAL)
+Risk Index:      100/100
+Scoring basis:   3 Critical, 7 High, 2 Medium, 0 Low (12 scorable findings)
+
+● Critical    4
+● High        7
+● Medium      2
+● Low         0
 ```
+
+Scores are computed from findings (not hardcoded). See [CLI Reference](cli.md) for `--theme` and `--no-progress`.
 
 ## Next steps
 
 - Save JSON: `mcpaudit scan ./server.py -o report.json`
 - Generate HTML: `mcpaudit report report.json`
+- Try example servers: `examples/safe-mcp-server/`, `examples/medium-risk-mcp-server/`
 - Add to CI: see `action/action.yml`

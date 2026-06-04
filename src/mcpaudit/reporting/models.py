@@ -59,9 +59,28 @@ class ScanSummary(BaseModel):
         )
 
 
+class ScoreBasis(BaseModel):
+    """Severity counts used to compute the score (auditable, not hardcoded)."""
+
+    critical: int = Field(ge=0)
+    high: int = Field(ge=0)
+    medium: int = Field(ge=0)
+    low: int = Field(ge=0)
+    scorable_total: int = Field(ge=0)
+    excluded_non_scorable: int = Field(
+        ge=0,
+        description="Findings excluded from scoring (e.g. compliance meta-checks)",
+    )
+
+
 class RiskScore(BaseModel):
-    overall: int = Field(ge=0, le=100)
-    penalty: int = Field(ge=0)
+    """overall: security score (100 = best). risk_index: inverted risk (100 = worst)."""
+
+    overall: int = Field(ge=0, le=100, description="Security score; higher is better")
+    risk_index: int = Field(ge=0, le=100, description="Risk index; higher is worse")
+    raw_risk: int = Field(ge=0, description="Uncapped weighted risk points")
+    penalty: int = Field(ge=0, description="Deprecated alias for raw_risk")
+    basis: ScoreBasis = Field(description="Finding counts used for this score")
 
 
 class ScanReport(BaseModel):

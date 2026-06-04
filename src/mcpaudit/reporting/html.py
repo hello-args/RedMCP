@@ -28,7 +28,10 @@ HTML_TEMPLATE = Template("""<!DOCTYPE html>
 <body>
   <h1>MCPAudit Security Report</h1>
   <p class="meta">Target: {{ report.target }} · Scanned: {{ report.scanned_at }}</p>
-  <p class="score">Score: {{ report.score.overall }}/100</p>
+  <p class="score">
+    Security Score: {{ report.score.overall }}/100 ·
+    Risk Index: {{ report.score.risk_index }}/100
+  </p>
   <p>
     Critical: {{ report.summary.critical }} ·
     High: {{ report.summary.high }} ·
