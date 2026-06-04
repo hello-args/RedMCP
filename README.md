@@ -60,7 +60,7 @@ MCP servers expose databases, APIs, file systems, cloud resources, and SaaS tool
 | Terminal UI | ✅ Alpha | Rich dashboard, themes (`cyber`, `minimal`, `github`) |
 | Compliance Checks | ✅ Alpha | OWASP LLM Top 10 & MCP best practices |
 | CI/CD Integration | 🚧 Planned | GitHub Action for pipeline gates |
-| HTML Reports | ✅ Alpha | `mcpaudit report` → `security-report.html` |
+| HTML Security Dashboard | ✅ Alpha | Enterprise HTML report — gauge, grades, OWASP, attack chains |
 | MCP Fuzzer | 🔮 Roadmap | `mcpaudit fuzz` |
 | MCPAudit Agent | 🔮 Roadmap | `mcpaudit pentest` |
 
@@ -85,12 +85,15 @@ uv sync --all-extras
 uv run mcpaudit scan examples/vulnerable-mcp-server/server.py
 ```
 
-Save JSON results and generate HTML:
+Save JSON and generate an executive HTML dashboard:
 
 ```bash
 uv run mcpaudit scan examples/vulnerable-mcp-server/server.py -o report.json
 uv run mcpaudit report report.json -o security-report.html
+open security-report.html
 ```
+
+The HTML report includes a dark-themed overview (score gauge, letter grade, severity cards, posture summary), risk breakdown with radar chart, searchable findings, attack chain graph, OWASP mapping, and in-browser export (JSON / HTML / PDF). See [docs/html-report.md](docs/html-report.md).
 
 ### CI gate (fail on critical)
 
@@ -123,9 +126,19 @@ Permission   Injection     Leakage
 Analyzer      Engine       Scanner
      ▼            ▼            ▼
        Risk Scoring Engine
-                  ▼
-          Security Report
+                  │
+        ┌─────────┴─────────┐
+        ▼                   ▼
+  Terminal UI          HTML Dashboard
+  (Rich CLI)      (mcpaudit report)
 ```
+
+## Documentation
+
+- [Getting Started](docs/getting-started.md)
+- [CLI Reference](docs/cli.md)
+- [HTML Security Dashboard](docs/html-report.md)
+- [Architecture](docs/architecture.md)
 
 ## Project Structure
 
@@ -137,7 +150,10 @@ MCPAudit/
 │   ├── analyzers/       # Security analyzers
 │   ├── scoring/         # Risk scoring engine
 │   ├── compliance/      # OWASP & MCP compliance checks
-│   ├── reporting/       # Models & HTML reports
+│   ├── reporting/       # ScanReport models & JSON
+│   ├── report/          # HTML dashboard (templates, CSS, JS)
+│   ├── brand/           # Logo assets
+│   ├── ui/              # Terminal dashboard (Rich)
 │   └── mcp/             # MCP client & discovery
 ├── tests/               # pytest suite
 ├── examples/            # Sample vulnerable MCP servers

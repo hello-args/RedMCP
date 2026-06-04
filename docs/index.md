@@ -4,6 +4,7 @@
 
 - [Getting Started](getting-started.md)
 - [CLI Reference](cli.md)
+- [HTML Security Dashboard](html-report.md)
 - [Architecture](architecture.md)
 
 ## Roadmap

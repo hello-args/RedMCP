@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MCPAudit Security Report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>{{ styles | safe }}</style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">
+          <img src="{{ logo_src }}" alt="MCPAudit logo" width="44" height="44">
+        </div>
+        <div class="brand-text">
+          <h1>MCPAudit</h1>
+          <p>Security Report</p>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Report sections">
+        <button type="button" class="nav-item active" data-section="overview">Overview</button>
+        <button type="button" class="nav-item" data-section="findings">Findings</button>
+        <button type="button" class="nav-item" data-section="analyzers">Analyzers</button>
+        <button type="button" class="nav-item" data-section="attack-chains">Attack Chains</button>
+        <button type="button" class="nav-item" data-section="owasp">OWASP Mapping</button>
+        <button type="button" class="nav-item" data-section="recommendations">Recommendations</button>
+        <button type="button" class="nav-item" data-section="appendix">Appendix</button>
+      </nav>
+
+      <div class="scan-card">
+        <h3>Scan Information</h3>
+        <dl class="scan-meta">
+          <dt>Target</dt><dd id="meta-target">—</dd>
+          <dt>Scan Date</dt><dd id="meta-date">—</dd>
+          <dt>Scan Time</dt><dd id="meta-time">—</dd>
+          <dt>Tools Discovered</dt><dd id="meta-tools">—</dd>
+          <dt>Analyzers Run</dt><dd id="meta-analyzers">—</dd>
+        </dl>
+      </div>
+
+      <div class="sidebar-footer">
+        <button type="button" class="btn-download" id="download-json-side">
+          Download JSON Report
+        </button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="header">
+        <span class="badge-version">v{{ app_version }}</span>
+        <div class="export-wrap">
+          <button type="button" class="btn-export" id="export-toggle" aria-haspopup="true" aria-expanded="false">
+            Export
+          </button>
+          <div class="export-menu" id="export-menu" role="menu">
+            <button type="button" role="menuitem" id="export-pdf">PDF (Print)</button>
+            <button type="button" role="menuitem" id="export-json">JSON</button>
+            <button type="button" role="menuitem" id="export-html">HTML</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Overview -->
+      <section id="overview" class="page-section active">
+        <div class="metrics-row">
+          <div class="card score-card">
+            <div class="score-title-row">
+              <h3>Overall Risk Score</h3>
+              <div class="score-info-wrap">
+                <button type="button" class="score-info" id="score-info" aria-describedby="score-tooltip">ⓘ</button>
+                <div class="score-tooltip" id="score-tooltip" role="tooltip"></div>
+              </div>
+            </div>
+            <div class="gauge-wrap">
+              <canvas id="gauge-chart" aria-label="Security score gauge"></canvas>
+              <div class="gauge-center">
+                <div class="gauge-score"><span id="gauge-score-value">0</span><span class="gauge-denom">/100</span></div>
+                <p class="gauge-grade">Grade <span id="security-grade" class="grade-badge">—</span></p>
+              </div>
+            </div>
+            <div class="risk-pill critical" id="risk-pill">—</div>
+            <p class="score-brief" id="score-brief">—</p>
+          </div>
+
+          <div class="card severity-card severity-card--critical" data-severity="critical">
+            <div class="severity-icon-wrap"></div>
+            <div class="severity-main">
+              <div class="count">0</div>
+              <div class="severity-tier">CRITICAL</div>
+              <div class="severity-desc">Issues Detected</div>
+            </div>
+            <div class="severity-footer-badge">Critical Risk</div>
+          </div>
+          <div class="card severity-card severity-card--high" data-severity="high">
+            <div class="severity-icon-wrap"></div>
+            <div class="severity-main">
+              <div class="count">0</div>
+              <div class="severity-tier">HIGH</div>
+              <div class="severity-desc">Issues Detected</div>
+            </div>
+            <div class="severity-footer-badge">High Risk</div>
+          </div>
+          <div class="card severity-card severity-card--medium" data-severity="medium">
+            <div class="severity-icon-wrap"></div>
+            <div class="severity-main">
+              <div class="count">0</div>
+              <div class="severity-tier">MEDIUM</div>
+              <div class="severity-desc">Issues Detected</div>
+            </div>
+            <div class="severity-footer-badge">Medium Risk</div>
+          </div>
+          <div class="card severity-card severity-card--low" data-severity="low">
+            <div class="severity-icon-wrap"></div>
+            <div class="severity-main">
+              <div class="count">0</div>
+              <div class="severity-tier">LOW</div>
+              <div class="severity-desc">Issues Detected</div>
+            </div>
+            <div class="severity-footer-badge">Low Risk</div>
+          </div>
+          <div class="card severity-card severity-card--tools" data-severity="tools">
+            <div class="severity-icon-wrap"></div>
+            <div class="severity-main">
+              <div class="count">0</div>
+              <div class="severity-tier">TOOLS</div>
+              <div class="severity-desc">Discovered</div>
+            </div>
+            <div class="severity-footer-badge">Analyzed by MCPAudit</div>
+          </div>
+        </div>
+
+        <div class="overview-row">
+          <div class="card exec-summary">
+            <h3 class="card-heading">Security Posture Summary</h3>
+            <div class="exec-summary-grid">
+              <div class="exec-col">
+                <h4 class="exec-col-title">Security Summary</h4>
+                <div id="exec-paragraphs" class="exec-paragraphs"></div>
+              </div>
+              <div class="exec-col">
+                <h4 class="exec-col-title">Recommended Actions</h4>
+                <div id="exec-actions" class="exec-actions"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="breakdown-row">
+          <div class="card breakdown-card">
+            <h3 class="card-heading">Risk Score Breakdown</h3>
+            <div class="breakdown-inner">
+              <div class="metrics-panel">
+                <ul class="category-list" id="category-list"></ul>
+              </div>
+              <div class="chart-box radar-box">
+                <canvas id="radar-chart" aria-label="Risk category radar"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="card breakdown-card trend-card">
+            <h3 class="card-heading">Risk Score Trend</h3>
+            <div class="chart-box trend">
+              <canvas id="trend-chart" aria-label="Score trend over time" hidden></canvas>
+              <div id="trend-empty" class="trend-empty" hidden>
+                <div class="trend-empty-icon" aria-hidden="true">📈</div>
+                <h4>No Historical Data</h4>
+                <p>Run MCPAudit regularly to build security posture trends over time.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card risk-guide-card">
+          <h3 class="card-heading">Risk Level Guide</h3>
+          <div class="risk-guide" id="risk-guide"></div>
+        </div>
+      </section>
+
+      <!-- Findings -->
+      <section id="findings" class="page-section">
+        <h2 class="section-title">Security Findings</h2>
+        <div class="card">
+          <div class="table-toolbar">
+            <div class="search-wrap">
+              <input type="search" id="findings-search" placeholder="Search findings…" aria-label="Search findings">
+            </div>
+            <select class="filter-select" id="findings-filter" aria-label="Filter by severity">
+              <option value="all">All severities</option>
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+          <table class="data-table" id="findings-table">
+            <thead>
+              <tr>
+                <th data-sort="severity">Severity</th>
+                <th data-sort="title">Finding</th>
+                <th data-sort="category">Category</th>
+                <th data-sort="owasp">OWASP</th>
+                <th data-sort="tool">Affected Tool</th>
+                <th>Remediation</th>
+              </tr>
+            </thead>
+            <tbody id="findings-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Analyzers -->
+      <section id="analyzers" class="page-section">
+        <h2 class="section-title">Analyzers</h2>
+        <div class="analyzer-grid" id="analyzer-grid"></div>
+      </section>
+
+      <!-- Attack Chains -->
+      <section id="attack-chains" class="page-section">
+        <h2 class="section-title">Attack Chains</h2>
+        <div class="card">
+          <p style="color:var(--muted);margin:0 0 16px">Tool dependency graph derived from attack chain analysis.</p>
+          <div class="graph-wrap">
+            <svg id="attack-graph" role="img" aria-label="Attack chain graph"></svg>
+          </div>
+        </div>
+      </section>
+
+      <!-- OWASP -->
+      <section id="owasp" class="page-section">
+        <h2 class="section-title">OWASP LLM Mapping</h2>
+        <div class="owasp-grid" id="owasp-grid"></div>
+      </section>
+
+      <!-- Recommendations -->
+      <section id="recommendations" class="page-section">
+        <h2 class="section-title">Recommendations</h2>
+        <div class="rec-list" id="rec-list"></div>
+      </section>
+
+      <!-- Appendix -->
+      <section id="appendix" class="page-section">
+        <h2 class="section-title">Appendix</h2>
+        <div class="card appendix">
+          <h3>Raw Scan Report (JSON)</h3>
+          <pre id="appendix-json"></pre>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="application/json" id="mcpaudit-report-data">{{ report_json | safe }}</script>
+  <script type="application/json" id="mcpaudit-icons-data">{{ icons_json | safe }}</script>
+  <script>{{ dashboard_js | safe }}</script>
+</body>
+</html>
