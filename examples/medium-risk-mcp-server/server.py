@@ -1,5 +1,6 @@
 """Medium-risk MCP server — limited file access surface for scoring demos."""
 
+
 def create_app():
     mcp = type("MCP", (), {"tool": staticmethod(lambda **kw: lambda f: f)})()
 

@@ -1,5 +1,6 @@
 """Minimal low-risk MCP server for MCPAudit scoring demos."""
 
+
 def create_app():
     mcp = type("MCP", (), {"tool": staticmethod(lambda **kw: lambda f: f)})()
 

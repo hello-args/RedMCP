@@ -19,9 +19,7 @@ MCPAUDIT_ASCII = r"""
 ██║╚██╔╝██║██║     ██╔═══╝ ██╔══██║██║   ██║██║  ██║██║   ██║
 ██║ ╚═╝ ██║╚██████╗██║     ██║  ██║╚██████╔╝██████╔╝██║   ██║
 ╚═╝     ╚═╝ ╚═════╝╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚═╝   ╚═╝
-""".strip(
-    "\n"
-)
+""".strip("\n")
 
 # Pure-ASCII fallback when Unicode block chars cannot be encoded.
 MCPAUDIT_ASCII_PLAIN = r"""
@@ -30,9 +28,7 @@ MCPAUDIT_ASCII_PLAIN = r"""
 | |\/| | |    | |_) / _ \ | | | | | |  | |  | | |  _|  
 | |  | | |___ |  __/ ___ \| |_| | | |  | |  | | | |___ 
 |_|  |_|\____||_| /_/   \_\\___/  |_| |___| |_| |_____|
-""".strip(
-    "\n"
-)
+""".strip("\n")
 
 LOGO_WIDTH = max(len(line) for line in MCPAUDIT_ASCII.splitlines())
 LOGO_MIN_TERMINAL_WIDTH = LOGO_WIDTH + 4
