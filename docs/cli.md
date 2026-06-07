@@ -1,6 +1,6 @@
 # CLI Reference
 
-Commands and flags reflect the current Typer CLI in `src/mcts/cli/main.py`. Planned commands are marked 📋.
+Commands and flags reflect the current Typer CLI in `src/mcts/cli/main.py`. Planned commands are marked as planned.
 
 ---
 
@@ -33,8 +33,8 @@ mcts scan <target> [options]
 | `--semantic-secrets` | Opt-in semantic credential detection (MCTS-T-1022) |
 | `--runtime-events` | JSON file with probe/runtime telemetry for analyzers |
 | `--behavioral-probe` | Multi-turn MCTS-T-1026 probe events (auto-enabled with `--live`) |
-| `--profile` | 📋 Policy profile: `strict`, `balanced`, `dev` |
-| `--llm-review` | 📋 Opt-in LLM finding review (requires API key) |
+| `--profile` | Policy profile: `strict`, `balanced`, `dev` (planned) |
+| `--llm-review` | Opt-in LLM finding review; requires API key (planned) |
 
 **Target:** path to MCP server file, repository directory, or `.` with `--config` + `--server`.
 
@@ -141,7 +141,7 @@ See [Protocol Fuzzing](fuzzing.md).
 
 ---
 
-## `mcts audit-config` (📋 Planned)
+## `mcts audit-config` (Planned)
 
 Static review of `mcpServers` JSON without LLM agent tool invocation.
 
@@ -152,37 +152,37 @@ mcts audit-config ./claude_desktop_config.json --probe
 
 ---
 
-## `mcts simulate` (📋 Planned)
+## `mcts simulate` (Planned)
 
 Active attack-path simulation. See [Roadmap](roadmap.md).
 
 ---
 
-## `mcts pentest` (📋 Planned)
+## `mcts pentest` (Planned)
 
 AI-assisted penetration testing agent. Stub today — prints "not yet implemented".
 
 ---
 
-## `mcts vet` (📋 Planned)
+## `mcts vet` (Planned)
 
 Pre-install package vetting (`pypi:…`, `npm:…`).
 
 ---
 
-## `mcts trend` (📋 Planned)
+## `mcts trend` (Planned)
 
 Score history from `.mcts/history/`.
 
 ---
 
-## `mcts badge` (📋 Planned)
+## `mcts badge` (Planned)
 
 README certification SVG from scan JSON.
 
 ---
 
-## `mcts serve` (📋 Planned)
+## `mcts serve` (Planned)
 
 Local REST API for pipeline integration.
 

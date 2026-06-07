@@ -353,18 +353,18 @@ src/mcts/
 
 | Doc | Status |
 |-----|--------|
-| `docs/scoring-spec.md` | ✅ Shipped |
-| `docs/taxonomy.md` | ✅ Shipped |
-| `docs/live-scanning.md` | ✅ Shipped |
-| `docs/inventory.md` | ✅ Shipped |
-| `docs/ci-integration.md` | ✅ Shipped |
-| `docs/competitive-positioning.md` | ✅ Shipped |
-| `docs/architecture.md` | ✅ Updated — discovery, probe, analyzer list |
-| `docs/cli.md` | ✅ Updated — all commands and flags |
-| `docs/roadmap.md` | ✅ Aligned with Phases 0–3 |
-| `docs/fuzzing.md` | ✅ Shipped |
-| `docs/typescript-discovery.md` | ✅ Shipped |
-| `action/README.md` | ✅ Shipped |
+| `docs/scoring-spec.md` | Shipped |
+| `docs/taxonomy.md` | Shipped |
+| `docs/live-scanning.md` | Shipped |
+| `docs/inventory.md` | Shipped |
+| `docs/ci-integration.md` | Shipped |
+| `docs/competitive-positioning.md` | Shipped |
+| `docs/architecture.md` | Updated — discovery, probe, analyzer list |
+| `docs/cli.md` | Updated — all commands and flags |
+| `docs/roadmap.md` | Aligned with Phases 0–3 |
+| `docs/fuzzing.md` | Shipped |
+| `docs/typescript-discovery.md` | Shipped |
+| `action/README.md` | Shipped |
 
 ---
 

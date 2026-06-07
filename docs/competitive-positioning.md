@@ -30,15 +30,15 @@ Last updated after Phase 0/1 foundation work (live stdio probe, inventory, fuzz,
 
 | | mcp-scanner | MCTS |
 |---|-------------|------|
-| Live MCP (tools/prompts/resources) | ✅ Multi-transport | ✅ Stdio (`--live`); SSE/HTTP planned |
-| Static SAST depth | ✅ Tree-sitter + taint | ⚠️ Python AST + TS patterns + heuristics |
-| YARA / behavioral LLM | ✅ | ❌ |
-| Config discovery | ✅ known-configs | ✅ `mcts inventory` |
-| SARIF | ❌ | ✅ |
-| HTML dashboard | ❌ | ✅ |
-| Attack chains | ⚠️ Implicit | ✅ Capability graph |
-| CI score gate | ⚠️ Severity only | ✅ `--min-score` + SARIF |
-| Cloud dependency | ⚠️ Optional Cisco API | ✅ None |
+| Live MCP (tools/prompts/resources) | Yes — Multi-transport | Yes — Stdio (`--live`); SSE/HTTP planned |
+| Static SAST depth | Yes — Tree-sitter + taint | Partial — Python AST + TS patterns + heuristics |
+| YARA / behavioral LLM | Yes | No |
+| Config discovery | Yes (known-configs) | Yes `mcts inventory` |
+| SARIF | No | Yes |
+| HTML dashboard | No | Yes |
+| Attack chains | Partial — Implicit | Yes (capability graph) |
+| CI score gate | Partial — Severity only | Yes (`--min-score` + SARIF) |
+| Cloud dependency | Partial (optional Cisco API) | None |
 
 **MCTS wins:** SARIF, HTML, scoring, offline default, attack chains, stdio live probe.  
 **mcp-scanner wins:** Multi-transport live, deeper SAST/taint, YARA, behavioral alignment.
@@ -49,11 +49,11 @@ Last updated after Phase 0/1 foundation work (live stdio probe, inventory, fuzz,
 
 | | MCPScan | MCTS |
 |---|---------|------|
-| Semgrep + LLM pipeline | ✅ | ❌ |
-| Tests | ❌ | ✅ 40+ tests |
-| Live MCP | ❌ | ✅ Stdio (`--live`) |
-| SARIF / CI | ❌ | ✅ |
-| Repo scan | ✅ | ✅ |
+| Semgrep + LLM pipeline | Yes | No |
+| Tests | No | Yes (40+ tests) |
+| Live MCP | No | Yes — Stdio (`--live`) |
+| SARIF / CI | No | Yes |
+| Repo scan | Yes | Yes |
 
 **MCTS wins:** Everything except Semgrep corpus (planned as optional extra).
 
@@ -63,12 +63,12 @@ Last updated after Phase 0/1 foundation work (live stdio probe, inventory, fuzz,
 
 | | agent-scan | MCTS |
 |---|------------|------|
-| Config inventory breadth | ✅ 10+ agents | ⚠️ 4 clients |
-| Live introspection | ✅ Multi-client | ✅ Stdio (`--live`) |
-| Security findings | ☁️ Snyk cloud | ✅ Local |
-| SARIF | ❌ | ✅ |
-| HTML dashboard | ❌ | ✅ |
-| Enterprise guard hooks | ✅ | ❌ (out of scope) |
+| Config inventory breadth | Yes (10+ agents) | Partial (4 clients) |
+| Live introspection | Yes — Multi-client | Yes — Stdio (`--live`) |
+| Security findings | Snyk cloud | Local |
+| SARIF | No | Yes |
+| HTML dashboard | No | Yes |
+| Enterprise guard hooks | Yes | No (out of scope) |
 
 **MCTS wins:** Local findings, SARIF, HTML, no token required.  
 **agent-scan wins:** Inventory breadth, live probe, enterprise runtime guard.
@@ -79,10 +79,10 @@ Last updated after Phase 0/1 foundation work (live stdio probe, inventory, fuzz,
 
 | | McpSafetyScanner | MCTS |
 |---|------------------|------|
-| Production readiness | ❌ Alpha single-file | ✅ |
-| Structured output | ❌ Markdown narrative | ✅ JSON/SARIF/HTML |
-| Agent red-team | ✅ | ❌ (`pentest` stub) |
-| Tests / CI | ❌ | ✅ |
+| Production readiness | No Alpha single-file | Yes |
+| Structured output | No Markdown narrative | Yes — JSON/SARIF/HTML |
+| Agent red-team | Yes | No (`pentest` stub) |
+| Tests / CI | No | Yes |
 
 **MCTS wins:** All structural/product dimensions.
 
@@ -92,12 +92,12 @@ Last updated after Phase 0/1 foundation work (live stdio probe, inventory, fuzz,
 
 | | scanner-main | MCTS |
 |---|--------------|------|
-| MCTS technique mapping | ✅ 10 specs | ✅ MCTS-T taxonomy (41 techniques, 25 mitigations) |
-| MCP server mode | ✅ | ❌ (Phase 3) |
-| LLM required | ✅ | ❌ |
-| Deterministic scan | ❌ | ✅ |
-| SARIF | ❌ | ✅ |
-| HTML | ❌ | ✅ |
+| MCTS technique mapping | Yes 10 specs | Yes — MCTS-T taxonomy (41 techniques, 25 mitigations) |
+| MCP server mode | Yes | No (Phase 3) |
+| LLM required | Yes | No |
+| Deterministic scan | No | Yes |
+| SARIF | No | Yes |
+| HTML | No | Yes |
 
 **MCTS wins:** Offline CI, SARIF, HTML, deterministic scoring.  
 **scanner-main wins:** MCP tools for IDE agents, SAF-MCP corpus depth.
@@ -114,12 +114,12 @@ Not a scanner — taxonomy corpus. MCTS **links** via `technique_id` / optional 
 
 | | mcp-guard | MCTS |
 |---|-----------|------|
-| Dynamic fuzzing | ✅ ~5k LOC, broad `tools/call` by default | ✅ Safe read-only default; aggressive with consent |
-| CVSS scoring | ✅ | ⚠️ Exponential security score (different model) |
-| SARIF | ❌ | ✅ |
-| HTML | ❌ | ✅ |
-| Monolith maintainability | ⚠️ | ✅ Modular analyzers |
-| Tests / CI | ⚠️ Minimal | ✅ |
+| Dynamic fuzzing | Yes ~5k LOC, broad `tools/call` by default | Yes — Safe read-only default; aggressive with consent |
+| CVSS scoring | Yes | Partial — Exponential security score (different model) |
+| SARIF | No | Yes |
+| HTML | No | Yes |
+| Monolith maintainability | Partial | Yes — Modular analyzers |
+| Tests / CI | Partial — Minimal | Yes |
 
 **MCTS wins:** SARIF, HTML, CI, architecture, tests, CI-safe fuzz defaults.  
 **mcp-guard wins:** Broader default `tools/call` fuzz coverage and larger payload corpus.
@@ -136,14 +136,14 @@ No auditable source in competitor folder — **not a code peer**. MCTS exceeds a
 
 | | agent-security | MCTS |
 |---|----------------|------|
-| General SAST (Semgrep 1700+ rules) | ✅ | ❌ (MCP-boundary focused) |
-| SARIF | ✅ | ✅ |
-| HTML | ✅ | ✅ (attack graph + OWASP) |
-| MCP scan mode | ⚠️ Static filesystem | ✅ Static Python + TypeScript |
-| Live MCP probe | ❌ | ✅ Stdio (`--live`) |
-| Supply chain / SBOM | ✅ | ❌ (Phase 3) |
-| Attack chains | ❌ | ✅ |
-| Local-first default | ⚠️ Heavy deps | ✅ Lean core |
+| General SAST (Semgrep 1700+ rules) | Yes | No (MCP-boundary focused) |
+| SARIF | Yes | Yes |
+| HTML | Yes | Yes (attack graph + OWASP) |
+| MCP scan mode | Partial — Static filesystem | Yes — Static Python + TypeScript |
+| Live MCP probe | No | Yes — Stdio (`--live`) |
+| Supply chain / SBOM | Yes | No (Phase 3) |
+| Attack chains | No | Yes |
+| Local-first default | Partial — Heavy deps | Yes — Lean core |
 
 **MCTS wins:** Attack chains, MCP-specific scoring, lean install, capability graph.  
 **agent-security wins:** SAST breadth, SBOM, compliance frameworks, MCP server mode.
@@ -167,8 +167,8 @@ No auditable source in competitor folder — **not a code peer**. MCTS exceeds a
 | Gap | Best peer | MCTS phase |
 |-----|-----------|------------|
 | SSE/HTTP live transports | mcp-scanner | Phase 2+ |
-| Protocol fuzzing (safe defaults) | mcp-guard (broader aggressive) | ✅ Phase 2.1 |
-| TypeScript discovery | ✅ `registerTool`, `server.tool`, `setRequestHandler` | ✅ Multi-language static |
+| Protocol fuzzing (safe defaults) | mcp-guard (broader aggressive) | Yes — Phase 2.1 |
+| TypeScript discovery | Yes `registerTool`, `server.tool`, `setRequestHandler` | Yes — Multi-language static |
 | Semgrep optional layer | MCPScan / agent-security | Optional extra |
 | MCP server mode (`mcts-mcp`) | agent-security | Phase 3.3 |
 | Package vetting (`mcts vet`) | agent-scan / mcp-scanner | Phase 3.1 |

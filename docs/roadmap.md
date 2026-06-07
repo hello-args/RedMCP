@@ -8,10 +8,10 @@ Status labels:
 
 | Label | Meaning |
 |-------|---------|
-| ✅ Shipped | Available in the current release |
-| 🚧 In progress | Actively being built |
-| 📋 Planned | Scoped for an upcoming phase |
-| 🔮 Future | Longer-term vision |
+| Shipped | Available in the current release |
+| In progress | Actively being built |
+| Planned | Scoped for an upcoming phase |
+| Future | Longer-term vision |
 
 ---
 
@@ -27,27 +27,27 @@ Today, MCTS identifies security issues across permissions, prompt injection, too
 
 | Capability | Status |
 |------------|--------|
-| Permission analyzer | ✅ Shipped |
-| Prompt injection simulator | ✅ Shipped (heuristic; live probing planned) |
-| Tool abuse testing | ✅ Shipped |
-| Data leakage detection | ✅ Shipped (source + metadata) |
-| Multi-step attack chain detection | ✅ Shipped (hint-based; graph upgrade planned) |
-| Compliance checks (OWASP LLM Top 10) | ✅ Shipped |
-| Exponential risk scoring (score + risk index) | ✅ Shipped |
-| Terminal UI (Rich, themes, progress animation) | ✅ Shipped |
-| JSON reports | ✅ Shipped |
-| HTML security dashboard (`mcts report`) | ✅ Shipped |
-| Category breakdown (HTML dashboard bars + radar) | ✅ Shipped |
-| Live stdio probing (`--live`) | ✅ Shipped |
-| Protocol fuzzing (`mcts fuzz`) | ✅ Shipped |
-| SARIF output (`--format sarif`) | ✅ Shipped |
-| CI score thresholds (`--min-score`, `--max-critical`) | ✅ Shipped |
-| Technique regression harness (34 techniques) | ✅ Shipped |
-| Runtime telemetry analyzers (`--runtime-events`) | ✅ Shipped |
-| CLI category breakdown + `--fail-on-category` | ✅ Shipped |
-| GitHub Action (JSON + SARIF + HTML artifacts) | ✅ Shipped — `@v1` tag published |
-| Agent pentest (`mcts pentest`) | 📋 Planned |
-| SSE/HTTP live transports | 📋 Planned |
+| Permission analyzer | Shipped |
+| Prompt injection simulator | Shipped (heuristic; live probing planned) |
+| Tool abuse testing | Shipped |
+| Data leakage detection | Shipped (source + metadata) |
+| Multi-step attack chain detection | Shipped (hint-based; graph upgrade planned) |
+| Compliance checks (OWASP LLM Top 10) | Shipped |
+| Exponential risk scoring (score + risk index) | Shipped |
+| Terminal UI (Rich, themes, progress animation) | Shipped |
+| JSON reports | Shipped |
+| HTML security dashboard (`mcts report`) | Shipped |
+| Category breakdown (HTML dashboard bars + radar) | Shipped |
+| Live stdio probing (`--live`) | Shipped |
+| Protocol fuzzing (`mcts fuzz`) | Shipped |
+| SARIF output (`--format sarif`) | Shipped |
+| CI score thresholds (`--min-score`, `--max-critical`) | Shipped |
+| Technique regression harness (34 techniques) | Shipped |
+| Runtime telemetry analyzers (`--runtime-events`) | Shipped |
+| CLI category breakdown + `--fail-on-category` | Shipped |
+| GitHub Action (JSON + SARIF + HTML artifacts) | Shipped — `@v1` tag published |
+| Agent pentest (`mcts pentest`) | Planned |
+| SSE/HTTP live transports | Planned |
 
 ### Known alpha gaps
 
@@ -60,39 +60,39 @@ See [Building in Public](blog-building-mcp-security-in-public.md) and [Feature E
 
 ---
 
-## Phase 0 — Foundation (✅ Shipped)
+## Phase 0 — Foundation (Shipped)
 
 > **Goal:** Fix structural limits so new features have a solid base.  
 > **Timeline:** ~2–3 weeks. See [Part 4 — Phase 0](feature-expansion-plan.md#phase-0--foundation-23-weeks).
 
 | # | Deliverable | Status |
 |---|-------------|--------|
-| 0.1 | Multi-file **repository scanning** (`mcts scan ./repo/`) | ✅ |
-| 0.2 | Parse **`input_schema`** + handler snippets | ✅ |
-| 0.3 | **Source-aware analyzers** (secrets in code, command execution, path validation) | ✅ |
-| 0.4 | Fix **placeholder analyzers** + **capability-graph** attack chains | 🚧 Partial — jailbreak heuristic remains |
+| 0.1 | Multi-file **repository scanning** (`mcts scan ./repo/`) | Done |
+| 0.2 | Parse **`input_schema`** + handler snippets | Done |
+| 0.3 | **Source-aware analyzers** (secrets in code, command execution, path validation) | Done |
+| 0.4 | Fix **placeholder analyzers** + **capability-graph** attack chains | Partial — jailbreak heuristic remains |
 
 **New modules:** `discovery/static.py`, `core/target.py`, analyzers: `schema_surface`, `command_execution`, `path_validation`.
 
 ---
 
-## Phase 1 — Adoption & Live Probing (✅ Shipped)
+## Phase 1 — Adoption & Live Probing (Shipped)
 
 > **Goal:** CI/CD adoption, live MCP enrichment, config inventory.  
 > **Timeline:** ~4–6 weeks. See [Part 4 — Phase 1](feature-expansion-plan.md#phase-1--adoption--live-probing-46-weeks).
 
 | # | Deliverable | Status |
 |---|-------------|--------|
-| 1.1 | CI score thresholds (`--min-score`, `--max-critical`) | ✅ |
-| 1.2 | GitHub Action (JSON + SARIF + HTML) | ✅ `@v1` published |
-| 1.3 | SARIF output (`--format sarif`) | ✅ |
-| 1.4 | Live MCP probing (`--live`, stdio) | ✅ |
-| 1.5 | Config inventory (`mcts inventory`) | ✅ |
-| 1.6 | Runtime telemetry analyzers (`--runtime-events`) | ✅ |
-| 1.7 | Technique regression harness (34 techniques, ≥80% gate) | ✅ |
-| 1.8 | CLI category breakdown + `--fail-on-category` gates | ✅ |
+| 1.1 | CI score thresholds (`--min-score`, `--max-critical`) | Done |
+| 1.2 | GitHub Action (JSON + SARIF + HTML) | Done (`@v1` published) |
+| 1.3 | SARIF output (`--format sarif`) | Done |
+| 1.4 | Live MCP probing (`--live`, stdio) | Done |
+| 1.5 | Config inventory (`mcts inventory`) | Done |
+| 1.6 | Runtime telemetry analyzers (`--runtime-events`) | Done |
+| 1.7 | Technique regression harness (34 techniques, ≥80% gate) | Done |
+| 1.8 | CLI category breakdown + `--fail-on-category` gates | Done |
 
-### 1. Security Risk Score (Category Breakdown in CLI) — ✅ Shipped
+### 1. Security Risk Score (Category Breakdown in CLI) — Shipped
 
 ```
 Overall Risk Score: 82/100 (Critical)
@@ -125,7 +125,7 @@ Upload JSON, SARIF, and HTML artifacts. Implementation: [`action/action.yml`](..
 
 ---
 
-### 3. SARIF Output — ✅ Shipped
+### 3. SARIF Output — Shipped
 
 ```bash
 mcts scan ./server.py -o report.sarif --format sarif
@@ -135,7 +135,7 @@ Integrations: GitHub Advanced Security, GitLab, Azure DevOps, VS Code Security P
 
 ---
 
-### 4. Live MCP Probing — ✅ Shipped
+### 4. Live MCP Probing — Shipped
 
 ```bash
 mcts scan --live --command uv --args run,server.py
@@ -146,7 +146,7 @@ Stdio first; consent gate + `--i-understand-live-risk` for CI. Modules: `probe/s
 
 ---
 
-### 5. Config Inventory — ✅ Shipped
+### 5. Config Inventory — Shipped
 
 ```bash
 mcts inventory
@@ -163,7 +163,7 @@ Per-tool capability dimensions (reads untrusted input, egresses network, execute
 
 ---
 
-### 7. MCTS-T Technique Taxonomy — ✅ Shipped (core)
+### 7. MCTS-T Technique Taxonomy — Shipped (core)
 
 `technique_id` on findings; [taxonomy.md](taxonomy.md); bundled Sigma rules. Technique Map in HTML dashboard still planned.
 
@@ -175,18 +175,18 @@ Per-tool capability dimensions (reads untrusted input, egresses network, execute
 
 ---
 
-## Phase 2 — Differentiation (🔮 Future)
+## Phase 2 — Differentiation (Future)
 
 > **Goal:** Threat simulation and probing beyond static heuristics.  
 > See [Part 4 — Phase 2](feature-expansion-plan.md#phase-2--differentiation-610-weeks).
 
 | # | Deliverable | Command |
 |---|-------------|---------|
-| 2.1 | Protocol fuzzing (safe defaults) ✅ | `mcts fuzz` — see [fuzzing.md](fuzzing.md) |
+| 2.1 | Protocol fuzzing (safe defaults) Yes | `mcts fuzz` — see [fuzzing.md](fuzzing.md) |
 | 2.2 | Config audit (no LLM side effects) | `mcts audit-config` |
-| 2.3 | Rug-pull baselines ✅ | `--baseline` / `--save-baseline` |
+| 2.3 | Rug-pull baselines Yes | `--baseline` / `--save-baseline` |
 | 2.4 | Description vs implementation drift | `ImplementationDriftAnalyzer` |
-| 2.5 | TypeScript/JavaScript static discovery ✅ | `discovery/static_js.py` — see [typescript-discovery.md](typescript-discovery.md) |
+| 2.5 | TypeScript/JavaScript static discovery Yes | `discovery/static_js.py` — see [typescript-discovery.md](typescript-discovery.md) |
 | 2.6 | Scan history + trend chart | `.mcts/history/` |
 | 2.7 | Attack simulation mode | `mcts simulate` |
 | 2.8 | Visual attack graph export | Mermaid, Graphviz, PNG |
@@ -194,7 +194,7 @@ Per-tool capability dimensions (reads untrusted input, egresses network, execute
 
 ---
 
-## Phase 3 — Platform & Community (🔮 Future)
+## Phase 3 — Platform & Community (Future)
 
 > **Goal:** Recognized security standard in the MCP ecosystem.  
 > See [Part 4 — Phase 3](feature-expansion-plan.md#phase-3--platform-10-weeks).
@@ -230,7 +230,7 @@ Full rationale: [Feature Expansion Plan — Part 8](feature-expansion-plan.md#pa
 
 | Phase | Focus | Key deliverables |
 |-------|-------|------------------|
-| **Phase 0–1** ✅ | Foundation + adoption | Repo scan · SARIF · Action · live probe · inventory · taxonomy · fuzz |
+| **Phase 0–1** Yes | Foundation + adoption | Repo scan · SARIF · Action · live probe · inventory · taxonomy · fuzz |
 | **Phase 2** | Differentiation | audit-config · trends · simulation · SSE/HTTP |
 | **Phase 3** | Platform | Vet · API · MCP tools · certification |
 

@@ -52,22 +52,22 @@ MCP servers expose databases, APIs, file systems, cloud resources, and SaaS tool
 
 | Module | Status | Description |
 |--------|--------|-------------|
-| Repository scanning | ✅ Alpha | `mcts scan ./repo/` — Python + TypeScript discovery |
-| Permission & metadata analyzers | ✅ Alpha | Destructive tools, poisoning, schema surface (FSP) |
-| Source-aware SAST | ✅ Alpha | Secrets, command execution, path validation in handlers |
-| Runtime telemetry analyzers | ✅ Alpha | OAuth, rug-pull, injection — via `--runtime-events` / `--live` |
-| Multi-step attack chains | ✅ Alpha | Capability-graph chain detection |
-| Live stdio probing | ✅ Alpha | `--live` merges MCP protocol schemas with static analysis |
-| Config inventory | ✅ Alpha | `mcts inventory` — Cursor, Claude, VS Code, Windsurf |
-| Protocol fuzzing | ✅ Alpha | `mcts fuzz` — safe read-only probes by default |
-| Risk scoring engine | ✅ Alpha | Exponential score + risk index + category breakdown |
-| MCTS-T taxonomy | ✅ Alpha | Technique/mitigation IDs on every finding |
-| Terminal UI | ✅ Alpha | Rich dashboard, themes (`cyber`, `minimal`, `github`) |
-| SARIF + CI gates | ✅ Alpha | `--format sarif`, `--min-score`, `--fail-on-category` |
-| GitHub Action | ✅ Alpha | JSON + SARIF + HTML artifacts (`@v1`) |
-| HTML security dashboard | ✅ Alpha | `mcts report` — gauge, grades, OWASP, attack chains |
-| Compliance checks | ✅ Alpha | OWASP LLM Top 10 mapping |
-| MCTS Agent | 🔮 Roadmap | `mcts pentest` (stub) |
+| Repository scanning | Alpha | `mcts scan ./repo/` — Python + TypeScript discovery |
+| Permission & metadata analyzers | Alpha | Destructive tools, poisoning, schema surface (FSP) |
+| Source-aware SAST | Alpha | Secrets, command execution, path validation in handlers |
+| Runtime telemetry analyzers | Alpha | OAuth, rug-pull, injection — via `--runtime-events` / `--live` |
+| Multi-step attack chains | Alpha | Capability-graph chain detection |
+| Live stdio probing | Alpha | `--live` merges MCP protocol schemas with static analysis |
+| Config inventory | Alpha | `mcts inventory` — Cursor, Claude, VS Code, Windsurf |
+| Protocol fuzzing | Alpha | `mcts fuzz` — safe read-only probes by default |
+| Risk scoring engine | Alpha | Exponential score + risk index + category breakdown |
+| MCTS-T taxonomy | Alpha | Technique/mitigation IDs on every finding |
+| Terminal UI | Alpha | Rich dashboard, themes (`cyber`, `minimal`, `github`) |
+| SARIF + CI gates | Alpha | `--format sarif`, `--min-score`, `--fail-on-category` |
+| GitHub Action | Alpha | JSON + SARIF + HTML artifacts (`@v1`) |
+| HTML security dashboard | Alpha | `mcts report` — gauge, grades, OWASP, attack chains |
+| Compliance checks | Alpha | OWASP LLM Top 10 mapping |
+| MCTS Agent | Roadmap | `mcts pentest` (stub) |
 
 ## Quick Start
 
