@@ -89,11 +89,11 @@ def classify_response(
         and "result" in response_text.lower()
         and (PATH_ECHO.search(response_text) or "root:" in response_text)
     ):
-            return ClassifiedResponse(
-                signal=ResponseSignal.DANGEROUS_SUCCESS,
-                severity=Severity.CRITICAL,
-                summary="resources/read may have returned sensitive filesystem content",
-            )
+        return ClassifiedResponse(
+            signal=ResponseSignal.DANGEROUS_SUCCESS,
+            severity=Severity.CRITICAL,
+            summary="resources/read may have returned sensitive filesystem content",
+        )
 
     if (
         probe.id.startswith("sampling-")
@@ -126,7 +126,9 @@ def finding_from_classification(probe: FuzzProbe, classified: ClassifiedResponse
             "signal": classified.signal.value,
             "read_only": probe.read_only,
             "level": probe.level.value,
-            "attack_tags": ["attack.execution", "attack.t1499.003"] if probe.id.startswith("sampling-") else [],
+            "attack_tags": (
+                ["attack.execution", "attack.t1499.003"] if probe.id.startswith("sampling-") else []
+            ),
         },
     )
 

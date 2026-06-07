@@ -29,7 +29,7 @@ def test_classifier_detects_stack_trace() -> None:
     probe = probes_for_level(FuzzLevel.SAFE)[0]
     classified = classify_response(
         probe,
-        "Traceback (most recent call last):\n  File \"server.py\", line 1",
+        'Traceback (most recent call last):\n  File "server.py", line 1',
         process_exited=False,
     )
     assert classified is not None

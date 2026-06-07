@@ -31,9 +31,7 @@ SEMANTIC_REFERENCE_PHRASES: tuple[str, ...] = (
     "load environment secrets",
 )
 
-_OBFUSCATED_SECRET = re.compile(
-    r"(?i)(sk-[a-z0-9-]{10,}|ghp_[a-z0-9]{20,}|AKIA[0-9A-Z]{12,})"
-)
+_OBFUSCATED_SECRET = re.compile(r"(?i)(sk-[a-z0-9-]{10,}|ghp_[a-z0-9]{20,}|AKIA[0-9A-Z]{12,})")
 
 
 class EmbeddingSecretsAnalyzer(BaseAnalyzer):
@@ -78,8 +76,8 @@ def _regex_credential_hit(text: str) -> bool:
 
 def _semantic_credential_hit(text: str, threshold: float) -> bool:
     try:
-        from sentence_transformers import SentenceTransformer
         import numpy as np
+        from sentence_transformers import SentenceTransformer
     except ImportError:
         lowered = text.lower()
         return any(phrase in lowered for phrase in SEMANTIC_REFERENCE_PHRASES)

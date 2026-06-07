@@ -41,8 +41,7 @@ class MetadataIntegrityAnalyzer(BaseAnalyzer):
                     analyzer=self.name,
                     title=f"Excessive description length on {tool.name}",
                     description=(
-                        f"Description is {len(description)} chars — "
-                        "may hide instructions (line jumping)."
+                        f"Description is {len(description)} chars — may hide instructions (line jumping)."
                     ),
                     severity=Severity.MEDIUM,
                     tool=tool.name,

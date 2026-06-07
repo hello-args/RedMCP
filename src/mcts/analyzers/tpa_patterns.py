@@ -8,9 +8,7 @@ from typing import Any
 
 from mcts.reporting.models import Severity
 
-INVISIBLE_CHAR_PATTERN = re.compile(
-    r"[\u200b-\u200f\ufeff\u202a-\u202e\u2060-\u206f\u206a-\u206f]"
-)
+INVISIBLE_CHAR_PATTERN = re.compile(r"[\u200b-\u200f\ufeff\u202a-\u202e\u2060-\u206f\u206a-\u206f]")
 
 # Cyrillic homoglyphs that visually mimic Latin letters (MCTS-T-1001 PoC values only)
 _HOMOGLYPH_CHARS = frozenset("аАсСеЕоОрРхХуУвВнНкКмМтТ")

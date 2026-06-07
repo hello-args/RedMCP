@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 
+from mcts.analyzers.sigma_dedupe import dedupe_sigma_findings
+from mcts.reporting.models import Finding, Severity
 from mcts.testing.regression_harness import (
     REGRESSION_TECHNIQUES,
     REGRESSION_THRESHOLD,
@@ -13,8 +15,6 @@ from mcts.testing.regression_harness import (
     regression_summary,
     write_regression_report,
 )
-from mcts.analyzers.sigma_dedupe import dedupe_sigma_findings
-from mcts.reporting.models import Finding, Severity
 
 
 @pytest.mark.parametrize("technique_id", REGRESSION_TECHNIQUES)

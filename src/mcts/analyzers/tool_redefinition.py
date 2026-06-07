@@ -47,6 +47,4 @@ def detect_tool_definition_file_event(event: dict[str, Any]) -> bool:
     if syscall and syscall not in {"openat", "open", "write", "rename", "unlink", "creat", "file_modify"}:
         return False
     exe = str(event.get("exe") or event.get("process") or "").lower()
-    if any(admin in exe for admin in ("mcp-admin", "mcp-cli", "tool-manager", "/opt/mcp/bin/")):
-        return False
-    return True
+    return not any(admin in exe for admin in ("mcp-admin", "mcp-cli", "tool-manager", "/opt/mcp/bin/"))

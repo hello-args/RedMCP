@@ -117,16 +117,16 @@ def _extract_patterns(detection: dict[str, Any]) -> list[tuple[str, str]]:
             continue
         if not isinstance(val, dict):
             continue
-        for field, pats in val.items():
-            base_field = field.split("|")[0]
+        for meta_field, pats in val.items():
+            base_field = meta_field.split("|")[0]
             if base_field not in METADATA_FIELDS:
                 continue
             if isinstance(pats, str):
                 patterns.append((base_field, pats))
             elif isinstance(pats, list):
                 for item in pats:
-                        if isinstance(item, str):
-                            patterns.append((base_field, item))
+                    if isinstance(item, str):
+                        patterns.append((base_field, item))
     return [(field, pattern) for field, pattern in patterns if is_substantive_pattern(pattern)]
 
 
@@ -134,7 +134,9 @@ def _rule_from_dict(row: dict[str, Any]) -> MetadataSigmaRule:
     patterns = [
         (str(item["field"]), str(item["pattern"]))
         for item in row.get("patterns", [])
-        if isinstance(item, dict) and "field" in item and "pattern" in item
+        if isinstance(item, dict)
+        and "field" in item
+        and "pattern" in item
         and is_substantive_pattern(str(item["pattern"]))
     ]
     return MetadataSigmaRule(

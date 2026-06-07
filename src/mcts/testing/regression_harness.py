@@ -136,11 +136,7 @@ def detect_metadata_poison(tool_name: str, description: str) -> bool:
     findings.extend(MetadataIntegrityAnalyzer().analyze(server))
     findings.extend(SchemaSurfaceAnalyzer().analyze(server))
     findings.extend(SigmaMetadataAnalyzer().analyze(server))
-    findings = [
-        f
-        for f in dedupe_sigma_findings(findings)
-        if f.technique_id not in {"MCTS-T-1020"}
-    ]
+    findings = [f for f in dedupe_sigma_findings(findings) if f.technique_id not in {"MCTS-T-1020"}]
     return any(f.tool == tool_name for f in findings)
 
 
@@ -355,7 +351,14 @@ def load_cases(technique_id: str) -> list[RegressionCase]:
         return _cases_t1603(raw, expected)
     if technique_id == "MCTS-T-1028":
         return _cases_t1004(raw, expected)
-    if technique_id in {"MCTS-T-1014", "MCTS-T-1015", "MCTS-T-1007", "MCTS-T-1031", "MCTS-T-1032", "MCTS-T-1033"}:
+    if technique_id in {
+        "MCTS-T-1014",
+        "MCTS-T-1015",
+        "MCTS-T-1007",
+        "MCTS-T-1031",
+        "MCTS-T-1032",
+        "MCTS-T-1033",
+    }:
         return _cases_simple_array(raw, expected)
     if technique_id == "MCTS-T-1030":
         return _cases_simple_array(raw, expected)

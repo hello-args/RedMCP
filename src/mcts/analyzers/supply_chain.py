@@ -105,7 +105,8 @@ class SupplyChainAnalyzer(BaseAnalyzer):
         findings: list[Finding] = []
         for filename in ("requirements.txt", "requirements-dev.txt"):
             for path in _find_files(root, filename):
-                for line_no, line in enumerate(path.read_text(encoding="utf-8", errors="ignore").splitlines(), start=1):
+                text = path.read_text(encoding="utf-8", errors="ignore")
+                for line_no, line in enumerate(text.splitlines(), start=1):
                     stripped = line.strip()
                     if not stripped or stripped.startswith("#"):
                         continue
@@ -175,7 +176,8 @@ def _finding(
         description=description,
         severity=severity,
         recommendation=(
-            "Pin dependencies with exact versions or digests; verify package provenance (MCTS-M-008, MCTS-M-018)."
+            "Pin dependencies with exact versions or digests; "
+            "verify package provenance (MCTS-M-008, MCTS-M-018)."
         ),
         technique_id=technique,
         confidence=0.75,

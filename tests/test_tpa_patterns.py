@@ -3,6 +3,7 @@
 from mcts.analyzers.metadata_integrity import MetadataIntegrityAnalyzer
 from mcts.analyzers.prompt_injection import PromptInjectionAnalyzer
 from mcts.analyzers.schema_surface import SchemaSurfaceAnalyzer
+from mcts.analyzers.tool_abuse import TRAVERSAL_PAYLOADS
 from mcts.analyzers.tpa_patterns import (
     find_homoglyphs,
     has_control_chars,
@@ -10,11 +11,9 @@ from mcts.analyzers.tpa_patterns import (
     scan_schema_surface,
     scan_text_templates,
 )
-from mcts.analyzers.tool_abuse import TRAVERSAL_PAYLOADS
 from mcts.mcp.models import MCPServerInfo, MCPTool
-from mcts.reporting.models import Severity
+from mcts.reporting.models import Finding, Severity
 from mcts.taxonomy.mapper import enrich_finding
-from mcts.reporting.models import Finding
 
 
 def _tool(**kwargs: object) -> MCPTool:
@@ -83,7 +82,10 @@ def test_schema_surface_recursive_poison_in_property_description() -> None:
         }
     )
     findings = SchemaSurfaceAnalyzer().analyze(_server([tool]))
-    assert any(f.analyzer == "schema_surface" and "instruction_header" in f.evidence.get("pattern", "") for f in findings)
+    assert any(
+        f.analyzer == "schema_surface" and "instruction_header" in f.evidence.get("pattern", "")
+        for f in findings
+    )
 
 
 def test_tool_abuse_includes_encoded_traversal_payloads() -> None:

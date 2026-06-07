@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
+import contextlib
 import re
 
 
 def convert_sigma_pattern_to_regex(pattern: str) -> str:
     """Convert a Sigma wildcard pattern to a case-insensitive regex."""
     if "\\u" in pattern:
-        try:
+        with contextlib.suppress(UnicodeDecodeError):
             pattern = pattern.encode("utf-8").decode("unicode_escape")
-        except UnicodeDecodeError:
-            pass
 
     escaped = re.escape(pattern)
     return escaped.replace(r"\*", ".*")

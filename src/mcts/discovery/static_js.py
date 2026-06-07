@@ -168,9 +168,7 @@ class JsStaticDiscovery:
         tools.extend(self._tools_from_call_handler(file_path, content))
         return tools
 
-    def _tools_from_register_and_tool_methods(
-        self, file_path: Path, content: str
-    ) -> list[MCPTool]:
+    def _tools_from_register_and_tool_methods(self, file_path: Path, content: str) -> list[MCPTool]:
         tools: list[MCPTool] = []
         for pattern in (REGISTER_TOOL_PATTERN, TOOL_METHOD_PATTERN):
             for match in pattern.finditer(content):
@@ -220,16 +218,11 @@ class JsStaticDiscovery:
         if "CallToolRequestSchema" not in content:
             return []
 
-        known = {
-            match.group(1)
-            for match in REGISTER_TOOL_PATTERN.finditer(content)
-        } | {
-            match.group(1)
-            for match in TOOL_METHOD_PATTERN.finditer(content)
-        } | {
-            match.group(1)
-            for match in TOOL_OBJECT_NAME_PATTERN.finditer(content)
-        }
+        known = (
+            {match.group(1) for match in REGISTER_TOOL_PATTERN.finditer(content)}
+            | {match.group(1) for match in TOOL_METHOD_PATTERN.finditer(content)}
+            | {match.group(1) for match in TOOL_OBJECT_NAME_PATTERN.finditer(content)}
+        )
 
         tools: list[MCPTool] = []
         for match in CALL_TOOL_NAME_PATTERN.finditer(content):

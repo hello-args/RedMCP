@@ -45,14 +45,11 @@ def _check_gates(report, config: ScanConfig) -> None:
     if config.fail_on_critical and report.summary.critical > 0:
         raise typer.Exit(code=1)
     if config.min_score is not None and report.score.overall < config.min_score:
-        console.print(
-            f"[red]Score {report.score.overall} is below minimum {config.min_score}[/red]"
-        )
+        console.print(f"[red]Score {report.score.overall} is below minimum {config.min_score}[/red]")
         raise typer.Exit(code=1)
     if config.max_critical is not None and report.summary.critical > config.max_critical:
         console.print(
-            f"[red]Critical findings ({report.summary.critical}) "
-            f"exceed maximum ({config.max_critical})[/red]"
+            f"[red]Critical findings ({report.summary.critical}) exceed maximum ({config.max_critical})[/red]"
         )
         raise typer.Exit(code=1)
     category_failures = category_gate_failures(report.findings, config.fail_on_category)

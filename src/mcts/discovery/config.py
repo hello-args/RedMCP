@@ -32,9 +32,7 @@ def load_server_from_config(config_path: Path, server_name: str) -> LiveServerCo
 
     if server_name not in servers:
         available = ", ".join(sorted(servers)) or "(none)"
-        raise ConfigDiscoveryError(
-            f"Server {server_name!r} not found in {path}. Available: {available}"
-        )
+        raise ConfigDiscoveryError(f"Server {server_name!r} not found in {path}. Available: {available}")
 
     entry = servers[server_name]
     if not isinstance(entry, dict):

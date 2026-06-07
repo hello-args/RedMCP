@@ -8,7 +8,7 @@ import json
 import sys
 from pathlib import Path
 
-from mcts.taxonomy.sigma.loader import MetadataSigmaRule, load_metadata_rules
+from mcts.taxonomy.sigma.loader import MetadataSigmaRule
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SOURCE = ROOT / "tests" / "fixtures" / "sigma_fixtures"
@@ -59,7 +59,7 @@ def rules_to_json(rules: list[MetadataSigmaRule]) -> str:
 
 
 def compile_rules(source: Path, *, merge_bundled: bool = True) -> list[MetadataSigmaRule]:
-    from mcts.taxonomy.sigma.loader import _load_bundled_rules, _load_rules_from_directory, _dedupe_rules
+    from mcts.taxonomy.sigma.loader import _dedupe_rules, _load_bundled_rules, _load_rules_from_directory
 
     compiled = _load_rules_from_directory(source)
     if merge_bundled:

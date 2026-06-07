@@ -35,9 +35,7 @@ def enrich_finding(finding: Finding) -> Finding:
 
     if not finding.mitigation_ids and finding.technique_id:
         finding.mitigation_ids = [
-            mid
-            for mid, meta in mitigations.items()
-            if finding.technique_id in meta.get("techniques", [])
+            mid for mid, meta in mitigations.items() if finding.technique_id in meta.get("techniques", [])
         ]
 
     return finding

@@ -76,8 +76,7 @@ class SigmaMetadataAnalyzer(BaseAnalyzer):
                                 analyzer=self.name,
                                 title=f"Sigma rule match on {tool.name}: {rule.title}",
                                 description=(
-                                    f"MCTS Sigma pattern matched in {corpus_field} "
-                                    f"({rule.technique_id})."
+                                    f"MCTS Sigma pattern matched in {corpus_field} ({rule.technique_id})."
                                 ),
                                 severity=_LEVEL_TO_SEVERITY.get(rule.level.lower(), Severity.MEDIUM),
                                 tool=tool.name,

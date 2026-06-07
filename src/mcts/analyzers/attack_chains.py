@@ -135,9 +135,8 @@ def _can_chain(src: MCPTool, dst: MCPTool) -> bool:
     if not src.capability or not dst.capability:
         return False
     s, d = src.capability, dst.capability
-    return (
-        (s.reads_untrusted_input and (d.egresses_network or d.executes_commands))
-        or (s.accesses_sensitive_data and d.egresses_network)
+    return (s.reads_untrusted_input and (d.egresses_network or d.executes_commands)) or (
+        s.accesses_sensitive_data and d.egresses_network
     )
 
 

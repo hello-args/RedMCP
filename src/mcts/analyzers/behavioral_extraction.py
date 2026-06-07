@@ -77,9 +77,10 @@ def detect_behavioral_extraction(event: dict[str, Any]) -> bool:
     if any(phrase in user_input for phrase in _META_QUESTIONS):
         return not (guard == "benign" and guard_conf >= 0.7)
 
-    if any(phrase in user_input for phrase in _SOCIAL_ENGINEERING) and _float(
-        log.get("meta_question_count")
-    ) >= 1:
+    if (
+        any(phrase in user_input for phrase in _SOCIAL_ENGINEERING)
+        and _float(log.get("meta_question_count")) >= 1
+    ):
         return guard != "benign"
 
     if _float(log.get("meta_question_count")) > 3 and _float(log.get("conversation_turns")) >= 3:

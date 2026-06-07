@@ -382,9 +382,7 @@ def build_recommendations(findings: list[Finding]) -> list[dict[str, Any]]:
                 "analyzer": finding.analyzer,
                 "tool": finding.tool,
                 "mitigation_links": mitigation_links(finding.mitigation_ids),
-                "technique_url": technique_url(finding.technique_id)
-                if finding.technique_id
-                else None,
+                "technique_url": technique_url(finding.technique_id) if finding.technique_id else None,
             }
         )
     return rows
@@ -457,9 +455,7 @@ def build_dashboard_payload(report: ScanReport) -> dict[str, Any]:
                 "tool": finding.tool or "—",
                 "recommendation": finding.recommendation,
                 "technique_id": finding.technique_id or "—",
-                "technique_url": technique_url(finding.technique_id)
-                if finding.technique_id
-                else None,
+                "technique_url": technique_url(finding.technique_id) if finding.technique_id else None,
                 "mitigation_links": mitigation_links(finding.mitigation_ids),
                 "cwe_id": finding.cwe_id or "—",
             }

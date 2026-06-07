@@ -27,11 +27,7 @@ class MCPClient:
 
         live_info = LiveDiscovery(self.config).discover()
 
-        if (
-            static_info.tools
-            and self.config.merge_static_live
-            and static_info.discovery_mode != "empty"
-        ):
+        if static_info.tools and self.config.merge_static_live and static_info.discovery_mode != "empty":
             return merge_server_info(static_info, live_info)
         return live_info
 

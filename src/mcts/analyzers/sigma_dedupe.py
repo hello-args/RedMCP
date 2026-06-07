@@ -71,7 +71,4 @@ def _sigma_is_redundant(
     if tool in tools_with_path and rule_technique in _PATH_TECHNIQUES:
         return True
 
-    if tool in tools_with_command and rule_technique in _COMMAND_TECHNIQUES:
-        return True
-
-    return False
+    return bool(tool in tools_with_command and rule_technique in _COMMAND_TECHNIQUES)

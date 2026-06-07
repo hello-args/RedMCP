@@ -41,10 +41,7 @@ def detect_oauth_mixup_event(event: dict[str, Any]) -> bool:
         if any(marker in cert_domain.lower() for marker in ("accounts-google", "googie", "-google")):
             return True
 
-    if oauth.get("configuration_count", 0) > 1 and oauth.get("as_domain_first_seen"):
-        return True
-
-    return False
+    return bool(oauth.get("configuration_count", 0) > 1 and oauth.get("as_domain_first_seen"))
 
 
 def _suspicious_oauth_url(url: str) -> bool:
@@ -64,7 +61,9 @@ def _suspicious_oauth_url(url: str) -> bool:
         for marker in ("signin-aws", "accounts-google", "accounts-goog", "login-microsoft", "guthub.com")
     ):
         return True
-    if host.endswith((".co", ".net")) and not host.endswith(".co.uk"):
-        if any(brand in host for brand in ("google", "github", "microsoft", "amazon", "apple")):
-            return True
-    return False
+    brands = ("google", "github", "microsoft", "amazon", "apple")
+    return (
+        host.endswith((".co", ".net"))
+        and not host.endswith(".co.uk")
+        and any(brand in host for brand in brands)
+    )

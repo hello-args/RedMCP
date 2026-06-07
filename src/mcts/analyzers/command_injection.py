@@ -119,24 +119,27 @@ def detect_command_injection(
         return False
     lowered = blob.lower()
 
-    if tool_name.startswith("git_"):
-        if not _contains_any(
+    if (
+        tool_name.startswith("git_")
+        and not _contains_any(
             lowered,
             SUSPICIOUS_COMMANDS + ENCODED_PATTERNS + REVERSE_SHELL_PATTERNS + ENV_PATTERNS,
-        ):
-            if not any(marker in blob for marker in (";", "|", "`", "$(")):
-                return False
+        )
+        and not any(marker in blob for marker in (";", "|", "`", "$("))
+    ):
+        return False
 
     if tool_name.startswith("git_") and any(
         token in lowered for token in ("git config", "git log", "git status", "--oneline")
     ):
         return False
 
-    if LEGITIMATE_PATH.match(blob.strip('"')) and not any(
-        marker in lowered for marker in SUSPICIOUS_COMMANDS
+    if (
+        LEGITIMATE_PATH.match(blob.strip('"'))
+        and not any(marker in lowered for marker in SUSPICIOUS_COMMANDS)
+        and not any(marker in blob for marker in METACHARACTERS)
     ):
-        if not any(marker in blob for marker in METACHARACTERS):
-            return False
+        return False
 
     checks = (
         _contains_any(lowered, SUSPICIOUS_COMMANDS),

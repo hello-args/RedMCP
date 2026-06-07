@@ -19,9 +19,7 @@ def test_embedding_secrets_detects_api_key_pattern() -> None:
 
 
 def test_embedding_secrets_ignores_benign_description() -> None:
-    findings = EmbeddingSecretsAnalyzer(semantic_secrets=False).analyze(
-        _server("Adds two numbers together")
-    )
+    findings = EmbeddingSecretsAnalyzer(semantic_secrets=False).analyze(_server("Adds two numbers together"))
     assert not findings
 
 

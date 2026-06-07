@@ -72,8 +72,7 @@ class CrossServerAnalyzer(BaseAnalyzer):
                         analyzer=self.name,
                         title=f"Similar tool names may shadow: {left} / {right}",
                         description=(
-                            f"Tool names are {score:.0%} similar across servers — "
-                            "agents may pick wrong tool."
+                            f"Tool names are {score:.0%} similar across servers — agents may pick wrong tool."
                         ),
                         severity=Severity.MEDIUM,
                         recommendation="Differentiate tool names clearly across MCP servers.",

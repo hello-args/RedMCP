@@ -36,9 +36,8 @@ def detect_sampling_abuse(event: dict[str, Any]) -> bool:
         return True
 
     requested = event.get("requested_tools") or []
-    if approval == "missing" and requested and any(
-        marker in follow_on for marker in SENSITIVE_FOLLOW_ON_MARKERS
-    ):
-        return True
-
-    return False
+    return bool(
+        approval == "missing"
+        and requested
+        and any(marker in follow_on for marker in SENSITIVE_FOLLOW_ON_MARKERS)
+    )

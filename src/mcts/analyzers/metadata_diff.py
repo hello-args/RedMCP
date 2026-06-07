@@ -38,9 +38,7 @@ class MetadataDiffAnalyzer(BaseAnalyzer):
                 continue
 
             changed_fields = [
-                field
-                for field in ("description", "input_schema")
-                if previous.get(field) != snap.get(field)
+                field for field in ("description", "input_schema") if previous.get(field) != snap.get(field)
             ]
             if not changed_fields:
                 continue
@@ -85,7 +83,9 @@ class MetadataDiffAnalyzer(BaseAnalyzer):
                         description=f"Tool '{name}' existed in baseline but is missing from current scan.",
                         severity=Severity.MEDIUM,
                         tool=name,
-                        recommendation="Verify tool removal was intentional; monitor for shadow replacements.",
+                        recommendation=(
+                            "Verify tool removal was intentional; monitor for shadow replacements."
+                        ),
                         technique_id="MCTS-T-1040",
                     )
                 )

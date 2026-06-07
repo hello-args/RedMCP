@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-from typing import Any
 
 from mcts.analyzers.tpa_patterns import has_hidden_unicode
 

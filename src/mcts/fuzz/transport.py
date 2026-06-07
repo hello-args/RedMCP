@@ -54,9 +54,9 @@ async def run_probe_messages(
                     and isinstance(messages[0], dict)
                     and messages[0].get("method") == "initialize"
                 ):
-                        initialized = {"jsonrpc": "2.0", "method": "notifications/initialized"}
-                        write.write((json.dumps(initialized) + "\n").encode("utf-8"))
-                        await write.drain()
+                    initialized = {"jsonrpc": "2.0", "method": "notifications/initialized"}
+                    write.write((json.dumps(initialized) + "\n").encode("utf-8"))
+                    await write.drain()
 
                 for followup in followups:
                     line = (json.dumps(followup) + "\n").encode("utf-8")

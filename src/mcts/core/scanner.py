@@ -9,8 +9,8 @@ from mcts.analyzers.attack_chains import AttackChainAnalyzer
 from mcts.analyzers.command_execution import CommandExecutionAnalyzer
 from mcts.analyzers.cross_server import CrossServerAnalyzer
 from mcts.analyzers.data_leakage import DataLeakageAnalyzer
-from mcts.analyzers.jailbreak import JailbreakAnalyzer
 from mcts.analyzers.embedding_secrets import EmbeddingSecretsAnalyzer
+from mcts.analyzers.jailbreak import JailbreakAnalyzer
 from mcts.analyzers.line_jumping import LineJumpingAnalyzer
 from mcts.analyzers.metadata_diff import MetadataDiffAnalyzer, save_baseline
 from mcts.analyzers.metadata_integrity import MetadataIntegrityAnalyzer

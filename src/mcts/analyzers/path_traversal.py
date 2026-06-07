@@ -95,10 +95,7 @@ _LEGITIMATE_PATH_FILTERS: tuple[str, ...] = (
 
 
 def _matches_any_pattern(value: str, patterns: tuple[str, ...]) -> bool:
-    for pattern in patterns:
-        if re.search(pattern, value, re.IGNORECASE):
-            return True
-    return False
+    return any(re.search(pattern, value, re.IGNORECASE) for pattern in patterns)
 
 
 def is_file_tool_name(tool_name: str) -> bool:

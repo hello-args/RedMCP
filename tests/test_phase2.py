@@ -11,7 +11,7 @@ from mcts.analyzers.sigma_metadata import SigmaMetadataAnalyzer
 from mcts.analyzers.supply_chain import SupplyChainAnalyzer
 from mcts.core.config import ScanConfig
 from mcts.core.scanner import Scanner
-from mcts.fuzz.payloads import probes_for_level, FuzzLevel
+from mcts.fuzz.payloads import FuzzLevel, probes_for_level
 from mcts.mcp.models import MCPServerInfo, MCPTool
 from mcts.reporting.sarif import build_sarif
 from mcts.taxonomy.sigma.matcher import convert_sigma_pattern_to_regex, match_sigma_pattern
@@ -52,9 +52,7 @@ def test_oauth_config_detects_typosquat_url(tmp_path: Path) -> None:
                     "bad": {
                         "command": "node",
                         "args": ["server.js"],
-                        "oauth": {
-                            "authorization_endpoint": "https://accounts-google.com/o/oauth2/auth"
-                        },
+                        "oauth": {"authorization_endpoint": "https://accounts-google.com/o/oauth2/auth"},
                     }
                 }
             }
@@ -94,9 +92,7 @@ def test_sarif_includes_taxa(example_server_path: Path) -> None:
     config = ScanConfig(target=example_server_path)
     report = Scanner(config).run()
     sarif = build_sarif(report)
-    assert "taxa" in sarif["runs"][0] or any(
-        "taxa" in result for result in sarif["runs"][0]["results"]
-    )
+    assert "taxa" in sarif["runs"][0] or any("taxa" in result for result in sarif["runs"][0]["results"])
 
 
 def test_match_sigma_pattern_simple() -> None:

@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from mcts.analyzers.base import BaseAnalyzer
-from mcts.mcp.models import MCPServerInfo, MCPTool
+from mcts.mcp.models import MCPServerInfo
 from mcts.reporting.models import Finding, Severity, SourceLocation
 
 SHADOWING_PATTERNS: tuple[str, ...] = (
@@ -103,10 +103,7 @@ def detect_tool_shadowing(
         return True
     if "invoke external_server" in text or "sensitive_operation()" in text:
         return True
-    if "exfiltrate" in text and "never be mentioned" in text:
-        return True
-
-    return False
+    return bool("exfiltrate" in text and "never be mentioned" in text)
 
 
 def _schema_field(schema: dict, field: str) -> object | None:

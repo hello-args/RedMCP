@@ -192,8 +192,11 @@ class OAuthConfigAnalyzer(BaseAnalyzer):
             )
 
         if host.endswith((".io", ".co", ".cloud")):
-            brand_hit = any(brand in host for brand in ("google", "microsoft", "github", "amazon", "apple"))
-            legit = any(host.endswith(legit_host) or legit_host in host for legit_host in LEGITIMATE_OAUTH_HOSTS)
+            brands = ("google", "microsoft", "github", "amazon", "apple")
+            brand_hit = any(brand in host for brand in brands)
+            legit = any(
+                host.endswith(legit_host) or legit_host in host for legit_host in LEGITIMATE_OAUTH_HOSTS
+            )
             if brand_hit and not legit:
                 findings.append(
                     _oauth_finding(
@@ -276,7 +279,12 @@ class OAuthConfigAnalyzer(BaseAnalyzer):
         )
         token_endpoint = _string_field(block, ("token_endpoint", "tokenEndpoint"))
 
-        for label, url in (("issuer", issuer), ("authorization_endpoint", auth_endpoint), ("token_endpoint", token_endpoint)):
+        oauth_urls = (
+            ("issuer", issuer),
+            ("authorization_endpoint", auth_endpoint),
+            ("token_endpoint", token_endpoint),
+        )
+        for label, url in oauth_urls:
             if not url or not url.startswith("http"):
                 continue
             host = (urlparse(url).hostname or "").lower()
@@ -286,7 +294,8 @@ class OAuthConfigAnalyzer(BaseAnalyzer):
 
             rogue = any(marker in host for marker in ROGUE_ISSUER_MARKERS)
             untrusted = host and not any(trusted in host for trusted in TRUSTED_ISSUER_HOSTS)
-            if rogue or (label == "issuer" and untrusted and any(marker in host for marker in (".example", "localhost", "127.0.0.1"))):
+            local_issuer = any(marker in host for marker in (".example", "localhost", "127.0.0.1"))
+            if rogue or (label == "issuer" and untrusted and local_issuer):
                 seen.add(key)
                 findings.append(
                     _oauth_finding(
@@ -297,7 +306,12 @@ class OAuthConfigAnalyzer(BaseAnalyzer):
                         source=source,
                         mcts_technique="MCTS-T-1017",
                         technique_scenario="MCTS-T-1017",
-                        evidence={"url": url, "field": label, "host": host, "issue": "rogue_authorization_server"},
+                        evidence={
+                            "url": url,
+                            "field": label,
+                            "host": host,
+                            "issue": "rogue_authorization_server",
+                        },
                     )
                 )
 

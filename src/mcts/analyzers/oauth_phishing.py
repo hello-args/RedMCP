@@ -38,10 +38,7 @@ def detect_oauth_phishing_config(config: dict) -> bool:
         return True
 
     providers = config.get("oauth_providers") or config.get("providers")
-    if isinstance(providers, list) and len(providers) > 2:
-        return True
-
-    return False
+    return bool(isinstance(providers, list) and len(providers) > 2)
 
 
 def _first_str(config: dict, keys: tuple[str, ...]) -> str:
