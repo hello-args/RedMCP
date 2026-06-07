@@ -65,9 +65,9 @@ Opt-in semantic secrets detection references **MCTS-M-025** / **MCTS-T-1022** (`
 
 ## Sigma rule IDs (MCTS-S-*)
 
-Bundled metadata Sigma rules in `src/mcts/taxonomy/sigma/metadata_rules.json` may reference **MCTS-S-*** IDs for pattern-only detections. When `sigma_metadata` matches, the finding's `technique_id` comes from the rule definition.
+Bundled metadata Sigma rules in `src/mcts/taxonomy/sigma/metadata_rules.json` may reference **MCTS-S-*** IDs for pattern-only detections that do not yet have a full MCTS-T dossier. When `sigma_metadata` matches such a rule, the finding's `technique_id` is the rule's technique field (MCTS-T-* or MCTS-S-*).
 
-Extra YAML rules via `--sigma-rules-path` (directories named `MCTS-T-*/detection-rule.yml`).
+Extra YAML rules can be supplied via `--sigma-rules-path` (directories named `MCTS-T-*/detection-rule.yml`).
 
 ---
 

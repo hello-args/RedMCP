@@ -157,7 +157,7 @@ No auditable source in competitor folder — **not a code peer**. MCTS exceeds a
 3. **Executive HTML dashboard** + **SARIF** in one toolchain  
 4. **`mcts inventory`** + **cross-server shadowing** (`MCTS-T-1008`)  
 5. **MCTS-T technique taxonomy** with CWE/OWASP mapping on every finding  
-6. **11 analyzers** covering metadata poisoning, schema surface, command execution, path validation, secrets in source  
+6. **19 analyzers** covering metadata poisoning, schema surface, command execution, path validation, runtime telemetry  
 7. **`mcts fuzz`** — CI-safe read-only protocol fuzzing with consent-gated aggressive tier  
 
 ---
@@ -166,7 +166,7 @@ No auditable source in competitor folder — **not a code peer**. MCTS exceeds a
 
 | Gap | Best peer | MCTS phase |
 |-----|-----------|------------|
-| Live stdio/SSE probe | mcp-scanner | Phase 1.1 |
+| SSE/HTTP live transports | mcp-scanner | Phase 2+ |
 | Protocol fuzzing (safe defaults) | mcp-guard (broader aggressive) | ✅ Phase 2.1 |
 | TypeScript discovery | ✅ `registerTool`, `server.tool`, `setRequestHandler` | ✅ Multi-language static |
 | Semgrep optional layer | MCPScan / agent-security | Optional extra |
@@ -179,9 +179,9 @@ No auditable source in competitor folder — **not a code peer**. MCTS exceeds a
 
 | Tool | MCTS better overall? | Notes |
 |------|---------------------|-------|
-| mcp-scanner | **Partial** | Better CI/reporting; they win live+SAST |
+| mcp-scanner | **Partial** | Better CI/reporting; they win multi-transport live+SAST |
 | MCPScan | **Yes** | Strictly ahead on product maturity |
-| agent-scan | **Partial** | Better local CI; they win inventory+cloud |
+| agent-scan | **Partial** | Better local CI; they win inventory breadth+cloud |
 | McpSafetyScanner | **Yes** | |
 | scanner-main | **Partial** | Better CI; they win MCP server mode |
 | saf-mcp | N/A | Complementary corpus |
@@ -191,4 +191,4 @@ No auditable source in competitor folder — **not a code peer**. MCTS exceeds a
 
 **MCTS is the best choice when:** you need offline MCP server scanning, PR gates, executive reports, and attack-chain intelligence without cloud or LLM dependency.
 
-**Choose a peer when:** you need live multi-surface probing (mcp-scanner), unbounded destructive fuzzing without consent tiers (mcp-guard), or full-stack SAST+SBOM (agent-security).
+**Choose a peer when:** you need live multi-transport probing (mcp-scanner), unbounded destructive fuzzing without consent tiers (mcp-guard), or full-stack SAST+SBOM (agent-security).

@@ -145,6 +145,11 @@ See [Protocol Fuzzing](fuzzing.md).
 
 Static review of `mcpServers` JSON without LLM agent tool invocation.
 
+```bash
+mcts audit-config ~/.cursor/mcp.json
+mcts audit-config ./claude_desktop_config.json --probe
+```
+
 ---
 
 ## `mcts simulate` (📋 Planned)
