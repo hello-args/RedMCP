@@ -45,9 +45,7 @@ def build_sarif(report: ScanReport) -> dict[str, Any]:
         "rules": list(rules.values()),
     }
     if taxonomies:
-        driver["supportedTaxonomies"] = [
-            {"name": MCTS_TAXONOMY_NAME, "guid": MCTS_TAXONOMY_GUID}
-        ]
+        driver["supportedTaxonomies"] = [{"name": MCTS_TAXONOMY_NAME, "guid": MCTS_TAXONOMY_GUID}]
 
     run: dict[str, Any] = {
         "tool": {"driver": driver},
@@ -146,9 +144,7 @@ def _finding_to_result(finding: Finding, rules: dict[str, dict[str, Any]]) -> di
         result["taxa"] = taxa
     attack_tags = finding.evidence.get("attack_tags")
     if isinstance(attack_tags, list) and attack_tags:
-        result["properties"]["attack_tags"] = [
-            str(tag) for tag in attack_tags if isinstance(tag, str)
-        ]
+        result["properties"]["attack_tags"] = [str(tag) for tag in attack_tags if isinstance(tag, str)]
     if finding.tool:
         result["properties"]["tool"] = finding.tool
     if finding.technique_id:
