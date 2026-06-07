@@ -2,7 +2,6 @@
 
 > [Documentation](../index.md) → [More](README.md)
 
-
 Detailed gap analysis and implementation guide for evolving MCTS from alpha static scanner to a full MCP security platform. This plan is **original MCTS architecture** — informed by [product positioning](product-positioning.md) and [external frameworks](external-frameworks.md).
 
 **Related:** [Product Roadmap](roadmap.md) · [Architecture](../analysis/architecture.md) · [CLI Reference](../platform/cli.md)
