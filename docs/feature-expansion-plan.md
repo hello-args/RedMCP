@@ -1,6 +1,6 @@
 # MCTS Feature Expansion Plan
 
-Detailed gap analysis and implementation guide for evolving MCTS from alpha static scanner to a full MCP security platform. This plan is **original MCTS architecture** — informed by the [competitive landscape](competitive-landscape.md) and [external frameworks](external-frameworks.md), but not a copy of any third-party tool.
+Detailed gap analysis and implementation guide for evolving MCTS from alpha static scanner to a full MCP security platform. This plan is **original MCTS architecture** — informed by [product positioning](product-positioning.md) and [external frameworks](external-frameworks.md).
 
 **Related:** [Product Roadmap](roadmap.md) · [Architecture](architecture.md) · [CLI Reference](cli.md)
 
@@ -43,9 +43,9 @@ Detailed gap analysis and implementation guide for evolving MCTS from alpha stat
 
 ---
 
-## Part 2 — Competitor Features → MCTS Equivalents
+## Part 2 — Industry Capabilities → MCTS Equivalents
 
-| Competitor capability | MCTS equivalent (original design) | Priority |
+| Industry capability | MCTS equivalent (original design) | Priority |
 |----------------------|---------------------------------------|----------|
 | Live MCP handshake | `ProbeSession` + `LiveDiscovery` | P0 |
 | Client config discovery | `mcts inventory` | P1 |
@@ -241,7 +241,7 @@ Fix structural limits before adding features.
 1. `src/mcts/taxonomy/techniques.yaml`
 2. Analyzers assign `technique_id` on `Finding`
 3. HTML: Technique Map section
-4. Link to external frameworks in `evidence`, do not vendor SAF-MCP corpus
+4. Link to external frameworks in `evidence`, do not vendor third-party technique corpora
 
 #### 1.7 Benchmark corpus
 
@@ -358,7 +358,7 @@ src/mcts/
 | `docs/live-scanning.md` | Shipped |
 | `docs/inventory.md` | Shipped |
 | `docs/ci-integration.md` | Shipped |
-| `docs/competitive-positioning.md` | Shipped |
+| `docs/product-positioning.md` | Shipped |
 | `docs/architecture.md` | Updated — discovery, probe, analyzer list |
 | `docs/cli.md` | Updated — all commands and flags |
 | `docs/roadmap.md` | Aligned with Phases 0–3 |
@@ -392,7 +392,7 @@ Keep **core install lean** — live/fuzz/api behind extras.
 | LLM red-team config narratives | Non-deterministic; use `audit-config` instead |
 | 1,700-rule general SAST | Stay MCP-boundary focused |
 | Content moderation rules | Noise for MCP security |
-| Full SAF-MCP corpus vendoring | Link + map IDs only |
+| Full external technique corpus vendoring | Link + map IDs only |
 
 ---
 

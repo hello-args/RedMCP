@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Metadata integrity analyzer** — description poisoning and line-jumping patterns
 - **MCTS-T taxonomy** — `techniques.json` with CWE/OWASP mapping; auto-enriched on findings
 - **GitHub Action** — JSON + SARIF + HTML artifacts, `--min-score` input, Code Scanning upload
-- Docs: [Competitive Positioning](docs/competitive-positioning.md)
+- Docs: [Product Positioning](docs/product-positioning.md)
 - **Live stdio probing** — `mcts scan --live --i-understand-live-risk` connects via MCP protocol; merges live schemas with static analysis
 - **Config-based live scan** — `mcts scan --config ~/.cursor/mcp.json --server NAME --live --i-understand-live-risk`
 - Example: `examples/live-mcp-server/server.py` for probe integration tests

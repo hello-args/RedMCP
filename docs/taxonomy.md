@@ -82,4 +82,4 @@ Thirty-four+ technique regression cases live under `tests/fixtures/regression/MC
 - [Architecture — Taxonomy](architecture.md#taxonomy-taxonomy)
 - [CLI — sigma and semantic flags](cli.md#mcts-scan)
 - [Scoring Spec](scoring-spec.md) (compliance findings excluded from score)
-- [External Frameworks](external-frameworks.md) — SAF-MCP crosswalk and pattern adoption
+- [External Frameworks](external-frameworks.md) — Industry taxonomy relationship and pattern adoption

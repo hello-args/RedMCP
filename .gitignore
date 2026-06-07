@@ -23,7 +23,7 @@ security-report.html
 report.json
 *.scan.json
 
-# Local competitor analysis (not shipped; see docs/competitive-landscape.md)
+# Local analysis mirrors (not shipped)
 competitors/
 
 # IDE

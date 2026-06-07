@@ -39,8 +39,8 @@ mcts scan src/server.ts
 
 Zod schemas (`z.string()`, `z.number()`, etc.) and inline JSON Schema `properties` are mapped to tool `input_schema` for analyzers and capability inference.
 
-## vs mcp-scanner / agent-security
+## Design note
 
-Peers use tree-sitter or Semgrep for multi-language SAST breadth. MCTS focuses on **MCP-specific tool registration patterns** with zero extra dependencies — suitable for CI scans of Node MCP servers alongside Python repos.
+MCTS focuses on **MCP-specific tool registration patterns** with zero extra dependencies — suitable for CI scans of Node MCP servers alongside Python repos.
 
-Optional future: `tree-sitter-typescript` extra for deeper handler parsing (Phase 2+).
+Optional future: tree-sitter depth for TypeScript handler parsing (Phase 2+).

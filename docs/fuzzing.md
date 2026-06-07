@@ -78,9 +78,9 @@ Findings are taxonomy-enriched (`technique_id`, `mitigation_ids`) like static sc
 
 ---
 
-## vs mcp-guard
+## Design philosophy
 
-MCTS fuzz defaults to **read-only protocol probes** with explicit consent tiers. mcp-guard runs broader `tools/call` injection suites by default. Use MCTS for CI-safe regression; use aggressive mode only on trusted lab servers.
+MCTS fuzz defaults to **read-only protocol probes** with explicit consent tiers. Use `safe` or `standard` in CI; reserve `aggressive` (may invoke `tools/call`) for trusted lab servers only.
 
 ---
 

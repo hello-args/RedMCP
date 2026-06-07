@@ -98,7 +98,7 @@ See [live-scanning.md](live-scanning.md).
 
 - Discovers **local user configs** only — not remote or enterprise fleet management
 - `--scan` resolves targets heuristically from `command`/`args`; non-Python entrypoints may need explicit `mcts scan` with `--command`
-- Breadth is narrower than agent-scan (10+ agents); focused on the four most common MCP clients
+- Breadth is limited to four common MCP clients today; broader agent support is on the roadmap
 
 ---
 
