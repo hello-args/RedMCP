@@ -358,7 +358,11 @@ src/mcts/
 | `docs/live-scanning.md` | Shipped |
 | `docs/inventory.md` | Shipped |
 | `docs/ci-integration.md` | Shipped |
+<<<<<<< HEAD
 | `docs/product-positioning.md` | Shipped |
+=======
+| `docs/competitive-positioning.md` | Shipped |
+>>>>>>> origin/main
 | `docs/architecture.md` | Updated — discovery, probe, analyzer list |
 | `docs/cli.md` | Updated — all commands and flags |
 | `docs/roadmap.md` | Aligned with Phases 0–3 |
