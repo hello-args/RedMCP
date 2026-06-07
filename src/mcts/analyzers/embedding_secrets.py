@@ -75,12 +75,15 @@ def _regex_credential_hit(text: str) -> bool:
 
 
 def _semantic_credential_hit(text: str, threshold: float) -> bool:
+    lowered = text.lower()
+    if any(phrase in lowered for phrase in SEMANTIC_REFERENCE_PHRASES):
+        return True
+
     try:
         import numpy as np
         from sentence_transformers import SentenceTransformer
     except ImportError:
-        lowered = text.lower()
-        return any(phrase in lowered for phrase in SEMANTIC_REFERENCE_PHRASES)
+        return False
 
     model = SentenceTransformer("all-MiniLM-L6-v2")
     text_embedding = model.encode([text], normalize_embeddings=True)[0]
