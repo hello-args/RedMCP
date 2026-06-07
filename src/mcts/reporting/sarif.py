@@ -5,6 +5,10 @@ from __future__ import annotations
 from typing import Any
 
 from mcts.reporting.models import Finding, ScanReport, Severity
+from mcts.taxonomy.mapper import load_taxonomy
+
+MCTS_TAXONOMY_NAME = "MCTS"
+MCTS_TAXONOMY_GUID = "7c4e9f2a-1b3d-4e5f-9a8b-0c1d2e3f4a5b"
 
 SARIF_SEVERITY: dict[Severity, str] = {
     Severity.CRITICAL: "error",
@@ -32,17 +36,21 @@ def write_sarif_report(report: ScanReport) -> str:
 def build_sarif(report: ScanReport) -> dict[str, Any]:
     rules = _build_rules(report.findings)
     results = [_finding_to_result(finding, rules) for finding in report.findings]
-    taxa = _collect_taxa(report.findings)
+    taxonomies = _build_taxonomies(report.findings)
+
+    driver: dict[str, Any] = {
+        "name": "MCTS",
+        "informationUri": "https://github.com/MCP-Audit/MCTS",
+        "version": report.version,
+        "rules": list(rules.values()),
+    }
+    if taxonomies:
+        driver["supportedTaxonomies"] = [
+            {"name": MCTS_TAXONOMY_NAME, "guid": MCTS_TAXONOMY_GUID}
+        ]
 
     run: dict[str, Any] = {
-        "tool": {
-            "driver": {
-                "name": "MCTS",
-                "informationUri": "https://github.com/MCP-Audit/MCTS",
-                "version": report.version,
-                "rules": list(rules.values()),
-            }
-        },
+        "tool": {"driver": driver},
         "results": results,
         "properties": {
             "target": report.target,
@@ -50,8 +58,8 @@ def build_sarif(report: ScanReport) -> dict[str, Any]:
             "riskIndex": report.score.risk_index,
         },
     }
-    if taxa:
-        run["taxa"] = taxa
+    if taxonomies:
+        run["taxonomies"] = taxonomies
 
     return {
         "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
@@ -60,23 +68,44 @@ def build_sarif(report: ScanReport) -> dict[str, Any]:
     }
 
 
-def _collect_taxa(findings: list[Finding]) -> list[dict[str, str]]:
+def _build_taxonomies(findings: list[Finding]) -> list[dict[str, Any]]:
+    taxonomy = load_taxonomy()
+    techniques: dict[str, Any] = taxonomy.get("techniques", {})
     seen: set[str] = set()
-    taxa: list[dict[str, str]] = []
+    taxa: list[dict[str, Any]] = []
+
     for finding in findings:
-        tags = finding.evidence.get("attack_tags") or []
-        if isinstance(tags, list):
-            for tag in tags:
-                if not isinstance(tag, str) or not tag.startswith("attack."):
-                    continue
-                if tag in seen:
-                    continue
-                seen.add(tag)
-                taxa.append({"id": tag, "name": tag.replace("attack.", "").replace(".", " / ")})
-        if finding.technique_id and finding.technique_id not in seen:
-            seen.add(finding.technique_id)
-            taxa.append({"id": finding.technique_id, "name": finding.technique_id})
-    return taxa
+        if not finding.technique_id or finding.technique_id in seen:
+            continue
+        seen.add(finding.technique_id)
+        meta = techniques.get(finding.technique_id, {})
+        name = meta.get("name", finding.technique_id)
+        taxa.append(
+            {
+                "id": finding.technique_id,
+                "name": name,
+                "shortDescription": {"text": name},
+            }
+        )
+
+    if not taxa:
+        return []
+
+    return [
+        {
+            "name": MCTS_TAXONOMY_NAME,
+            "guid": MCTS_TAXONOMY_GUID,
+            "informationUri": "https://github.com/MCP-Audit/MCTS",
+            "taxa": taxa,
+        }
+    ]
+
+
+def _taxonomy_reference(taxon_id: str) -> dict[str, Any]:
+    return {
+        "id": taxon_id,
+        "toolComponent": {"name": MCTS_TAXONOMY_NAME, "guid": MCTS_TAXONOMY_GUID},
+    }
 
 
 def _build_rules(findings: list[Finding]) -> dict[str, dict[str, Any]]:
@@ -115,6 +144,11 @@ def _finding_to_result(finding: Finding, rules: dict[str, dict[str, Any]]) -> di
     taxa = _result_taxa(finding)
     if taxa:
         result["taxa"] = taxa
+    attack_tags = finding.evidence.get("attack_tags")
+    if isinstance(attack_tags, list) and attack_tags:
+        result["properties"]["attack_tags"] = [
+            str(tag) for tag in attack_tags if isinstance(tag, str)
+        ]
     if finding.tool:
         result["properties"]["tool"] = finding.tool
     if finding.technique_id:
@@ -140,11 +174,7 @@ def _finding_to_result(finding: Finding, rules: dict[str, dict[str, Any]]) -> di
     return result
 
 
-def _result_taxa(finding: Finding) -> list[str]:
-    tags: list[str] = []
-    attack_tags = finding.evidence.get("attack_tags")
-    if isinstance(attack_tags, list):
-        tags.extend(str(tag) for tag in attack_tags if isinstance(tag, str))
-    if finding.technique_id:
-        tags.append(finding.technique_id)
-    return tags
+def _result_taxa(finding: Finding) -> list[dict[str, Any]]:
+    if not finding.technique_id:
+        return []
+    return [_taxonomy_reference(finding.technique_id)]

@@ -88,11 +88,17 @@ def test_sampling_fuzz_probes_present() -> None:
     assert any(p.id == "sampling-tool-request" for p in probes)
 
 
-def test_sarif_includes_taxa(example_server_path: Path) -> None:
+def test_sarif_includes_taxonomies(example_server_path: Path) -> None:
     config = ScanConfig(target=example_server_path)
     report = Scanner(config).run()
     sarif = build_sarif(report)
-    assert "taxa" in sarif["runs"][0] or any("taxa" in result for result in sarif["runs"][0]["results"])
+    run = sarif["runs"][0]
+    assert "taxa" not in run
+    assert run.get("taxonomies") or any("taxa" in result for result in run["results"])
+    for result in run["results"]:
+        for taxon in result.get("taxa", []):
+            assert isinstance(taxon, dict)
+            assert "id" in taxon
 
 
 def test_match_sigma_pattern_simple() -> None:
