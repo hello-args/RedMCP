@@ -128,9 +128,7 @@ def _build_rules(findings: list[Finding]) -> dict[str, dict[str, Any]]:
     return rules
 
 
-def _finding_to_result(
-    finding: Finding, rules: dict[str, dict[str, Any]], target: str
-) -> dict[str, Any]:
+def _finding_to_result(finding: Finding, rules: dict[str, dict[str, Any]], target: str) -> dict[str, Any]:
     result: dict[str, Any] = {
         "ruleId": finding.id,
         "level": SARIF_SEVERITY[finding.severity],
