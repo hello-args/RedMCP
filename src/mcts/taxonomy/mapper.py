@@ -10,6 +10,14 @@ from typing import Any
 from mcts.reporting.models import Finding
 
 _TECHNIQUES_PATH = Path(__file__).with_name("techniques.json")
+_CROSSWALK_PATH = Path(__file__).with_name("crosswalk.json")
+
+
+@lru_cache(maxsize=1)
+def load_crosswalk() -> dict[str, Any]:
+    if not _CROSSWALK_PATH.exists():
+        return {}
+    return json.loads(_CROSSWALK_PATH.read_text(encoding="utf-8"))
 
 
 @lru_cache(maxsize=1)
@@ -37,6 +45,15 @@ def enrich_finding(finding: Finding) -> Finding:
         finding.mitigation_ids = [
             mid for mid, meta in mitigations.items() if finding.technique_id in meta.get("techniques", [])
         ]
+
+    crosswalk = load_crosswalk()
+    if finding.technique_id and finding.technique_id in crosswalk:
+        entry = crosswalk[finding.technique_id]
+        if finding.evidence is None:
+            finding.evidence = {}
+        finding.evidence.setdefault("aitech", entry.get("aitech"))
+        finding.evidence.setdefault("aisubtech", entry.get("aisubtech"))
+        finding.evidence.setdefault("saf_mcp", entry.get("saf_mcp"))
 
     return finding
 
