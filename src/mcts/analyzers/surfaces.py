@@ -82,9 +82,7 @@ def iter_surfaces(
 
     if ScanSurfaceKind.PROMPT in active:
         for prompt in server.prompts:
-            arg_text = " ".join(
-                f"{a.get('name', '')} {a.get('description', '')}" for a in prompt.arguments
-            )
+            arg_text = " ".join(f"{a.get('name', '')} {a.get('description', '')}" for a in prompt.arguments)
             rows.append(
                 ScanSurface(
                     kind=ScanSurfaceKind.PROMPT,

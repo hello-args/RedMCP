@@ -98,6 +98,7 @@ markers = [
 target-version = "py311"
 line-length = 110
 src = ["src", "tests"]
+extend-exclude = ["eval/behavioral/handlers/parity"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]

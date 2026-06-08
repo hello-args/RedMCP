@@ -33,23 +33,29 @@ def analyze_python_module_taint(source: str, entry_name: str) -> TaintResult:
             for node in ast.walk(func):
                 if isinstance(node, ast.Assign):
                     for target in node.targets:
-                        if isinstance(target, ast.Name) and _expr_uses_tainted(node.value, tainted):
-                            if target.id not in tainted:
-                                tainted.add(target.id)
-                                changed = True
+                        if (
+                            isinstance(target, ast.Name)
+                            and _expr_uses_tainted(node.value, tainted)
+                            and target.id not in tainted
+                        ):
+                            tainted.add(target.id)
+                            changed = True
                         if (
                             isinstance(target, ast.Name)
                             and isinstance(node.value, ast.Call)
                             and any(_expr_uses_tainted(arg, tainted) for arg in node.value.args)
+                            and target.id not in tainted
                         ):
-                            if target.id not in tainted:
-                                tainted.add(target.id)
-                                changed = True
-                elif isinstance(node, ast.AugAssign):
-                    if isinstance(node.target, ast.Name) and _expr_uses_tainted(node.value, tainted):
-                        if node.target.id not in tainted:
-                            tainted.add(node.target.id)
+                            tainted.add(target.id)
                             changed = True
+                elif isinstance(node, ast.AugAssign):
+                    if (
+                        isinstance(node.target, ast.Name)
+                        and _expr_uses_tainted(node.value, tainted)
+                        and node.target.id not in tainted
+                    ):
+                        tainted.add(node.target.id)
+                        changed = True
                 elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
                     _propagate_append(node.value, tainted)
                 elif isinstance(node, ast.Call):

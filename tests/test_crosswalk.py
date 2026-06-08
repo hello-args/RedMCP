@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
-from mcts.taxonomy.mapper import enrich_finding, load_crosswalk, load_taxonomy
 from mcts.reporting.models import Finding, Severity
+from mcts.taxonomy.mapper import enrich_finding, load_crosswalk, load_taxonomy
 
 
 def test_crosswalk_covers_all_mcts_techniques() -> None:

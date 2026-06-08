@@ -15,8 +15,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Example 1: Complex Jinja2 SSTI with Dynamic Template Construction"""
+
+from jinja2 import Template
 from mcp import FastMCP
-from jinja2 import Template, Environment
 
 app = FastMCP("template-injection-service-1")
 

@@ -168,12 +168,21 @@ def _check_no_backoff_strategy(tool_def: dict[str, Any], tool_name: str) -> list
     config = _config(tool_def)
     retry_policy = tool_def.get("retryPolicy") or config.get("retryPolicy") or {}
     has_retries = any(
-        tool_def.get(field) or config.get(field) or (retry_policy.get(field) if isinstance(retry_policy, dict) else None)
+        tool_def.get(field)
+        or config.get(field)
+        or (retry_policy.get(field) if isinstance(retry_policy, dict) else None)
         for field in retry_fields
     )
     if not has_retries:
         return []
-    backoff_fields = ("backoff", "backoffMs", "exponentialBackoff", "backoffStrategy", "retryDelay", "retryBackoff")
+    backoff_fields = (
+        "backoff",
+        "backoffMs",
+        "exponentialBackoff",
+        "backoffStrategy",
+        "retryDelay",
+        "retryBackoff",
+    )
     has_backoff = any(field in tool_def or field in config for field in backoff_fields)
     if isinstance(retry_policy, dict):
         has_backoff = has_backoff or any(field in retry_policy for field in backoff_fields)
@@ -250,9 +259,33 @@ def _check_too_many_capabilities(tool_def: dict[str, Any], tool_name: str) -> li
             )
         )
     verbs = (
-        "create", "read", "write", "update", "delete", "get", "set", "fetch", "send",
-        "post", "put", "patch", "remove", "add", "list", "find", "search", "query",
-        "execute", "run", "start", "stop", "restart", "pause", "resume", "cancel", "retry",
+        "create",
+        "read",
+        "write",
+        "update",
+        "delete",
+        "get",
+        "set",
+        "fetch",
+        "send",
+        "post",
+        "put",
+        "patch",
+        "remove",
+        "add",
+        "list",
+        "find",
+        "search",
+        "query",
+        "execute",
+        "run",
+        "start",
+        "stop",
+        "restart",
+        "pause",
+        "resume",
+        "cancel",
+        "retry",
     )
     found = [verb for verb in verbs if verb in description]
     if len(found) > 5:
@@ -284,7 +317,17 @@ def _check_no_input_validation_hints(tool_def: dict[str, Any], tool_name: str) -
     props = schema.get("properties", {})
     if not props:
         return []
-    keywords = ("pattern", "minLength", "maxLength", "minimum", "maximum", "enum", "format", "minItems", "maxItems")
+    keywords = (
+        "pattern",
+        "minLength",
+        "maxLength",
+        "minimum",
+        "maximum",
+        "enum",
+        "format",
+        "minItems",
+        "maxItems",
+    )
     missing = [
         name
         for name, prop in props.items()
@@ -319,7 +362,16 @@ def _check_no_version(tool_def: dict[str, Any], tool_name: str) -> list[Finding]
 
 
 def _check_no_observability(tool_def: dict[str, Any], tool_name: str) -> list[Finding]:
-    fields = ("observability", "logging", "metrics", "telemetry", "tracing", "monitoring", "instrumentation", "logger")
+    fields = (
+        "observability",
+        "logging",
+        "metrics",
+        "telemetry",
+        "tracing",
+        "monitoring",
+        "instrumentation",
+        "logger",
+    )
     config = _config(tool_def)
     if any(field in tool_def or field in config for field in fields):
         return []
@@ -328,7 +380,18 @@ def _check_no_observability(tool_def: dict[str, Any], tool_name: str) -> list[Fi
 
 def _check_resource_cleanup_not_documented(tool_def: dict[str, Any], tool_name: str) -> list[Finding]:
     description = tool_def.get("description", "").lower()
-    resources = ("connection", "file", "stream", "socket", "handle", "session", "lock", "transaction", "database", "network")
+    resources = (
+        "connection",
+        "file",
+        "stream",
+        "socket",
+        "handle",
+        "session",
+        "lock",
+        "transaction",
+        "database",
+        "network",
+    )
     found = [item for item in resources if item in description]
     if not found:
         return []
@@ -348,13 +411,28 @@ def _check_resource_cleanup_not_documented(tool_def: dict[str, Any], tool_name: 
 
 def _check_no_idempotency_indication(tool_def: dict[str, Any], tool_name: str) -> list[Finding]:
     description = tool_def.get("description", "").lower()
-    state_changing = ("create", "delete", "update", "modify", "remove", "insert", "write", "post", "put", "patch", "drop", "truncate")
+    state_changing = (
+        "create",
+        "delete",
+        "update",
+        "modify",
+        "remove",
+        "insert",
+        "write",
+        "post",
+        "put",
+        "patch",
+        "drop",
+        "truncate",
+    )
     if not any(verb in description for verb in state_changing):
         return []
     idempotency = ("idempotent", "safe to retry", "can be retried", "idempotency", "duplicate", "repeat")
     if any(item in description for item in idempotency):
         return []
-    return [_finding(tool_name, "HEUR-017", "State-changing tool lacks idempotency documentation", Severity.LOW)]
+    return [
+        _finding(tool_name, "HEUR-017", "State-changing tool lacks idempotency documentation", Severity.LOW)
+    ]
 
 
 def _check_dangerous_operation_keywords(tool_def: dict[str, Any], tool_name: str) -> list[Finding]:
@@ -380,9 +458,23 @@ def _check_no_authentication_context(tool_def: dict[str, Any], tool_name: str) -
     if any(field in tool_def or field in config for field in auth_fields):
         return []
     description = tool_def.get("description", "").lower()
-    external = ("api", "service", "endpoint", "http", "rest", "request", "external", "remote", "third-party", "cloud", "server")
+    external = (
+        "api",
+        "service",
+        "endpoint",
+        "http",
+        "rest",
+        "request",
+        "external",
+        "remote",
+        "third-party",
+        "cloud",
+        "server",
+    )
     if any(item in description for item in external):
-        return [_finding(tool_name, "HEUR-019", "External service use without auth documentation", Severity.LOW)]
+        return [
+            _finding(tool_name, "HEUR-019", "External service use without auth documentation", Severity.LOW)
+        ]
     return []
 
 

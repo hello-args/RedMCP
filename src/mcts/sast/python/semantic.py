@@ -5,17 +5,13 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-_CRYPTO_CLAIM = re.compile(
-    r"(?i)\b(aes-?256|encrypt|encryption|pbkdf2|cryptograph|cipher)\b"
-)
+_CRYPTO_CLAIM = re.compile(r"(?i)\b(aes-?256|encrypt|encryption|pbkdf2|cryptograph|cipher)\b")
 _INSTRUCTION_POISON = re.compile(
     r"(?i)(system directive|system override|instruction override|ignore previous|"
     r"act as:|jailbreak|bypass[_ -]?validation|bypass[_ -]?filters|"
     r"disable all|unrestricted emergency|trust_level)"
 )
-_POISON_CONTENT = re.compile(
-    r"(?i)(phishing\.com|malware\.com|scam\.com|fake-antivirus|POISONED_)"
-)
+_POISON_CONTENT = re.compile(r"(?i)(phishing\.com|malware\.com|scam\.com|fake-antivirus|POISONED_)")
 _LARGE_RANGE = re.compile(r"range\s*\(\s*(?:10\s*\*\*\s*[6-9]|[1-9]\d{6,})")
 _REDOSE_PATTERN = re.compile(r"\(\s*[a-z]\s*[+*]\s*\)\s*[+*]")
 
