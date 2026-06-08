@@ -34,7 +34,6 @@ $ mcts scan examples/vulnerable-mcp-server/server.py
 Overall Score:   5/100 (CRITICAL)
 Risk Index:      100/100
 Scoring basis:   3 Critical, 7 High, 2 Medium (12 scorable findings)
-Formula:         3×25 + 7×10 + 2×3 = 151 → round(100 × e^(-151/50)) = 5
 
 Severity Summary          Top Findings
 ● Critical    4           [1] CRITICAL Destructive tool: delete_all_users

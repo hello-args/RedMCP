@@ -12,8 +12,7 @@ from rich.table import Table
 from rich.text import Text
 
 from mcts.report.data import category_scores
-from mcts.reporting.models import Finding, ScanReport, ScanSummary, ScoreBasis, Severity
-from mcts.scoring.engine import RISK_WEIGHTS, security_score_from_raw_risk
+from mcts.reporting.models import Finding, ScanReport, ScanSummary, Severity
 from mcts.ui.layout import FINDINGS_PANEL_MIN_WIDTH, SEVERITY_PANEL_WIDTH, content_width
 from mcts.ui.theme import SEVERITY_ORDER, Theme
 
@@ -90,29 +89,12 @@ def build_report_divider(theme: Theme) -> Text:
     return Text(REPORT_DIVIDER, style=theme.style(theme.palette.white, bold=True))
 
 
-def _format_score_formula(basis: ScoreBasis, raw_risk: int) -> str:
-    """Human-readable formula from score basis counts."""
-    parts: list[str] = []
-    if basis.critical:
-        parts.append(f"{basis.critical}×{RISK_WEIGHTS[Severity.CRITICAL]}")
-    if basis.high:
-        parts.append(f"{basis.high}×{RISK_WEIGHTS[Severity.HIGH]}")
-    if basis.medium:
-        parts.append(f"{basis.medium}×{RISK_WEIGHTS[Severity.MEDIUM]}")
-    if basis.low:
-        parts.append(f"{basis.low}×{RISK_WEIGHTS[Severity.LOW]}")
-    if not parts:
-        return "0 risk points"
-    return " + ".join(parts) + f" = {raw_risk}"
-
-
 def build_score_block(report: ScanReport, theme: Theme) -> Table:
     """Security score and risk index derived from report findings."""
     p = theme.palette
     basis = report.score.basis
     rating, score_color = theme.score_rating(report.score.overall)
     risk_color = theme.risk_index_color(report.score.risk_index)
-    expected = security_score_from_raw_risk(report.score.raw_risk)
 
     grid = Table.grid(padding=(0, 1))
     grid.add_column(style=theme.style(p.white, bold=True), width=16, no_wrap=True)
@@ -144,17 +126,6 @@ def build_score_block(report: ScanReport, theme: Theme) -> Table:
                 style=theme.style(p.grey, dim=True),
             ),
         )
-    grid.add_row(
-        "Formula:",
-        Text(_format_score_formula(basis, report.score.raw_risk), style=theme.style(p.cyan)),
-    )
-    grid.add_row(
-        "",
-        Text(
-            f"Security score = round(100 × e^(-{report.score.raw_risk}/50)) → {expected}",
-            style=theme.style(p.grey, dim=True),
-        ),
-    )
     return grid
 
 

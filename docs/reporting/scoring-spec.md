@@ -60,8 +60,6 @@ overall = round(100 × e^(-raw_risk / 50))
 | 1 Critical + 2 High | 45 | 41 |
 | 3 Critical + 7 High + 2 Medium | 151 | **5** |
 
-Formula shown in terminal: `3×25 + 7×10 + 2×3 = 151 → round(100 × e^(-151/50)) = 5`
-
 Example servers: `examples/safe-mcp-server/` (~100), `examples/medium-risk-mcp-server/` (~67), `examples/vulnerable-mcp-server/` (~5).
 
 ---

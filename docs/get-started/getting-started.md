@@ -123,7 +123,6 @@ Directory scans default to `--languages python,typescript`. MCTS walks the tree,
 Overall Score:   5/100 (CRITICAL)
 Risk Index:      100/100
 Scoring basis:   3 Critical, 7 High, 2 Medium, 0 Low (12 scorable findings)
-Formula:         3×25 + 7×10 + 2×3 = 151 → round(100 × e^(-151/50)) = 5
 
 ● Critical    4
 ● High        7
