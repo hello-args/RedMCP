@@ -38,11 +38,15 @@ async def probe_stdio(config: LiveServerConfig, timeout_seconds: int = 120) -> M
         ) from exc
 
     merged_env = {**os.environ, **config.env}
+    errlog = None
+    if config.stderr_file:
+        errlog = open(config.stderr_file, "w", encoding="utf-8")  # noqa: SIM115
     server_params = StdioServerParameters(
         command=config.command,
         args=config.args,
         env=merged_env,
         cwd=config.cwd,
+        errlog=errlog,
     )
 
     connect_timeout = min(timeout_seconds, 30)
@@ -59,6 +63,11 @@ async def probe_stdio(config: LiveServerConfig, timeout_seconds: int = 120) -> M
                     tools = await _list_tools(session, session_timeout)
                     prompts = await _list_prompts(session, session_timeout)
                     resources = await _list_resources(session, session_timeout)
+                    from mcts.probe.resources import enrich_resources_with_content
+
+                    resources = await enrich_resources_with_content(
+                        session, resources, timeout=session_timeout
+                    )
                     instructions = _extract_instructions(init_result)
 
                     return MCPServerInfo(

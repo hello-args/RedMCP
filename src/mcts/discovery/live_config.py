@@ -11,7 +11,14 @@ from mcts.probe.models import LiveServerConfig
 
 def resolve_live_config(config: ScanConfig) -> LiveServerConfig:
     if config.config_path and config.config_server:
-        return load_server_from_config(config.config_path, config.config_server)
+        live = load_server_from_config(
+            config.config_path,
+            config.config_server,
+            expand_vars=config.expand_vars,
+        )
+        if config.stderr_file:
+            live = live.model_copy(update={"stderr_file": config.stderr_file})
+        return live
 
     if config.live_command:
         return LiveServerConfig(
@@ -20,6 +27,7 @@ def resolve_live_config(config: ScanConfig) -> LiveServerConfig:
             env=config.live_env,
             cwd=str(config.target) if config.target.is_dir() else None,
             server_name=config.config_server or config.target.stem,
+            stderr_file=config.stderr_file,
         )
 
     target = config.target
@@ -29,9 +37,10 @@ def resolve_live_config(config: ScanConfig) -> LiveServerConfig:
             args=[str(target.resolve())],
             env=config.live_env,
             server_name=target.stem,
+            stderr_file=config.stderr_file,
         )
 
     raise ValueError(
-        "Live scan requires --command and --args, or --config with --server, "
+        "Live scan requires --command and --args, --url for remote, or --config with --server, "
         "or a Python file target for auto-launch"
     )
