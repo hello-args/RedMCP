@@ -28,6 +28,7 @@ ScanConfig (CLI → core/config.py)
         ┌───────────────┼───────────────┐
         ▼               ▼               ▼
    25+ analyzers  ComplianceChecker   enrich_findings
+   (20 default)
    (see table)     (OWASP meta)        (MCTS-T / MCTS-M)
         │               │               │
         └───────────────┴───────────────┘
@@ -262,20 +263,40 @@ Multi-surface iteration: `analyzers/surfaces.py` — `ScanSurface` abstraction f
 | `sast/rust/sinks.py`, `taint.py` | Rust | `Command::new`, `fs::write`, `reqwest` |
 | `sast/eval.py` | — | Corpus runner for regression metrics |
 
-Eval corpus: `eval/behavioral/cases.json` (13 cases across Python, TypeScript, Go, Rust). Run via `scripts/run_behavioral_eval.py` or `tests/test_behavioral_eval.py`. Install optional tree-sitter parsers with `uv sync --extra sast`.
+Eval corpus: `eval/behavioral/cases.json` (22 cases across Python, TypeScript, Go, Rust). Run via `scripts/run_behavioral_eval.py` or `tests/test_behavioral_eval.py`. Install optional tree-sitter parsers with `uv sync --extra sast`.
 
 Taxonomy crosswalk: `taxonomy/crosswalk.json` adds `aitech`, `aisubtech`, `saf_mcp` to finding evidence via `enrich_findings()`.
 
 ### RuntimeEventsAnalyzer sub-detectors
 
+`RuntimeEventsAnalyzer` delegates telemetry rows to focused detector modules under `analyzers/`:
+
 | Module | Technique examples |
 |--------|-------------------|
+| `autonomous_loop.py` | MCTS-T-1035 |
 | `command_injection.py` | MCTS-T-1023 |
 | `oauth_mixup.py` | MCTS-T-1012 |
 | `rug_pull.py` | MCTS-T-1013 |
 | `behavioral_extraction.py` | MCTS-T-1026 |
+| `credential_access.py` | MCTS-T-1024 |
 | `tool_redefinition.py` | MCTS-T-1040 |
+| `over_privileged.py` | MCTS-T-1006 |
+| `exposed_endpoint.py` | MCTS-T-1027 |
+| `dns_poisoning.py` | MCTS-T-1028 |
+| `tool_output_injection.py` | MCTS-T-1007 |
+| `cross_server_registry.py` | MCTS-T-1029 |
+| `privilege_tool_abuse.py` | MCTS-T-1030 |
+| `suspicious_registration.py` | MCTS-T-1031 |
+| `fake_tool_invocation.py` | MCTS-T-1032 |
+| `sandbox_escape.py` | MCTS-T-1033 |
+| `oauth_escalation_runtime.py` | MCTS-T-1017–1019 |
 | `instruction_steganography.py` | MCTS-T-1041 |
+| `vector_poisoning.py` | MCTS-T-1034 |
+| `inspector_rce.py` | MCTS-T-1036 |
+| `oauth_token_persistence.py` | MCTS-T-1037 |
+| `backdoored_install.py` | MCTS-T-1038 |
+| `context_memory_implant.py` | MCTS-T-1039 |
+| `sampling_abuse.py` | MCTS-T-1016 |
 
 See [Threat Taxonomy](../reporting/taxonomy.md) for the full catalog.
 
@@ -428,13 +449,15 @@ src/mcts/
 
 | Feature | Status |
 |---------|--------|
-| SSE/HTTP live transports | Planned |
+| Remote protocol fuzz (`mcts fuzz --url`) | Planned |
 | `mcts audit-config`, `mcts simulate`, `mcts pentest`, `mcts vet` | Planned / stub |
 | Scan history / trends (`.mcts/history/`) | Planned |
 | HTML Capability Matrix + Technique Map | Planned |
 | Tree-sitter depth for TypeScript handlers | Partial (`--extra sast`) |
 | Go/Rust behavioral SAST | Shipped (regex; tree-sitter optional) |
-| Full 141-file behavioral eval corpus | Partial (`eval/behavioral/`) |
+| SSE/HTTP live transports | Shipped (`--url`, `--transport`) |
+| REST API (`mcts serve`) | Shipped (10 endpoints) |
+| Expanded behavioral eval corpus | Partial (22 cases in `eval/behavioral/`) |
 
 See [Roadmap](../more/roadmap.md) and [Feature Expansion Plan](../more/feature-expansion-plan.md).
 

@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Protocol security probes** — `--protocol-probe` for MCPS-style HTTP checks
 - **Optional analyzers** — `--yara`, `--llm-judge`, `--cloud-inspect`, `--virustotal` (all opt-in)
 - **Readiness command** — `mcts readiness` for production heuristics (excluded from security score)
-- **REST API** — `mcts serve` with `/health` and `/scan` (`--extra api`)
+- **REST API** — `mcts serve` with 10 endpoints: `/health`, `/scan`, `/scan-tool`, `/scan-all-tools`, `/scan-prompt`, `/scan-all-prompts`, `/scan-resource`, `/scan-all-resources`, `/scan-instructions`, `/readiness` (`--extra api`; optional `MCTS_API_KEY` auth)
 - **Terminal output formats** — `--terminal-format table|by_tool|by_analyzer|by_severity|summary`
 - **Scan filters** — `--tool-filter`, `--analyzer-filter`, `--severity-filter`, `--analyzers`
 - **Taxonomy crosswalk** — AITech / SAF-MCP IDs in finding evidence (`taxonomy/crosswalk.json`)

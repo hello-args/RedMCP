@@ -57,7 +57,7 @@ jobs:
 5. Uploads JSON/HTML as workflow artifacts
 6. Respects `fail-on-critical` and `min-score` inputs
 
-Monorepo: `uses: ./action`  
+Monorepo: `uses: ./action`
 Full reference: [action/README.md](../../action/README.md)
 
 ### Action inputs

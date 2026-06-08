@@ -36,7 +36,7 @@ Today, MCTS identifies security issues across permissions, prompt injection, too
 | Prompt injection simulator | Shipped (heuristic; live probing planned) |
 | Tool abuse testing | Shipped |
 | Data leakage detection | Shipped (source + metadata) |
-| Multi-step attack chain detection | Shipped (hint-based; graph upgrade planned) |
+| Multi-step attack chain detection | Shipped (capability-graph BFS) |
 | Compliance checks (OWASP LLM Top 10) | Shipped |
 | Exponential risk scoring (score + risk index) | Shipped |
 | Terminal UI (Rich, themes, progress animation) | Shipped |
@@ -44,6 +44,7 @@ Today, MCTS identifies security issues across permissions, prompt injection, too
 | HTML security dashboard (`mcts report`) | Shipped |
 | Category breakdown (HTML dashboard bars + radar) | Shipped |
 | Live stdio probing (`--live`) | Shipped |
+| Remote HTTP/SSE probing (`--url`) | Shipped |
 | Protocol fuzzing (`mcts fuzz`) | Shipped |
 | SARIF output (`--format sarif`) | Shipped |
 | CI score thresholds (`--min-score`, `--max-critical`) | Shipped |
@@ -51,23 +52,23 @@ Today, MCTS identifies security issues across permissions, prompt injection, too
 | Runtime telemetry analyzers (`--runtime-events`) | Shipped |
 | CLI category breakdown + `--fail-on-category` | Shipped |
 | GitHub Action (JSON + SARIF + HTML artifacts) | Shipped — `@v1` tag published |
-| Agent pentest (`mcts pentest`) | Planned |
-| SSE/HTTP live transports | Planned |
+| Agent pentest (`mcts pentest`) | Planned (stub) |
+| REST API (`mcts serve`) | Shipped |
 
 ### Known alpha gaps
 
 See [Feature Expansion Plan — Part 1](feature-expansion-plan.md#part-1--current-state-honest-inventory) for the honest inventory.
 
-- Multi-file repo discovery shipped; jailbreak analyzer still uses weighted heuristic
+- Multi-file repo discovery shipped; jailbreak analyzer uses weighted heuristic (not live payload injection)
 - `mcts pentest` remains a stub
-- SSE/HTTP live transports not yet implemented
+- Remote protocol fuzz (`mcts fuzz --url`) not yet supported — stdio only
 - ~34 / ~75 external-framework techniques covered by regression fixtures (~45%)
 
 ---
 
 ## Phase 0 — Foundation (Shipped)
 
-> **Goal:** Fix structural limits so new features have a solid base.  
+> **Goal:** Fix structural limits so new features have a solid base.
 > **Timeline:** ~2–3 weeks. See [Part 4 — Phase 0](feature-expansion-plan.md#phase-0--foundation-23-weeks).
 
 | # | Deliverable | Status |
@@ -75,7 +76,7 @@ See [Feature Expansion Plan — Part 1](feature-expansion-plan.md#part-1--curren
 | 0.1 | Multi-file **repository scanning** (`mcts scan ./repo/`) | Done |
 | 0.2 | Parse **`input_schema`** + handler snippets | Done |
 | 0.3 | **Source-aware analyzers** (secrets in code, command execution, path validation) | Done |
-| 0.4 | Fix **placeholder analyzers** + **capability-graph** attack chains | Partial — jailbreak heuristic remains |
+| 0.4 | Fix **placeholder analyzers** + **capability-graph** attack chains | Done — jailbreak uses weighted heuristic; live payload injection planned |
 
 **New modules:** `discovery/static.py`, `core/target.py`, analyzers: `schema_surface`, `command_execution`, `path_validation`.
 
@@ -83,7 +84,7 @@ See [Feature Expansion Plan — Part 1](feature-expansion-plan.md#part-1--curren
 
 ## Phase 1 — Adoption & Live Probing (Shipped)
 
-> **Goal:** CI/CD adoption, live MCP enrichment, config inventory.  
+> **Goal:** CI/CD adoption, live MCP enrichment, config inventory.
 > **Timeline:** ~4–6 weeks. See [Part 4 — Phase 1](feature-expansion-plan.md#phase-1--adoption--live-probing-46-weeks).
 
 | # | Deliverable | Status |
@@ -147,7 +148,7 @@ mcts scan --live --command uv --args run,server.py
 mcts scan --config ~/.cursor/mcp.json --server my-server
 ```
 
-Stdio first; consent gate + `--i-understand-live-risk` for CI. Modules: `probe/session.py`, `discovery/live.py`.
+Stdio and remote HTTP/SSE; consent gate + `--i-understand-live-risk` for CI. Modules: `probe/session.py`, `probe/http_session.py`, `discovery/live.py`.
 
 ---
 
@@ -180,40 +181,40 @@ Per-tool capability dimensions (reads untrusted input, egresses network, execute
 
 ---
 
-## Phase 2 — Differentiation (Future)
+## Phase 2 — Differentiation (In progress)
 
-> **Goal:** Threat simulation and probing beyond static heuristics.  
+> **Goal:** Threat simulation and probing beyond static heuristics.
 > See [Part 4 — Phase 2](feature-expansion-plan.md#phase-2--differentiation-610-weeks).
 
-| # | Deliverable | Command |
-|---|-------------|---------|
-| 2.1 | Protocol fuzzing (safe defaults) Yes | `mcts fuzz` — see [fuzzing.md](../scanning/fuzzing.md) |
-| 2.2 | Config audit (no LLM side effects) | `mcts audit-config` |
-| 2.3 | Rug-pull baselines Yes | `--baseline` / `--save-baseline` |
-| 2.4 | Description vs implementation drift | `ImplementationDriftAnalyzer` |
-| 2.5 | TypeScript/JavaScript static discovery Yes | `discovery/static_js.py` — see [typescript-discovery.md](../scanning/typescript-discovery.md) |
-| 2.6 | Scan history + trend chart | `.mcts/history/` |
-| 2.7 | Attack simulation mode | `mcts simulate` |
-| 2.8 | Visual attack graph export | Mermaid, Graphviz, PNG |
-| 2.9 | MCP marketplace scorecards | Public benchmark publishing |
+| # | Deliverable | Status | Command |
+|---|-------------|--------|---------|
+| 2.1 | Protocol fuzzing (safe defaults) | Shipped | `mcts fuzz` — see [fuzzing.md](../scanning/fuzzing.md) |
+| 2.2 | Config audit (no LLM side effects) | Planned | `mcts audit-config` |
+| 2.3 | Rug-pull baselines | Shipped | `--baseline` / `--save-baseline` |
+| 2.4 | Description vs implementation drift | Partial | `BehavioralStaticAnalyzer` (SAST); full drift analyzer planned |
+| 2.5 | TypeScript/JavaScript static discovery | Shipped | `discovery/static_js.py` — see [typescript-discovery.md](../scanning/typescript-discovery.md) |
+| 2.6 | Scan history + trend chart | Planned | `.mcts/history/` |
+| 2.7 | Attack simulation mode | Planned | `mcts simulate` |
+| 2.8 | Visual attack graph export | Planned | Mermaid, Graphviz, PNG |
+| 2.9 | MCP marketplace scorecards | Planned | Public benchmark publishing |
+| 2.10 | Remote protocol fuzz | Planned | `mcts fuzz --url` |
 
 ---
 
 ## Phase 3 — Platform & Community (Future)
 
-> **Goal:** Recognized security standard in the MCP ecosystem.  
+> **Goal:** Recognized security standard in the MCP ecosystem.
 > See [Part 4 — Phase 3](feature-expansion-plan.md#phase-3--platform-10-weeks).
 
 | # | Deliverable |
 |---|-------------|
 | 3.1 | Package vetting (`mcts vet pypi:…`) |
-| 3.2 | Local REST API (`mcts serve`) |
-| 3.3 | MCP server mode for IDE agents (`mcts-mcp`) |
-| 3.4 | Opt-in LLM review (`--llm-review`) |
-| 3.5 | Security baselines (`--profile strict\|balanced\|dev`) |
-| 3.6 | Certification badges (`mcts badge`) |
-| 3.7 | Expanded benchmark suite (Juice Shop–style MCP corpus) |
-| 3.8 | Community hub — research, hall of fame, disclosures |
+| 3.2 | MCP server mode for IDE agents (`mcts-mcp`) |
+| 3.3 | Opt-in LLM review (`--llm-review`) |
+| 3.4 | Security baselines (`--profile strict\|balanced\|dev`) |
+| 3.5 | Certification badges (`mcts badge`) |
+| 3.6 | Expanded benchmark suite (Juice Shop–style MCP corpus) |
+| 3.7 | Community hub — research, hall of fame, disclosures |
 
 ---
 
@@ -236,8 +237,8 @@ Full rationale: [Feature Expansion Plan — Part 8](feature-expansion-plan.md#pa
 | Phase | Focus | Key deliverables |
 |-------|-------|------------------|
 | **Phase 0–1** Yes | Foundation + adoption | Repo scan · SARIF · Action · live probe · inventory · taxonomy · fuzz |
-| **Phase 2** | Differentiation | audit-config · trends · simulation · SSE/HTTP |
-| **Phase 3** | Platform | Vet · API · MCP tools · certification |
+| **Phase 2** | Differentiation | audit-config · trends · simulation · remote fuzz |
+| **Phase 3** | Platform | Vet · MCP tools · certification |
 
 ### Suggested build order
 
@@ -265,7 +266,7 @@ Phase 1 is complete when:
 - [x] Attack chains use capability graph
 - [x] Benchmark/regression suite prevents detector regressions
 
-Remaining Phase 1 polish: CLI/HTML Technique Map, capability matrix in dashboard, SSE/HTTP transports.
+Remaining Phase 1 polish: CLI/HTML Technique Map, capability matrix in dashboard.
 
 Full checklist: [Feature Expansion Plan — Part 10](feature-expansion-plan.md#part-10--success-criteria).
 

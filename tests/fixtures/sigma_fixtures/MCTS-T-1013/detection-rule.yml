@@ -38,7 +38,7 @@ detection:
   selection_file_indicators:
     file_access_pattern|contains:
       - "credential_files"
-      - "system_directories" 
+      - "system_directories"
       - "user_data"
       - "configuration_files"
       - "log_files"
@@ -56,7 +56,7 @@ detection:
   condition: selection_tool_execution and (selection_behavioral_change or selection_network_indicators or selection_file_indicators) and selection_timing_indicators
 falsepositives:
   - Legitimate tool updates and feature additions with proper approval
-  - Network connectivity changes due to infrastructure updates  
+  - Network connectivity changes due to infrastructure updates
   - System updates changing tool execution environment
   - Performance optimization changes affecting tool behavior
   - New legitimate features requiring expanded file access
@@ -82,4 +82,4 @@ fields:
   - baseline_deviation
   - behavioral_change_type
   - user_id
-  - timestamp 
+  - timestamp

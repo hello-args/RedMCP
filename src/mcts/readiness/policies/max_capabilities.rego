@@ -40,4 +40,3 @@ violation[msg] {
     input.input_properties_count <= max_input_parameters
     msg := sprintf("Tool '%s' has %d input parameters. Consider if all are necessary or if the tool should be split", [input.tool_name, input.input_properties_count])
 }
-

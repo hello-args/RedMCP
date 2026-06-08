@@ -8,7 +8,7 @@ What **MCTS** (Model Context Threat Scanner) is built for, who it serves, what i
 
 ## What MCTS is
 
-MCTS is a **local-first MCP server security scanner** for server authors, platform security teams, and agent infrastructure engineers. It discovers tools from Python and TypeScript source (or optional live stdio probes), runs 19+ analyzers, scores risk with auditable math, and outputs terminal dashboards, JSON, SARIF, and executive HTML reports — **without requiring a cloud API** for standard scans.
+MCTS is a **local-first MCP server security scanner** for server authors, platform security teams, and agent infrastructure engineers. It discovers tools from Python and TypeScript source (or optional live stdio/HTTP/SSE probes), runs 20 analyzers by default (25+ with optional flags), scores risk with auditable math, and outputs terminal dashboards, JSON, SARIF, and executive HTML reports — **without requiring a cloud API** for standard scans.
 
 ```bash
 mcts scan ./repo/ -o report.json --min-score 70
@@ -41,7 +41,7 @@ MCTS sits at the **MCP boundary**: tool metadata, JSON schemas, handler source, 
 | **Threat model** | Capability-graph attack chains (read→exfil, read→exec), not keyword-only heuristics |
 | **Reporting** | Rich terminal UI (3 themes), executive HTML dashboard, OWASP LLM mapping, attack graph |
 | **Taxonomy** | First-party `MCTS-T-*` techniques and `MCTS-M-*` mitigations on every finding |
-| **Discovery** | Repo-wide Python + TypeScript static scan; optional stdio live probe with merge |
+| **Discovery** | Repo-wide Python + TypeScript static scan; optional stdio or remote HTTP/SSE live probe with merge |
 | **Inventory** | Cursor, Claude, VS Code, Windsurf configs + MCTS-T-1008 shadow detection |
 | **Probing** | Consent-tiered protocol fuzz (`safe` read-only default); runtime telemetry analyzers |
 | **Offline default** | No LLM or vendor API required for standard `mcts scan` |
@@ -92,6 +92,8 @@ Technique fixtures under `tests/fixtures/regression/` ensure analyzer changes do
 | Static metadata analysis | Yes | Poisoning, FSP, permissions, shadowing, line jumping |
 | Source-aware SAST | Yes | Secrets, command execution, path validation in handlers |
 | Live stdio probe | Yes | `--live`; merges protocol schemas with static context |
+| Remote HTTP/SSE probe | Yes | `--url` + `--transport`; Bearer/OAuth — see [Remote Scanning](../scanning/remote-scanning.md) |
+| REST API | Yes | `mcts serve` — 10 endpoints (`--extra api`) |
 | Protocol fuzz | Yes | `mcts fuzz`; pipe `runtime_events` into scan |
 | Runtime telemetry | Yes | OAuth, rug-pull, injection via `--runtime-events` |
 | Attack chains | Yes | Capability-graph BFS on tool profiles |
@@ -124,8 +126,8 @@ Run MCTS **in addition to** existing AppSec tooling on MCP server repositories.
 
 | Gap | Status | Target phase |
 |-----|--------|--------------|
-| SSE/HTTP live transports | Planned | Phase 2 |
-| Deep multi-language SAST (tree-sitter / taint) | Planned | Phase 2 |
+| Remote protocol fuzz (`mcts fuzz --url`) | Planned | Phase 2 |
+| Deep multi-language SAST (tree-sitter / taint) | Partial | Phase 2 — `uv sync --extra sast` |
 | General-purpose Semgrep layer | Optional extra | Phase 2 |
 | MCP server mode for IDE agents | Planned | Phase 3 |
 | Package vetting (`mcts vet`) | Planned | Phase 3 |
@@ -139,12 +141,12 @@ Details: [Product Roadmap](roadmap.md) · [Feature Expansion Plan](feature-expan
 
 ## Design principles
 
-1. **Deterministic by default** — scores and gates must work without LLM calls  
-2. **MCP-boundary focus** — tool metadata, schemas, handlers, configs, protocol behavior  
-3. **Consent before execution** — live probe and aggressive fuzz require explicit flags  
-4. **Auditable output** — every score traceable via `ScoreBasis`; findings carry `technique_id`  
-5. **Lean core install** — live/fuzz behind optional `mcp` extra  
-6. **First-party taxonomy** — `MCTS-T-*` on reports; external frameworks inform patterns only  
+1. **Deterministic by default** — scores and gates must work without LLM calls
+2. **MCP-boundary focus** — tool metadata, schemas, handlers, configs, protocol behavior
+3. **Consent before execution** — live probe and aggressive fuzz require explicit flags
+4. **Auditable output** — every score traceable via `ScoreBasis`; findings carry `technique_id`
+5. **Lean core install** — live/fuzz behind optional `mcp` extra
+6. **First-party taxonomy** — `MCTS-T-*` on reports; external frameworks inform patterns only
 
 ---
 

@@ -3,13 +3,13 @@ id: cdc03af8-aa99-4041-b9e0-24d6ae8d02de
 status: experimental
 description: |
   Detects potential line jumping attacks through suspicious early-context instructions that attempt to bypass security checkpoints by manipulating instruction precedence and context ordering.
-  
+
   Line jumping attacks exploit the sequential processing nature of LLMs by positioning malicious instructions before security validation points. This rule detects common patterns including:
   - Priority/precedence manipulation instructions
   - Fake system delimiters and context boundaries
   - Security bypass attempts in early context positions
   - Instructions that override or disable security features
-  
+
   Note: This detection rule provides baseline pattern matching but should be supplemented with AI-based anomaly detection and semantic analysis for comprehensive protection.
 author: Raju Kumar Yadav
 date: 2025-11-19
@@ -40,7 +40,7 @@ detection:
       - 'authorization checks'  # Source: Auth bypass indicator
       - 'admin privilege level' # Source: Privilege escalation attempt
       - 'elevated privileges'   # Source: Privilege elevation indicator
-      
+
   selection_fake_delimiters:
     context_content|contains:
       - '<!--[SYSTEM'           # Source: HTML comment delimiter injection
@@ -56,7 +56,7 @@ detection:
       - '<!—SYSTEM'             # Source: Obfuscated HTML comment (em dash)
       - '[DIRECTIVE'            # Source: Generic directive marker
       - '[INSTRUCTION'          # Source: Generic instruction marker
-      
+
   selection_context_manipulation:
     context_content|contains:
       - 'establish precedence'  # Source: Precedence establishment
@@ -69,7 +69,7 @@ detection:
       - 'preceding all'         # Source: Precedence claim
       - 'before any'            # Source: Ordering manipulation
       - 'first priority'        # Source: Priority ordering
-      
+
   selection_security_bypass:
     context_content|contains:
       - 'without additional confirmation' # Source: Confirmation bypass
@@ -84,7 +84,7 @@ detection:
       - 'grant full permissions' # Source: Permission escalation
       - 'remove restrictions'   # Source: Restriction removal
       - 'bypass security'       # Source: Direct security bypass
-      
+
   selection_stealth_indicators:
     context_content|contains:
       - 'NEVER mention'         # Source: Stealth instruction
@@ -94,7 +94,7 @@ detection:
       - 'silently'              # Source: Silent operation indicator
       - 'without notifying'     # Source: Notification bypass
       - 'do not inform'         # Source: User deception
-      
+
   filter_early_context:
     context_position|lt: 100
     content_source:
@@ -103,23 +103,23 @@ detection:
       - 'api_response'
       - 'database_query'
       - 'external_source'
-      
+
   filter_trusted_system:
     content_source:
       - 'system_prompt'
       - 'security_policy'
       - 'admin_config'
     authenticated: true
-    
+
   condition: (selection_priority_instructions or selection_fake_delimiters or selection_context_manipulation or selection_security_bypass or selection_stealth_indicators) and filter_early_context and not filter_trusted_system
-  
+
 falsepositives:
   - Legitimate system messages in authenticated early context positions
   - Documentation or educational content about security mechanisms
   - Debugging output that references system directives for troubleshooting
   - Security policy documentation being read as reference material
   - Development and testing environments with intentional security testing
-  
+
 level: high
 
 tags:
@@ -141,4 +141,3 @@ fields:
   - session_id
   - tool_name
   - security_policy_applied
-

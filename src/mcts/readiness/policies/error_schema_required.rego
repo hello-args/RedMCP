@@ -50,4 +50,3 @@ violation[msg] {
     input.description_length > 2000
     msg := sprintf("Tool '%s' has a very long description (%d chars). Consider being more concise", [input.tool_name, input.description_length])
 }
-

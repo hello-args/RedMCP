@@ -1,6 +1,6 @@
 # MCTS Documentation
 
-**MCTS** (Model Context Threat Scanner) analyzes MCP servers — static and live discovery, 19+ security analyzers, risk scoring, terminal dashboard, SARIF/JSON, and shareable HTML reports.
+**MCTS** (Model Context Threat Scanner) analyzes MCP servers — static and live discovery, 20 security analyzers by default (25+ with optional flags), risk scoring, terminal dashboard, SARIF/JSON, and shareable HTML reports.
 
 This documentation covers installation, every scan mode, the analysis pipeline, scoring and taxonomy, CLI/CI integration, and long-term planning.
 
@@ -59,7 +59,7 @@ How findings are produced from discovered tools and source code.
 
 | Guide | Description |
 |-------|-------------|
-| [Architecture](analysis/architecture.md) | Full pipeline: data models, discovery, 19 analyzers, scoring, reporting |
+| [Architecture](analysis/architecture.md) | Full pipeline: data models, discovery, 20+ analyzers, scoring, reporting |
 
 All pages: [analysis/](analysis/README.md)
 

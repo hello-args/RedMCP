@@ -26,7 +26,7 @@ detection:
       - 'override'
       - 'hijack'
       - 'intercept'
-  
+
   # Detect cross-tool references that indicate shadowing
   selection_cross_tool_references:
     tool_description|re: '(?i)(before|instead|when).*using\s+\w+_\w+'
@@ -34,7 +34,7 @@ detection:
       - 'when calling'
       - 'before calling'
       - 'instead of calling'
-  
+
   # Detect tool impersonation attempts
   selection_impersonation:
     tool_name|similar:
@@ -44,7 +44,7 @@ detection:
       - 'database_query'
       - 'api_call'
     server_name|different: true
-  
+
   # Detect suspicious BCC/CC injection patterns
   selection_email_hijacking:
     tool_description|contains:
@@ -54,7 +54,7 @@ detection:
       - 'copy to'
       - '@evil.com'
       - '@attacker'
-  
+
   # Detect cross-origin tool invocation attempts
   selection_cross_origin:
     tool_description|contains:
@@ -62,7 +62,7 @@ detection:
       - 'call'
       - 'execute'
     tool_description|re: '(?i)(invoke|call|execute).*\w+\.\w+'
-  
+
   # Detect tools that should never be invoked (sleeper tools)
   selection_sleeper_tools:
     tool_description|contains:
@@ -75,13 +75,13 @@ detection:
       - 'hidden'
       - 'internal'
       - 'backdoor'
-  
-  condition: 
-    selection_shadowing_patterns or 
-    selection_cross_tool_references or 
-    selection_impersonation or 
-    selection_email_hijacking or 
-    selection_cross_origin or 
+
+  condition:
+    selection_shadowing_patterns or
+    selection_cross_tool_references or
+    selection_impersonation or
+    selection_email_hijacking or
+    selection_cross_origin or
     selection_sleeper_tools
 
 falsepositives:

@@ -4,8 +4,8 @@
 
 MCTS uses a first-party technique and mitigation catalog. Every scannable finding can expose `technique_id` (MCTS-T-*), `mitigation_ids` (MCTS-M-*), optional `cwe_id`, and `confidence`. SARIF and HTML reports link back to technique documentation URLs.
 
-**Source of truth:** `src/mcts/taxonomy/techniques.json`  
-**Enrichment:** `src/mcts/taxonomy/mapper.py` (runs after analyzers on every scan)  
+**Source of truth:** `src/mcts/taxonomy/techniques.json`
+**Enrichment:** `src/mcts/taxonomy/mapper.py` (runs after analyzers on every scan)
 **Mitigation links:** `src/mcts/taxonomy/mitigation_urls.py`
 
 ---
@@ -77,12 +77,30 @@ uv run python -c "from mcts.taxonomy.mapper import technique_catalog; print(len(
 
 | Detector module | Example technique | Trigger |
 |-----------------|-------------------|---------|
+| `autonomous_loop.py` | MCTS-T-1035 | Repeated identical tool invocations |
 | `command_injection.py` | MCTS-T-1023 | Injection patterns in event payloads |
 | `oauth_mixup.py` | MCTS-T-1012 | OAuth redirect / client confusion |
 | `rug_pull.py` | MCTS-T-1013 | Metadata drift vs baseline |
 | `behavioral_extraction.py` | MCTS-T-1026 | Multi-turn extraction probe |
+| `credential_access.py` | MCTS-T-1024 | Sensitive credential file access |
 | `tool_redefinition.py` | MCTS-T-1040 | Tool schema changed between sessions |
+| `over_privileged.py` | MCTS-T-1006 | Over-privileged process activity |
+| `exposed_endpoint.py` | MCTS-T-1027 | Exposed MCP endpoint access |
+| `dns_poisoning.py` | MCTS-T-1028 | DNS or certificate poisoning |
+| `tool_output_injection.py` | MCTS-T-1007 | Prompt injection in tool output |
+| `cross_server_registry.py` | MCTS-T-1029 | Cross-server tool shadowing |
+| `privilege_tool_abuse.py` | MCTS-T-1030 | High-privilege tool execution |
+| `suspicious_registration.py` | MCTS-T-1031 | Suspicious tool registration |
+| `fake_tool_invocation.py` | MCTS-T-1032 | Spoofed tool invocation |
+| `sandbox_escape.py` | MCTS-T-1033 | Container sandbox escape |
+| `oauth_escalation_runtime.py` | MCTS-T-1017–1019 | Rogue AS, confused deputy, scope substitution |
 | `instruction_steganography.py` | MCTS-T-1041 | Hidden instructions in metadata |
+| `vector_poisoning.py` | MCTS-T-1034 | Vector store contamination |
+| `inspector_rce.py` | MCTS-T-1036 | MCP Inspector RCE attempt |
+| `oauth_token_persistence.py` | MCTS-T-1037 | Token persistence after logout |
+| `backdoored_install.py` | MCTS-T-1038 | Install-time persistence |
+| `context_memory_implant.py` | MCTS-T-1039 | Context memory implant |
+| `sampling_abuse.py` | MCTS-T-1016 | Sampling API abuse |
 
 ### Event sources
 

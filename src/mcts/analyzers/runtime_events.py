@@ -323,7 +323,7 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     f"runtime-steganography-{index}",
                     "Hidden instructions in tool metadata",
                     tool,
-                    "MCTS-T-1001",
+                    "MCTS-T-1041",
                     Severity.HIGH,
                     {"event_index": index, "type": "instruction_steganography"},
                 )

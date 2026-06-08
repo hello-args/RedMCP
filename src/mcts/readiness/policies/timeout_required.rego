@@ -44,4 +44,3 @@ violation[msg] {
     input.timeout_value > 300000
     msg := sprintf("Tool '%s' has very long timeout (%dms). Consider if this could cause user-facing delays", [input.tool_name, input.timeout_value])
 }
-

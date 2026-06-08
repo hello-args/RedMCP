@@ -135,6 +135,7 @@ uv run mcts scan ./server.py --theme minimal --no-progress
               │
               ▼
      25+ security analyzers + compliance + MCTS-T taxonomy
+     (20 enabled by default)
               │
               ▼
         Risk scoring engine

@@ -109,6 +109,7 @@ OAuth client credentials: set via config JSON or env (`oauth_token_url`, `oauth_
 | `--analyzer-filter` | Comma-separated analyzer keys |
 | `--severity-filter` | Comma-separated severities |
 | `--analyzers` | Run only listed analyzers (subset mode) |
+| `--hide-safe` | Hide low-severity informational findings in terminal output |
 
 ### Planned flags (not yet implemented)
 
@@ -328,6 +329,7 @@ Gate failures (`scan` only): `--fail-on-critical`, `--min-score`, `--max-critica
 | `MCTS_CLOUD_API_KEY` | Cloud inspect API key for `--cloud-inspect` |
 | `MCTS_CLOUD_ENDPOINT` | Cloud inspect API URL |
 | `MCTS_VT_API_KEY` / `VIRUSTOTAL_API_KEY` | VirusTotal API key for `--virustotal` |
+| `MCTS_API_KEY` | When set, REST API (`mcts serve`) requires matching `X-API-Key` header |
 
 ---
 

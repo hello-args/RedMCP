@@ -97,4 +97,4 @@ falsepositives:
   - Development and testing activities with controlled path traversal
   - File system backup and maintenance operations
   - Debugging and troubleshooting activities
-level: high 
+level: high

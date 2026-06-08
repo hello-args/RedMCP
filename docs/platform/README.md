@@ -11,7 +11,7 @@ Operational guides for running MCTS locally, in CI, and via the published GitHub
 | Page | Contents |
 |------|----------|
 | [CLI Reference](cli.md) | Complete reference: `scan`, `report`, `inventory`, `fuzz`, `readiness`, `serve`, all flags |
-| [REST API](rest-api.md) | `mcts serve` — FastAPI `/scan` and `/health` |
+| [REST API](rest-api.md) | `mcts serve` — FastAPI (10 endpoints) |
 | [CI Integration](ci-integration.md) | GitHub Action, SARIF upload, gate patterns, live/fuzz in CI, inventory audit |
 
 ---

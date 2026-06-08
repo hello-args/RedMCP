@@ -26,25 +26,27 @@ Detailed gap analysis and implementation guide for evolving MCTS from alpha stat
 | Layer | Files | What actually works |
 |-------|-------|---------------------|
 | **Orchestration** | `core/scanner.py`, `core/config.py` | 20+ analyzers → compliance → scoring → `ScanReport` |
-| **Discovery** | `discovery/*`, `mcp/client.py` | Multi-file Python + TypeScript static discovery; live stdio merge |
-| **Analyzers** | `analyzers/*.py` | Metadata, SAST, runtime events, Sigma, OAuth, supply chain, fuzz |
-| **Attack chains** | `attack_chains.py` | Hint-based chains (capability-graph upgrade planned) |
-| **Scoring** | `scoring/engine.py` | Exponential decay + auditable `ScoreBasis` |
+| **Discovery** | `discovery/*`, `mcp/client.py` | Multi-file Python + TypeScript static discovery; live stdio + HTTP/SSE merge |
+| **Analyzers** | `analyzers/*.py` | Metadata, SAST, 20+ runtime sub-detectors, Sigma, OAuth, supply chain |
+| **Attack chains** | `attack_chains.py` | Capability-graph BFS on per-tool profiles |
+| **Scoring** | `scoring/engine.py` | Exponential decay + auditable `ScoreBasis` + `--fail-on-category` |
 | **Compliance** | `compliance/checks.py` | OWASP LLM meta-findings |
-| **CLI** | `cli/main.py` | `scan`, `report`, `inventory`, `fuzz`; stub `pentest` |
-| **Terminal UI** | `ui/*` | Rich themes, progress, report renderer |
+| **CLI** | `cli/main.py` | `scan`, `report`, `inventory`, `fuzz`, `readiness`, `serve`; stub `pentest` |
+| **Terminal UI** | `ui/*` | Rich themes, progress, report renderer, `--terminal-format` |
 | **HTML dashboard** | `report/*`, `reporting/html.py` | Full executive UI from JSON |
+| **REST API** | `api/app.py` | FastAPI — 10 endpoints (`--extra api`) |
 | **Tests** | `tests/` | 138+ tests incl. technique regression (34 techniques) |
-| **CI** | `action/action.yml`, `.github/workflows/ci.yml` | SARIF scan validation; Action ready for `@v1` tag |
+| **CI** | `action/action.yml`, `.github/workflows/ci.yml` | SARIF scan validation; Action `@v1` published |
 
-### Placeholder / aspirational
+### Remaining gaps (honest)
 
-- `PromptInjectionAnalyzer` — keyword match, payloads never sent
-- `JailbreakAnalyzer` — fires when `len(tools) >= 5`
-- `DataLeakageAnalyzer` — scans tool metadata only, not source file
-- `MCPClient` — live stdio probe shipped; SSE/HTTP transports planned
+- `PromptInjectionAnalyzer` — heuristic metadata patterns; live payload injection not sent
+- `JailbreakAnalyzer` — weighted manipulation score heuristic; not live agent red-teaming
 - `mcts pentest` — stub only
-- Score history / `--fail-on-category` — planned
+- Scan history / `mcts trend` — planned (`.mcts/history/`)
+- Remote protocol fuzz — `mcts fuzz` is stdio-only; `--url` fuzz planned
+- HTML Capability Matrix + Technique Map — planned dashboard sections
+- Expanded behavioral eval corpus — 22 cases in `eval/behavioral/`; full parity corpus still growing
 
 ### Architectural strengths to preserve
 
@@ -74,7 +76,7 @@ Detailed gap analysis and implementation guide for evolving MCTS from alpha stat
 | Package pre-install scan | `mcts vet <package>` | P3 |
 | MCTS threat taxonomy | `technique_id` + `mitigation_ids` on `Finding` | P1 |
 | SARIF / CI gates | `reporting/sarif.py` + published Action | P0 |
-| REST API | `mcts serve` (optional) | P3 |
+| REST API | `mcts serve` (optional) | P1 — shipped |
 | MCP server mode | `mcts-mcp` stdio tools | P3 |
 | LLM semantic review | `mcts review --llm` (opt-in) | P3 |
 | Skills scanning | `mcts inventory --skills` | P3 |
@@ -433,15 +435,19 @@ Week 11+:  Phase 2 (fuzz, audit-config, baselines, drift, TS discovery)
 
 ## Part 10 — Success Criteria
 
-- [ ] CI can gate on score/SARIF without cloud APIs
-- [ ] Scan works on a **repo**, not one file
-- [ ] Live stdio probe enriches tool schemas (optional, consented)
-- [ ] Config inventory detects cross-server shadowing
-- [ ] Findings carry `technique_id`, `location`, `confidence`
-- [ ] Attack chains use capability graph, not keyword hints
+- [x] CI can gate on score/SARIF without cloud APIs
+- [x] Scan works on a **repo**, not one file
+- [x] Live stdio + remote HTTP/SSE probe enriches tool schemas (optional, consented)
+- [x] Config inventory detects cross-server shadowing
+- [x] Findings carry `technique_id`, `location`, `confidence`
+- [x] Attack chains use capability graph, not keyword hints
+- [x] `--fail-on-category` category gates for CI
+- [x] `mcts fuzz` safe read-only protocol probes (stdio)
+- [x] REST API (`mcts serve`) with per-surface scan endpoints
 - [ ] HTML dashboard trend + capability matrix from real data
-- [ ] Benchmark suite prevents scoring/analyzer regressions
-- [ ] `fuzz` and `audit-config` replace stubs with safe, deterministic behavior
+- [ ] Benchmark suite expanded beyond 34 technique fixtures
+- [ ] `mcts audit-config` replaces stub with safe, deterministic behavior
+- [ ] Remote protocol fuzz (`mcts fuzz --url`)
 
 ---
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 from rich.console import Console
@@ -79,7 +79,7 @@ def _check_gates(report, config: ScanConfig) -> None:
 @app.callback()
 def main(
     version: Annotated[
-        Optional[bool],
+        bool | None,
         typer.Option("--version", callback=_version_callback, is_eager=True),
     ] = None,
 ) -> None:
@@ -95,7 +95,7 @@ def scan(
         ),
     ],
     output: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option("--output", "-o", help="Write report to file (JSON or SARIF)"),
     ] = None,
     format: Annotated[
@@ -112,19 +112,19 @@ def scan(
         typer.Option("--live", help="Connect to a live stdio MCP server (requires consent)"),
     ] = False,
     command: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--command", help="Command to launch the MCP server (live mode)"),
     ] = None,
     args: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--args", help="Comma-separated args for --command (live mode)"),
     ] = None,
     config: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option("--config", help="MCP client config JSON (Cursor, Claude, VS Code)"),
     ] = None,
     server: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--server", help="Server name inside --config mcpServers"),
     ] = None,
     understand_live_risk: Annotated[
@@ -139,15 +139,15 @@ def scan(
         typer.Option("--fail-on-critical", help="Exit with code 1 if critical findings exist"),
     ] = False,
     min_score: Annotated[
-        Optional[int],
+        int | None,
         typer.Option("--min-score", help="Exit 1 if security score is below this value (0-100)"),
     ] = None,
     max_critical: Annotated[
-        Optional[int],
+        int | None,
         typer.Option("--max-critical", help="Exit 1 if critical finding count exceeds this"),
     ] = None,
     fail_on_category: Annotated[
-        Optional[list[str]],
+        list[str] | None,
         typer.Option(
             "--fail-on-category",
             help="Exit 1 when category risk score reaches threshold (e.g. permissions:10). Repeatable.",
@@ -166,22 +166,22 @@ def scan(
         typer.Option("--no-progress", help="Skip pre-report progress animation"),
     ] = False,
     languages: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             "--languages",
             help="Comma-separated discovery languages: python, typescript (default: both)",
         ),
     ] = None,
     baseline: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option("--baseline", help="Compare tool metadata against a saved baseline JSON"),
     ] = None,
     save_baseline: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option("--save-baseline", help="Write current tool metadata snapshot to JSON"),
     ] = None,
     sigma_rules_path: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option(
             "--sigma-rules-path",
             help="Extra MCTS techniques directory for Sigma YAML rules",
@@ -195,7 +195,7 @@ def scan(
         ),
     ] = False,
     runtime_events: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option(
             "--runtime-events",
             help="JSON file with runtime/probe telemetry events for RuntimeEventsAnalyzer",
@@ -209,7 +209,7 @@ def scan(
         ),
     ] = False,
     url: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--url", help="Remote MCP server URL (SSE or streamable HTTP)"),
     ] = None,
     transport: Annotated[
@@ -217,29 +217,29 @@ def scan(
         typer.Option("--transport", help="Remote transport: streamable-http or sse"),
     ] = "streamable-http",
     bearer_token: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--bearer-token", help="Bearer token for remote MCP server"),
     ] = None,
     header: Annotated[
-        Optional[list[str]],
+        list[str] | None,
         typer.Option("--header", help="Custom HTTP header (Name: Value). Repeatable."),
     ] = None,
     surfaces: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             "--surfaces",
             help="Comma-separated surfaces: tool,prompt,resource,instruction",
         ),
     ] = None,
     resource_mime: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             "--resource-mime",
             help="Comma-separated MIME types to scan for resources (e.g. text/plain,application/json)",
         ),
     ] = None,
     snapshot: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option("--snapshot", help="Static JSON snapshot (tools/list export)"),
     ] = None,
     expand_vars: Annotated[
@@ -259,7 +259,7 @@ def scan(
         typer.Option("--protocol-probe", help="Active MCPS protocol checks on --url"),
     ] = False,
     stderr_file: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--stderr-file", help="Capture live server stderr to file"),
     ] = None,
     enable_yara: Annotated[
@@ -279,26 +279,26 @@ def scan(
         typer.Option("--virustotal", help="Enable VirusTotal hash lookup"),
     ] = False,
     terminal_format: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             "--terminal-format",
             help="Terminal layout: table, by_tool, by_analyzer, by_severity, summary",
         ),
     ] = None,
     tool_filter: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--tool-filter", help="Comma-separated tool names to scan"),
     ] = None,
     analyzer_filter: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--analyzer-filter", help="Comma-separated analyzer names"),
     ] = None,
     severity_filter: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--severity-filter", help="Comma-separated severities to show"),
     ] = None,
     analyzers: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--analyzers", help="Comma-separated analyzers to run (subset)"),
     ] = None,
     hide_safe: Annotated[
@@ -502,7 +502,7 @@ def inventory(
         typer.Option("--scan", help="Static-scan each discovered server entrypoint for tools"),
     ] = False,
     output: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option("--output", "-o", help="Write inventory JSON report"),
     ] = None,
     theme: Annotated[
@@ -601,23 +601,23 @@ def fuzz(
         ),
     ] = "safe",
     command: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--command", help="Command to launch the MCP server"),
     ] = None,
     args: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--args", help="Comma-separated args for --command"),
     ] = None,
     config: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option("--config", help="MCP client config JSON"),
     ] = None,
     server: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--server", help="Server name inside --config mcpServers"),
     ] = None,
     output: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option("--output", "-o", help="Write fuzz findings JSON"),
     ] = None,
     understand_live_risk: Annotated[
@@ -742,7 +742,7 @@ def _parse_headers(header: list[str] | None) -> dict[str, str]:
 @app.command()
 def readiness(
     target: Annotated[Path, typer.Argument(help="MCP server path or repo")],
-    output: Annotated[Optional[Path], typer.Option("--output", "-o")] = None,
+    output: Annotated[Path | None, typer.Option("--output", "-o")] = None,
     enable_opa: Annotated[
         bool,
         typer.Option("--opa", help="Enable optional OPA Rego policy checks"),
@@ -815,7 +815,7 @@ def _surface_scan(target: Path, surfaces: list[str], snapshot: Path | None = Non
 def scan_prompts(
     target: Annotated[Path, typer.Argument(help="MCP server path or repo")],
     snapshot: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option("--snapshot", help="Static JSON snapshot with prompts"),
     ] = None,
 ) -> None:
@@ -827,11 +827,11 @@ def scan_prompts(
 def scan_resources(
     target: Annotated[Path, typer.Argument(help="MCP server path or repo")],
     snapshot: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option("--snapshot", help="Static JSON snapshot with resources"),
     ] = None,
     resource_mime: Annotated[
-        Optional[str],
+        str | None,
         typer.Option("--resource-mime", help="Comma-separated MIME allowlist"),
     ] = None,
 ) -> None:
@@ -853,7 +853,7 @@ def scan_resources(
 def scan_instructions(
     target: Annotated[Path, typer.Argument(help="MCP server path or repo")],
     snapshot: Annotated[
-        Optional[Path],
+        Path | None,
         typer.Option("--snapshot", help="Static JSON snapshot with instructions"),
     ] = None,
 ) -> None:

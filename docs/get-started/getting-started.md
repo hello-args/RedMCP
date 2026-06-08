@@ -2,7 +2,7 @@
 
 > [Documentation](../index.md) → **Get Started**
 
-**MCTS** (Model Context Threat Scanner) is a local-first security analyzer for Model Context Protocol (MCP) servers. It discovers tools from Python and TypeScript source (or optional live stdio probes), runs 19+ security analyzers, computes an auditable risk score, and emits terminal dashboards, JSON, SARIF, and shareable HTML reports.
+**MCTS** (Model Context Threat Scanner) is a local-first security analyzer for Model Context Protocol (MCP) servers. It discovers tools from Python and TypeScript source (or optional live stdio/HTTP/SSE probes), runs 20 security analyzers by default (25+ with optional flags), computes an auditable risk score, and emits terminal dashboards, JSON, SARIF, and shareable HTML reports.
 
 This guide walks through installation, your first scan, export formats, optional live modes, and CI gates. For the full pipeline design, see [Architecture](../analysis/architecture.md).
 
