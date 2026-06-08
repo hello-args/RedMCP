@@ -59,6 +59,7 @@ How findings are produced from discovered tools and source code.
 
 | Guide | Description |
 |-------|-------------|
+| [Security Checks Reference](analysis/security-checks.md) | Every analyzer — what it detects, examples, flags to enable |
 | [Architecture](analysis/architecture.md) | Full pipeline: data models, discovery, 20+ analyzers, scoring, reporting |
 
 All pages: [analysis/](analysis/README.md)

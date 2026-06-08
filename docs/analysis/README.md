@@ -10,6 +10,7 @@ How MCTS transforms `MCPServerInfo` into scored, taxonomy-enriched `ScanReport` 
 
 | Page | Contents |
 |------|----------|
+| [Security Checks Reference](security-checks.md) | Every analyzer and check — what it detects, examples, and how to run |
 | [Architecture](architecture.md) | End-to-end pipeline, data models (`MCPServerInfo`, `Finding`, `ScanReport`), discovery/probe/scanner layers, full analyzer registry, capability graphs, scoring, reporting, extension points |
 
 ---
