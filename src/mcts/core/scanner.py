@@ -208,6 +208,8 @@ class Scanner:
             return self.config.baseline_path is not None
         if name == "EmbeddingSecretsAnalyzer":
             return self.config.semantic_secrets
+        if name == "CrossServerAnalyzer":
+            return len(self.inventory) >= 2
         return True
 
     def _analyzer_allowed(self, analyzer: object) -> bool:
