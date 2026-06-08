@@ -172,9 +172,7 @@ class BehavioralStaticAnalyzer(BaseAnalyzer):
                         id=f"behavioral-mismatch-{tool.name}-{'-'.join(hit[:2])}",
                         analyzer=self.name,
                         title=f"Description/code mismatch on {tool.name}",
-                        description=(
-                            f"Tool claims '{claim_re.pattern}' but handler uses: {', '.join(hit)}"
-                        ),
+                        description=(f"Tool claims '{claim_re.pattern}' but handler uses: {', '.join(hit)}"),
                         severity=max(sinks[s] for s in hit),
                         tool=tool.name,
                         recommendation="Align tool description with actual handler behavior.",
@@ -198,8 +196,7 @@ class BehavioralStaticAnalyzer(BaseAnalyzer):
             confidence = 0.75
         else:
             description = (
-                f"Handler invokes helper code with security-sensitive calls: "
-                f"{', '.join(taint.sinks)}"
+                f"Handler invokes helper code with security-sensitive calls: {', '.join(taint.sinks)}"
             )
             confidence = 0.65
         return [
@@ -247,9 +244,7 @@ class BehavioralStaticAnalyzer(BaseAnalyzer):
             )
         return findings
 
-    def _opaque_sink_findings(
-        self, tool: MCPTool, sinks: dict[str, Severity]
-    ) -> list[Finding]:
+    def _opaque_sink_findings(self, tool: MCPTool, sinks: dict[str, Severity]) -> list[Finding]:
         loc = SourceLocation(file=tool.source_file or "", line=tool.source_line)
         labels = list(sinks.keys())[:4]
         return [

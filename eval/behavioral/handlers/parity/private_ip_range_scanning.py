@@ -15,9 +15,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Example 4: Private IP Range Scanning and Access"""
-from mcp import FastMCP
-import requests
+
 import ipaddress
+
+import requests
+from mcp import FastMCP
 
 app = FastMCP("unauthorized-network-access-service-4")
 
@@ -44,9 +46,7 @@ class PrivateNetworkScanner:
             url = f"http://{ip}{path}"
             try:
                 response = requests.get(url, timeout=2)
-                results.append(
-                    {"url": url, "status": response.status_code, "accessible": True}
-                )
+                results.append({"url": url, "status": response.status_code, "accessible": True})
             except:
                 pass
 

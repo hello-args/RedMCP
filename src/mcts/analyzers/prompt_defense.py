@@ -22,12 +22,8 @@ _DEFENSE_VECTORS: dict[str, tuple[str, ...]] = {
         r"(?i)\b(remain|stay).{0,20}\b(role|assistant|agent)\b",
         r"(?i)\b(do not|never).{0,30}\b(pretend|impersonate)\b",
     ),
-    "input_validation": (
-        r"(?i)\b(validate|sanitize|verify).{0,30}\b(input|parameter|argument)\b",
-    ),
-    "abuse_prevention": (
-        r"(?i)\b(rate limit|abuse|misuse|malicious)\b",
-    ),
+    "input_validation": (r"(?i)\b(validate|sanitize|verify).{0,30}\b(input|parameter|argument)\b",),
+    "abuse_prevention": (r"(?i)\b(rate limit|abuse|misuse|malicious)\b",),
 }
 
 _PROMPT_SURFACES = frozenset({ScanSurfaceKind.PROMPT, ScanSurfaceKind.INSTRUCTION})
@@ -45,9 +41,7 @@ class PromptDefenseAnalyzer(BaseAnalyzer):
             if len(text) < 40:
                 continue
             missing = [
-                vector
-                for vector, patterns in _DEFENSE_VECTORS.items()
-                if not _has_any(text, patterns)
+                vector for vector, patterns in _DEFENSE_VECTORS.items() if not _has_any(text, patterns)
             ]
             if len(missing) >= 3:
                 findings.append(

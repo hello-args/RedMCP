@@ -345,12 +345,8 @@ def scan(
     )
     remote_headers = _parse_headers(header)
     tool_filters = [p.strip() for p in tool_filter.split(",") if p.strip()] if tool_filter else []
-    analyzer_filters = (
-        [p.strip() for p in analyzer_filter.split(",") if p.strip()] if analyzer_filter else []
-    )
-    severity_filters = (
-        [p.strip() for p in severity_filter.split(",") if p.strip()] if severity_filter else []
-    )
+    analyzer_filters = [p.strip() for p in analyzer_filter.split(",") if p.strip()] if analyzer_filter else []
+    severity_filters = [p.strip() for p in severity_filter.split(",") if p.strip()] if severity_filter else []
     analyzer_list = [p.strip() for p in analyzers.split(",") if p.strip()] if analyzers else []
 
     try:

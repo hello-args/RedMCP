@@ -15,8 +15,8 @@ from mcts.analyzers.embedding_secrets import EmbeddingSecretsAnalyzer
 from mcts.analyzers.jailbreak import JailbreakAnalyzer
 from mcts.analyzers.line_jumping import LineJumpingAnalyzer
 from mcts.analyzers.llm_judge import LlmJudgeAnalyzer
-from mcts.analyzers.metadata_diff import MetadataDiffAnalyzer, save_baseline
 from mcts.analyzers.metadata_dedupe import dedupe_metadata_findings
+from mcts.analyzers.metadata_diff import MetadataDiffAnalyzer, save_baseline
 from mcts.analyzers.metadata_integrity import MetadataIntegrityAnalyzer
 from mcts.analyzers.npm_audit import NpmAuditAnalyzer
 from mcts.analyzers.oauth_config import OAuthConfigAnalyzer

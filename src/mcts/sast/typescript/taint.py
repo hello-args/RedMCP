@@ -59,9 +59,7 @@ def _extract_params(source: str) -> set[str]:
 def _sink_uses_tainted(source: str, sink: str, tainted: set[str]) -> bool:
     if not tainted:
         return False
-    return any(
-        re.search(rf"\b{re.escape(param)}\b", source) and sink in source for param in tainted
-    )
+    return any(re.search(rf"\b{re.escape(param)}\b", source) and sink in source for param in tainted)
 
 
 def _tree_sitter_taint(source: str) -> TaintResult:

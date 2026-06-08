@@ -70,10 +70,7 @@ class YaraMetadataAnalyzer(BaseAnalyzer):
         rule_dir = self.rules_path or _DEFAULT_RULES_DIR
         if not rule_dir.exists():
             return None
-        sources = {
-            path.stem: path.read_text(encoding="utf-8")
-            for path in rule_dir.glob("*.yar*")
-        }
+        sources = {path.stem: path.read_text(encoding="utf-8") for path in rule_dir.glob("*.yar*")}
         if not sources:
             return None
         self._rules = yara.compile(sources=sources)

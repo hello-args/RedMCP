@@ -21,13 +21,15 @@ class MCPClient:
     def discover(self) -> MCPServerInfo:
         """Discover tools via static analysis, JSON snapshot, live probe, or merged mode."""
         if self._has_snapshot():
-            return self._apply_filters(load_snapshot(
-                tools_path=self.config.snapshot_tools,
-                prompts_path=self.config.snapshot_prompts,
-                resources_path=self.config.snapshot_resources,
-                instructions_path=self.config.snapshot_instructions,
-                snapshot_path=self.config.snapshot_path,
-            ))
+            return self._apply_filters(
+                load_snapshot(
+                    tools_path=self.config.snapshot_tools,
+                    prompts_path=self.config.snapshot_prompts,
+                    resources_path=self.config.snapshot_resources,
+                    instructions_path=self.config.snapshot_instructions,
+                    snapshot_path=self.config.snapshot_path,
+                )
+            )
 
         static_info = self._discover_static()
         if not self.config.live and not self.config.remote_url:

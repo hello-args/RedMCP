@@ -141,8 +141,7 @@ class LineJumpingAnalyzer(BaseAnalyzer):
                     analyzer=self.name,
                     title=f"Line jumping pattern on {surface.label}",
                     description=(
-                        "MCP surface attempts to establish precedence over security "
-                        "directives (MCTS-T-1021)."
+                        "MCP surface attempts to establish precedence over security directives (MCTS-T-1021)."
                     ),
                     severity=Severity.HIGH,
                     tool=tool_name_for(surface),

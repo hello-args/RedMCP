@@ -6,7 +6,6 @@ from mcts.analyzers.behavioral_static import BehavioralStaticAnalyzer
 from mcts.mcp.models import MCPServerInfo, MCPTool
 from mcts.sast.python.module_taint import analyze_python_module_taint
 
-
 _DELETE_FILE_SOURCE = '''
 class FileDeletor:
     @staticmethod

@@ -15,9 +15,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Example 1: Complex Command Injection via Grep with Shell Metacharacters"""
-from mcp import FastMCP
-import subprocess
+
 import os
+import subprocess
+
+from mcp import FastMCP
 
 app = FastMCP("injection-attacks-service-1")
 
@@ -73,9 +75,7 @@ def search_logs(
     command = f"grep {grep_opts}'{pattern}' {log_path}"
 
     # Execute with shell=True - allows command injection
-    result = subprocess.run(
-        command, shell=True, capture_output=True, text=True, timeout=10
-    )
+    result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=10)
 
     if result.returncode == 0:
         return f"Found {len(result.stdout.splitlines())} matches"

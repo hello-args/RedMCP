@@ -3,7 +3,12 @@
 from __future__ import annotations
 
 from mcts.analyzers.base import BaseAnalyzer
-from mcts.analyzers.surface_context import scan_surfaces, surface_location, surface_text_fields, tool_for_surface
+from mcts.analyzers.surface_context import (
+    scan_surfaces,
+    surface_location,
+    surface_text_fields,
+    tool_for_surface,
+)
 from mcts.analyzers.surfaces import ScanSurface, ScanSurfaceKind
 from mcts.analyzers.tpa_patterns import (
     scan_text_poison,

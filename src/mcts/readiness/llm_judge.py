@@ -10,8 +10,8 @@ from mcts.reporting.models import Finding, Severity
 
 _PROMPT = (
     "Review this MCP tool definition for production readiness. "
-    "Reply JSON only: {\"issues\": [{\"id\": \"actionable_errors|failure_modes|scope_clarity\", "
-    "\"severity\": \"low|medium|high\", \"summary\": \"...\"}]}\n\n"
+    'Reply JSON only: {"issues": [{"id": "actionable_errors|failure_modes|scope_clarity", '
+    '"severity": "low|medium|high", "summary": "..."}]}\n\n'
     "Evaluate: actionable error handling, documented failure modes, focused scope.\n\n"
     "Tool JSON:\n"
 )

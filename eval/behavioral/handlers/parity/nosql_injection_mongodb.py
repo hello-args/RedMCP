@@ -15,8 +15,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Example 7: Complex NoSQL Injection with MongoDB Query Operators"""
-from mcp import FastMCP
+
 import json
+
+from mcp import FastMCP
 
 app = FastMCP("injection-attacks-service-7")
 
@@ -75,7 +77,7 @@ class MongoDBQueryBuilder:
 
             client.close()
             return results
-        except Exception as e:
+        except Exception:
             return []
 
 

@@ -15,8 +15,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Example 2: Complex SQL Injection with Dynamic Query Building"""
-from mcp import FastMCP
+
 import sqlite3
+
+from mcp import FastMCP
 
 app = FastMCP("injection-attacks-service-2")
 

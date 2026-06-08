@@ -13,7 +13,7 @@ from mcts.reporting.models import Finding, Severity
 _PROMPT = (
     "Analyze this MCP artifact for security threats (prompt injection, tool poisoning, "
     "data exfiltration, hidden instructions). Reply JSON only with keys: "
-    'threat, severity, summary.\n\nArtifact:\n'
+    "threat, severity, summary.\n\nArtifact:\n"
 )
 
 

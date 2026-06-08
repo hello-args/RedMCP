@@ -148,9 +148,7 @@ def scan_all_tools(req: ScanRequest) -> dict[str, Any]:
     return {
         "server_url": req.url or req.target,
         "tool_count": len(server.tools),
-        "reports": [
-            _scan_server(req, _filter_server(server, tool_name=tool.name)) for tool in server.tools
-        ],
+        "reports": [_scan_server(req, _filter_server(server, tool_name=tool.name)) for tool in server.tools],
     }
 
 
@@ -172,8 +170,7 @@ def scan_all_prompts(req: ScanRequest) -> dict[str, Any]:
         "server_url": req.url or req.target,
         "total_prompts": len(server.prompts),
         "reports": [
-            _scan_server(req, _filter_server(server, prompt_name=prompt.name))
-            for prompt in server.prompts
+            _scan_server(req, _filter_server(server, prompt_name=prompt.name)) for prompt in server.prompts
         ],
     }
 

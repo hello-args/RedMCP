@@ -75,9 +75,7 @@ def run_behavioral_eval(corpus_path: Path | None = None) -> EvalReport:
     for case in cases:
         results.append(_evaluate_case(case))
     passed = sum(1 for row in results if row.passed)
-    malicious = [
-        c for c in cases if c.expect_taint or c.expect_mismatch or c.expect_detection
-    ]
+    malicious = [c for c in cases if c.expect_taint or c.expect_mismatch or c.expect_detection]
     detected = sum(
         1
         for case, result in zip(cases, results, strict=True)
