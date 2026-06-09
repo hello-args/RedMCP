@@ -95,6 +95,22 @@ Most teams ship MCP servers without dedicated security review. MCTS makes scanni
 
 ### Install
 
+**From PyPI** (recommended for end users):
+
+> Distribution name is **`mcp-mcts`** (the generic `mcts` name is already taken on PyPI). The import package and CLI remain `mcts`.
+
+```bash
+pip install mcp-mcts
+# or: uv tool install mcp-mcts
+
+# Optional feature extras
+pip install "mcp-mcts[mcp]"        # live probing + fuzzing
+pip install "mcp-mcts[api]"        # REST API (`mcts serve`)
+pip install "mcp-mcts[all]"        # every optional extra
+```
+
+**From source** (contributors):
+
 ```bash
 git clone https://github.com/MCP-Audit/MCTS.git
 cd MCTS
