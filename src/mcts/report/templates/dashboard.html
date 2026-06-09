@@ -13,7 +13,7 @@
 <body>
   <div class="app">
     <aside class="sidebar">
-      <div class="brand">
+      <div class="brand card-interactive" data-card-action="goto:overview" tabindex="0" role="button" aria-label="Back to report overview">
         <div class="brand-logo">
           <img src="{{ logo_src }}" alt="MCTS logo" width="44" height="44">
         </div>
@@ -24,19 +24,43 @@
       </div>
 
       <nav class="nav" aria-label="Report sections">
-        <button type="button" class="nav-item active" data-section="overview">Overview</button>
-        <button type="button" class="nav-item" data-section="findings">Findings</button>
-        <button type="button" class="nav-item" data-section="analyzers">Analyzers</button>
-        <button type="button" class="nav-item" data-section="attack-chains">Attack Chains</button>
-        <button type="button" class="nav-item" data-section="owasp">OWASP Mapping</button>
-        <button type="button" class="nav-item" data-section="recommendations">Recommendations</button>
-        <button type="button" class="nav-item" data-section="appendix">Appendix</button>
+        <button type="button" class="nav-item active" data-section="overview">
+          <span class="nav-label">Start Here</span>
+        </button>
+        <button type="button" class="nav-item" data-section="findings">
+          <span class="nav-label">Issues to Fix</span>
+          <span class="nav-badge" id="nav-badge-findings" hidden></span>
+        </button>
+        <button type="button" class="nav-item" data-section="analyzers">
+          <span class="nav-label">All Checks</span>
+          <span class="nav-badge nav-badge--ok" id="nav-badge-analyzers" hidden></span>
+        </button>
+        <button type="button" class="nav-item" data-section="recommendations">
+          <span class="nav-label">How to Fix</span>
+          <span class="nav-badge" id="nav-badge-recs" hidden></span>
+        </button>
+        <button type="button" class="nav-item" data-section="attack-chains">
+          <span class="nav-label">Attack Paths</span>
+        </button>
+        <button type="button" class="nav-item" data-section="techniques">
+          <span class="nav-label">MCTS-T Map</span>
+        </button>
+        <button type="button" class="nav-item" data-section="capabilities">
+          <span class="nav-label">Capabilities</span>
+        </button>
+        <button type="button" class="nav-item" data-section="owasp">
+          <span class="nav-label">OWASP Map</span>
+        </button>
+        <button type="button" class="nav-item" data-section="appendix">
+          <span class="nav-label">Raw Data</span>
+        </button>
       </nav>
 
       <div class="scan-card">
         <h3>Scan Information</h3>
         <dl class="scan-meta">
           <dt>Target</dt><dd id="meta-target">—</dd>
+          <dt>Scan Scope</dt><dd id="meta-scope">—</dd>
           <dt>Scan Date</dt><dd id="meta-date">—</dd>
           <dt>Scan Time</dt><dd id="meta-time">—</dd>
           <dt>Tools Discovered</dt><dd id="meta-tools">—</dd>
@@ -68,75 +92,111 @@
 
       <!-- Overview -->
       <section id="overview" class="page-section active">
-        <div class="metrics-row">
-          <div class="card score-card">
-            <div class="score-title-row">
-              <h3>Overall Risk Score</h3>
-              <div class="score-info-wrap">
-                <button type="button" class="score-info" id="score-info" aria-describedby="score-tooltip">ⓘ</button>
-                <div class="score-tooltip" id="score-tooltip" role="tooltip"></div>
+        <div id="tool-discovery-banner" class="tool-discovery-banner" role="status" hidden></div>
+        <div id="scan-notes-banner" class="scan-notes-banner" role="status" hidden></div>
+
+        <div class="card report-guide" id="report-guide">
+          <h2 class="report-guide-title">How to read this report</h2>
+          <p class="report-guide-lead" id="report-guide-lead"></p>
+          <ol class="report-guide-steps" id="report-guide-steps"></ol>
+          <div class="quick-jump" id="quick-jump" aria-label="Jump to report sections"></div>
+        </div>
+
+        <div class="metrics-section">
+          <h3 class="metrics-section-heading">Key results</h3>
+          <p class="metrics-section-intro" id="metrics-headline"></p>
+
+          <div class="scores-legend card" id="scores-legend" role="note" aria-label="How to read scores versus counts">
+            <h4 class="scores-legend-title">Scores vs counts — read this first</h4>
+            <div class="scores-legend-grid">
+              <div class="scores-legend-block scores-legend-block--scores">
+                <strong>Security scores (0–100 points)</strong>
+                <p>Used for <em>Security Score</em>, <em>Area sub-scores</em>, and the trend chart. Like a health rating: <strong>100 = best, 0 = worst</strong>. These are <strong>not percentages</strong> and not “% of tests passed.”</p>
+              </div>
+              <div class="scores-legend-block scores-legend-block--counts">
+                <strong>Counts (plain numbers)</strong>
+                <p><em>Issues found</em> (e.g. 21), <em>severity rows</em> (5 critical), <em>checks run</em> (20), and <em>tools</em> (6) are totals — how many items MCTS counted, not points out of 100.</p>
               </div>
             </div>
-            <div class="gauge-wrap">
-              <canvas id="gauge-chart" aria-label="Security score gauge"></canvas>
-              <div class="gauge-center">
-                <div class="gauge-score"><span id="gauge-score-value">0</span><span class="gauge-denom">/100</span></div>
-                <p class="gauge-grade">Grade <span id="security-grade" class="grade-badge">—</span></p>
-              </div>
-            </div>
-            <div class="risk-pill critical" id="risk-pill">—</div>
-            <p class="score-brief" id="score-brief">—</p>
           </div>
 
-          <div class="card severity-card severity-card--critical" data-severity="critical">
-            <div class="severity-icon-wrap"></div>
-            <div class="severity-main">
-              <div class="count">0</div>
-              <div class="severity-tier">CRITICAL</div>
-              <div class="severity-desc">Issues Detected</div>
+          <div class="metrics-primary-row">
+            <div class="card score-card card-interactive" id="score-card" data-card-action="scroll:score-breakdown-section" aria-label="View area sub-scores">
+              <span class="card-cta">View sub-scores →</span>
+              <div class="score-title-row">
+                <h3>Security Score</h3>
+                <div class="score-info-wrap">
+                  <button type="button" class="score-info" id="score-info" aria-describedby="score-tooltip">ⓘ</button>
+                  <div class="score-tooltip" id="score-tooltip" role="tooltip"></div>
+                </div>
+              </div>
+              <p class="score-scale-hint"><strong>Security points</strong> · 0 = worst · 100 = best · <em>Not a percentage</em></p>
+              <div class="gauge-wrap">
+                <canvas id="gauge-chart" aria-label="Security score gauge"></canvas>
+                <div class="gauge-center">
+                  <div class="gauge-score"><span id="gauge-score-value">0</span><span class="gauge-denom"> / 100 pts</span></div>
+                  <p class="gauge-grade">Grade <span id="security-grade" class="grade-badge">—</span></p>
+                </div>
+              </div>
+              <div class="risk-pill critical" id="risk-pill">—</div>
+              <p class="score-brief" id="score-brief">—</p>
+              <p class="score-detail" id="score-detail"></p>
             </div>
-            <div class="severity-footer-badge">Critical Risk</div>
+
+            <div class="card issues-summary-card card-interactive" data-card-action="goto:findings" aria-label="View all issues">
+              <span class="card-cta">View all issues →</span>
+              <h3 class="card-heading">Issues found</h3>
+              <p class="issues-summary-intro">Each row is a separate security finding MCTS flagged.</p>
+              <div class="issues-total-wrap">
+                <span class="issues-total" id="issues-total">0</span>
+                <span class="issues-total-label">total issues (count)</span>
+              </div>
+              <table class="issues-table" aria-label="Issues by severity">
+                <thead>
+                  <tr><th>Severity</th><th>Count</th><th>Meaning</th></tr>
+                </thead>
+                <tbody id="issues-table-body"></tbody>
+                <tfoot>
+                  <tr><td><strong>Total</strong></td><td id="issues-table-total"><strong>0</strong></td><td></td></tr>
+                </tfoot>
+              </table>
+              <div class="tools-stat" id="tools-stat"></div>
+            </div>
           </div>
-          <div class="card severity-card severity-card--high" data-severity="high">
-            <div class="severity-icon-wrap"></div>
-            <div class="severity-main">
-              <div class="count">0</div>
-              <div class="severity-tier">HIGH</div>
-              <div class="severity-desc">Issues Detected</div>
-            </div>
-            <div class="severity-footer-badge">High Risk</div>
+        </div>
+
+        <div class="score-breakdown-section" id="score-breakdown-section" hidden>
+          <h3 class="metrics-section-heading">Area sub-scores (security points)</h3>
+          <p class="metrics-section-intro">Each value is <strong>points out of 100</strong> for that area (100 = no findings in that bucket). They are <strong>not percentages</strong> and not the same formula as the main Security Score above.</p>
+          <div id="score-breakdown-row" class="score-breakdown-row"></div>
+        </div>
+
+        <div class="checks-section" id="checks-section" hidden>
+          <h3 class="metrics-section-heading">Security checks (counts)</h3>
+          <p class="metrics-section-intro">These numbers are <strong>how many checks ran or passed</strong> — not scores out of 100. Risk categories group related analyzers; a category fails if any analyzer in that group found issues.</p>
+          <div id="checks-summary-row" class="checks-summary-row"></div>
+        </div>
+
+        <div class="overview-split" id="overview-split" hidden>
+          <div class="card overview-panel overview-panel--issues card-interactive" data-card-action="goto:findings" aria-label="View all issues">
+            <span class="card-cta">Open issues →</span>
+            <h3 class="card-heading">Needs your attention</h3>
+            <p class="panel-hint">Start with Critical, then High severity items.</p>
+            <ul class="overview-list" id="overview-top-findings"></ul>
+            <button type="button" class="panel-link" data-goto="findings">View all issues →</button>
           </div>
-          <div class="card severity-card severity-card--medium" data-severity="medium">
-            <div class="severity-icon-wrap"></div>
-            <div class="severity-main">
-              <div class="count">0</div>
-              <div class="severity-tier">MEDIUM</div>
-              <div class="severity-desc">Issues Detected</div>
-            </div>
-            <div class="severity-footer-badge">Medium Risk</div>
-          </div>
-          <div class="card severity-card severity-card--low" data-severity="low">
-            <div class="severity-icon-wrap"></div>
-            <div class="severity-main">
-              <div class="count">0</div>
-              <div class="severity-tier">LOW</div>
-              <div class="severity-desc">Issues Detected</div>
-            </div>
-            <div class="severity-footer-badge">Low Risk</div>
-          </div>
-          <div class="card severity-card severity-card--tools" data-severity="tools">
-            <div class="severity-icon-wrap"></div>
-            <div class="severity-main">
-              <div class="count">0</div>
-              <div class="severity-tier">TOOLS</div>
-              <div class="severity-desc">Discovered</div>
-            </div>
-            <div class="severity-footer-badge">Analyzed by MCTS</div>
+          <div class="card overview-panel overview-panel--passed card-interactive" data-card-action="goto:analyzers-passed" aria-label="View passed checks">
+            <span class="card-cta">Open checks →</span>
+            <h3 class="card-heading">Checks that passed</h3>
+            <p class="panel-hint">Each check below ran with no matches — click for what was inspected and what “passed” means.</p>
+            <ul class="overview-list overview-list--passed" id="overview-passed-list"></ul>
+            <button type="button" class="panel-link" data-goto="analyzers">View all checks →</button>
           </div>
         </div>
 
         <div class="overview-row">
-          <div class="card exec-summary">
+          <div class="card exec-summary card-interactive" data-card-action="goto:recommendations" aria-label="View fix recommendations">
+            <span class="card-cta">How to fix →</span>
             <h3 class="card-heading">Security Posture Summary</h3>
             <div class="exec-summary-grid">
               <div class="exec-col">
@@ -151,8 +211,9 @@
           </div>
         </div>
 
-        <div class="breakdown-row">
-          <div class="card breakdown-card">
+        <div class="breakdown-row" id="breakdown-row">
+          <div class="card breakdown-card card-interactive" data-card-action="scroll:breakdown-row" aria-label="Explore risk categories">
+            <span class="card-cta">Explore categories →</span>
             <h3 class="card-heading">Risk Score Breakdown</h3>
             <div class="breakdown-inner">
               <div class="metrics-panel">
@@ -163,29 +224,35 @@
               </div>
             </div>
           </div>
-          <div class="card breakdown-card trend-card">
-            <h3 class="card-heading">Risk Score Trend</h3>
+          <div class="card breakdown-card trend-card card-interactive" id="trend-card" data-card-action="scroll:trend-card" aria-label="View score trend">
+            <span class="card-cta">View trend →</span>
+            <h3 class="card-heading">Security score over time</h3>
+            <p class="card-microcopy">Points out of 100 per scan — not a percentage.</p>
             <div class="chart-box trend">
-              <canvas id="trend-chart" aria-label="Score trend over time" hidden></canvas>
+              <p id="trend-note" class="trend-note" hidden></p>
+              <div id="trend-chart-wrap" class="trend-chart-wrap" hidden aria-hidden="true"></div>
+              <div id="trend-table-wrap" class="trend-table-wrap" hidden></div>
               <div id="trend-empty" class="trend-empty" hidden>
                 <div class="trend-empty-icon" aria-hidden="true">📈</div>
-                <h4>No Historical Data</h4>
-                <p>Run MCTS regularly to build security posture trends over time.</p>
+                <h4 id="trend-empty-title">No scan history yet</h4>
+                <p id="trend-empty-text">Run <code>mcts scan</code> at least twice from the same project folder. History is stored in <code>mcts_analysis/history.json</code>.</p>
               </div>
             </div>
           </div>
         </div>
 
         <div class="card risk-guide-card">
-          <h3 class="card-heading">Risk Level Guide</h3>
+          <h3 class="card-heading">Security score ranges</h3>
+          <p class="card-microcopy">Where your score (points out of 100, not %) falls on the scale.</p>
           <div class="risk-guide" id="risk-guide"></div>
         </div>
       </section>
 
       <!-- Findings -->
       <section id="findings" class="page-section">
-        <h2 class="section-title">Security Findings</h2>
-        <div class="card">
+        <h2 class="section-title">Issues to Fix</h2>
+        <p class="section-subtitle">Every security problem MCTS found, sorted by severity. Fix Critical and High items first.</p>
+        <div class="card findings-card">
           <div class="table-toolbar">
             <div class="search-wrap">
               <input type="search" id="findings-search" placeholder="Search findings…" aria-label="Search findings">
@@ -203,9 +270,13 @@
               <tr>
                 <th data-sort="severity">Severity</th>
                 <th data-sort="title">Finding</th>
+                <th data-sort="location">Location</th>
+                <th data-sort="technique_id">Technique</th>
+                <th data-sort="cwe_id">CWE</th>
                 <th data-sort="category">Category</th>
                 <th data-sort="owasp">OWASP</th>
                 <th data-sort="tool">Affected Tool</th>
+                <th>Confidence</th>
                 <th>Remediation</th>
               </tr>
             </thead>
@@ -214,17 +285,48 @@
         </div>
       </section>
 
+      <!-- Techniques -->
+      <section id="techniques" class="page-section">
+        <h2 class="section-title">MCTS-T Technique Map</h2>
+        <p class="section-subtitle" id="technique-map-lead">Regression technique coverage for this scan.</p>
+        <div class="technique-toolbar" id="technique-toolbar" role="toolbar" aria-label="Filter techniques">
+          <button type="button" class="technique-filter active" data-filter="all">All</button>
+          <button type="button" class="technique-filter" data-filter="detected">Detected</button>
+          <button type="button" class="technique-filter" data-filter="clear">Clear</button>
+        </div>
+        <div class="technique-grid technique-grid--full" id="technique-grid"></div>
+      </section>
+
+      <!-- Capabilities -->
+      <section id="capabilities" class="page-section">
+        <h2 class="section-title">Tool Capability Matrix</h2>
+        <p class="section-subtitle" id="capability-matrix-lead">Inferred capability flags per discovered MCP tool.</p>
+        <div class="capability-wrap" id="capability-matrix"></div>
+      </section>
+
       <!-- Analyzers -->
       <section id="analyzers" class="page-section">
-        <h2 class="section-title">Analyzers</h2>
-        <div class="analyzer-grid" id="analyzer-grid"></div>
+        <h2 class="section-title">All Security Checks</h2>
+        <p class="section-subtitle">Every analyzer MCTS ran — expand any card to see what it checked, OWASP mapping, and techniques.</p>
+        <p class="section-lead" id="analyzer-section-lead"></p>
+        <div id="analyzer-passed-section" class="analyzer-section" hidden>
+          <h3 class="subsection-title passed-title">Passed Checks</h3>
+          <p class="subsection-lead">Passed = no pattern matches in this scan scope. Expand a card to see what was inspected and framework coverage.</p>
+          <div class="analyzer-grid" id="analyzer-passed-grid"></div>
+        </div>
+        <div id="analyzer-issues-section" class="analyzer-section" hidden>
+          <h3 class="subsection-title issues-title">Checks With Findings</h3>
+          <div class="analyzer-grid" id="analyzer-issues-grid"></div>
+        </div>
       </section>
 
       <!-- Attack Chains -->
       <section id="attack-chains" class="page-section">
-        <h2 class="section-title">Attack Chains</h2>
-        <div class="card">
-          <p style="color:var(--muted);margin:0 0 16px">Tool dependency graph derived from attack chain analysis.</p>
+        <h2 class="section-title">Attack Paths</h2>
+        <p class="section-subtitle">How tools could be chained together for a multi-step attack (read → exfiltrate, etc.).</p>
+        <div class="card card-interactive" data-card-action="goto:findings" aria-label="View findings related to attack paths">
+          <span class="card-cta">View related issues →</span>
+          <p style="color:var(--muted);margin:0 0 16px">Each arrow shows a possible step between tools.</p>
           <div class="graph-wrap">
             <svg id="attack-graph" role="img" aria-label="Attack chain graph"></svg>
           </div>
@@ -233,25 +335,48 @@
 
       <!-- OWASP -->
       <section id="owasp" class="page-section">
-        <h2 class="section-title">OWASP LLM Mapping</h2>
+        <h2 class="section-title">OWASP Mapping</h2>
+        <p class="section-subtitle">How findings map to OWASP LLM and MCP Top 10 categories.</p>
+
+        <h3 class="owasp-subsection-title">OWASP LLM Top 10</h3>
+        <p class="section-subtitle owasp-subsection-lead" id="owasp-llm-lead">
+          Industry-standard categories for LLM application security.
+        </p>
         <div class="owasp-grid" id="owasp-grid"></div>
+
+        <h3 class="owasp-subsection-title">OWASP MCP Top 10</h3>
+        <p class="section-subtitle owasp-subsection-lead" id="owasp-mcp-lead">
+          MCP-specific risk categories — gaps mirror compliance meta-findings when analyzers did not cover a category.
+        </p>
+        <div class="owasp-grid" id="owasp-mcp-grid"></div>
       </section>
 
       <!-- Recommendations -->
       <section id="recommendations" class="page-section">
-        <h2 class="section-title">Recommendations</h2>
+        <h2 class="section-title">How to Fix</h2>
+        <p class="section-subtitle">Prioritized remediation steps — P1 is most urgent.</p>
         <div class="rec-list" id="rec-list"></div>
       </section>
 
       <!-- Appendix -->
       <section id="appendix" class="page-section">
-        <h2 class="section-title">Appendix</h2>
-        <div class="card appendix">
+        <h2 class="section-title">Raw Data</h2>
+        <p class="section-subtitle">Full machine-readable scan JSON for automation and debugging.</p>
+        <div class="card appendix card-interactive" data-card-action="goto:appendix" aria-label="View raw JSON data">
+          <span class="card-cta">Scroll to JSON →</span>
           <h3>Raw Scan Report (JSON)</h3>
           <pre id="appendix-json"></pre>
         </div>
       </section>
     </main>
+  </div>
+
+  <div id="analyzer-modal-backdrop" class="analyzer-modal-backdrop" hidden aria-hidden="true"></div>
+  <div id="analyzer-modal" class="analyzer-modal" role="dialog" aria-modal="true" aria-labelledby="analyzer-modal-title" hidden>
+    <div class="analyzer-modal-dialog">
+      <button type="button" class="analyzer-modal-close" id="analyzer-modal-close" aria-label="Close check details">×</button>
+      <div id="analyzer-modal-content"></div>
+    </div>
   </div>
 
   <script type="application/json" id="mcts-report-data">{{ report_json | safe }}</script>
