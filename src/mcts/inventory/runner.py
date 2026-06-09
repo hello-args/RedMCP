@@ -6,9 +6,11 @@ from pathlib import Path
 
 from mcts.inventory.discoverers import discover_config_paths, parse_config_file
 from mcts.inventory.models import InventoryEntry, InventoryReport
+from mcts.inventory.skills import discover_skills
+from mcts.inventory.targets import resolve_entrypoint
 
 
-def run_inventory() -> InventoryReport:
+def run_inventory(*, skills: bool = False) -> InventoryReport:
     entries: list[InventoryEntry] = []
     clients: set[str] = set()
     files_found = 0
@@ -18,10 +20,13 @@ def run_inventory() -> InventoryReport:
         clients.add(client)
         entries.extend(parse_config_file(client, path))
 
+    skill_entries = discover_skills(project_root=Path.cwd()) if skills else []
+
     return InventoryReport(
         entries=entries,
         clients_scanned=sorted(clients),
         config_files_found=files_found,
+        skills=skill_entries,
     )
 
 
@@ -33,7 +38,7 @@ def enrich_with_tool_names(entries: list[InventoryEntry]) -> list[InventoryEntry
     enriched: list[InventoryEntry] = []
     for entry in entries:
         updated = entry.model_copy()
-        target = _resolve_target(entry)
+        target = resolve_entrypoint(entry)
         if target and target.exists():
             report = Scanner(ScanConfig(target=target)).run()
             updated.tools = [tool.name for tool in report.server.tools]
@@ -42,14 +47,4 @@ def enrich_with_tool_names(entries: list[InventoryEntry]) -> list[InventoryEntry
 
 
 def _resolve_target(entry: InventoryEntry) -> Path | None:
-    if not entry.args:
-        return None
-    for arg in entry.args:
-        candidate = Path(arg).expanduser()
-        if candidate.suffix == ".py" and candidate.exists():
-            return candidate
-    for arg in entry.args:
-        candidate = Path(arg).expanduser()
-        if candidate.exists():
-            return candidate
-    return None
+    return resolve_entrypoint(entry)
