@@ -1,0 +1,2 @@
+INFO: Starting MCP server on stdio transport
+INFO: Ready for JSON-RPC messages
