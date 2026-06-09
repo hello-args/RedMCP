@@ -49,7 +49,8 @@ Pick the guide that matches your role:
 | **DevOps / CI engineer** | [CI Integration](platform/ci-integration.md) | [Scoring Spec](reporting/scoring-spec.md) (gate thresholds) |
 | **Security engineer** | [Architecture](analysis/architecture.md) | [Threat Taxonomy](reporting/taxonomy.md) |
 | **Security / engineering leader** | [Getting Started](get-started/getting-started.md) → HTML report | [Product Positioning](more/product-positioning.md) |
-| **Contributor** | [CONTRIBUTING.md](../CONTRIBUTING.md) | [Feature Expansion Plan](more/feature-expansion-plan.md) |
+| **Contributor** | [CONTRIBUTING.md](../CONTRIBUTING.md) | [Issue labeling guide](contributing/issue-labeling.md) |
+| **Issue triage / planning** | [Issue labeling guide](contributing/issue-labeling.md) | [Feature Expansion Plan](more/feature-expansion-plan.md) |
 
 ---
 
@@ -113,6 +114,15 @@ Running MCTS from the command line, in CI, or via API.
 
 All platform guides: [platform/](platform/README.md)
 
+### Contributing
+
+Issue tracking, labeling rules, and templates.
+
+| Guide | What you'll learn |
+|-------|-------------------|
+| [Issue Labeling & Creation](contributing/issue-labeling.md) | How to open issues, pick labels, and use the body template |
+| [Contributing section](contributing/README.md) | Index of contributor-facing docs |
+
 ### More
 
 Planning, positioning, and contributor references.
@@ -149,4 +159,5 @@ Full flag reference: [CLI Reference](platform/cli.md)
 - [Glossary](glossary.md) — plain-language definitions for all key terms
 - [Changelog](../CHANGELOG.md) — release notes
 - [CONTRIBUTING.md](../CONTRIBUTING.md) — development workflow
+- [Issue labeling guide](contributing/issue-labeling.md) — GitHub issue taxonomy and templates
 - [SECURITY.md](../SECURITY.md) — vulnerability reporting

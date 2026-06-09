@@ -23,6 +23,7 @@ Welcome to the MCTS documentation. This folder contains guides for installing, u
 | [Analysis](analysis/README.md) | Security engineers understanding findings | [Security Checks](analysis/security-checks.md) |
 | [Reporting](reporting/README.md) | Anyone interpreting scores and exports | [Scoring Spec](reporting/scoring-spec.md) |
 | [Platform](platform/README.md) | DevOps and CI engineers | [CLI Reference](platform/cli.md) |
+| [Contributing](contributing/README.md) | Issue authors and triagers | [Issue labeling guide](contributing/issue-labeling.md) |
 | [More](more/README.md) | Contributors and product stakeholders | [Product Positioning](more/product-positioning.md) |
 
 ---
@@ -40,6 +41,7 @@ uv run mcts report report.json -o security-report.html
 
 ## Other resources
 
+- [Issue labeling guide](contributing/issue-labeling.md) — how to open and label GitHub issues
 - [Glossary](glossary.md) — term definitions
 - [Changelog](../CHANGELOG.md) — release notes
 - [Main README](../README.md) — project overview

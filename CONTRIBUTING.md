@@ -37,6 +37,20 @@ uv run mcts report report.json -o security-report.html
 
 ---
 
+## Filing Issues
+
+Before opening a GitHub issue:
+
+1. Search [existing issues](https://github.com/MCP-Audit/MCTS/issues) for duplicates
+2. Reproduce on the latest `main` branch
+3. Apply the label taxonomy: one `type:*`, one `priority:P*`, and at least one `component:*`
+
+Full guide: **[Issue Labeling & Creation](docs/contributing/issue-labeling.md)** — types, priorities, components, finding labels, status workflow, body template, and examples.
+
+Use the repo templates when possible: [bug report](https://github.com/MCP-Audit/MCTS/issues/new?template=bug_report.yml) · [feature request](https://github.com/MCP-Audit/MCTS/issues/new?template=feature_request.yml)
+
+---
+
 ## Pull Request Guidelines
 
 - Keep PRs focused — one feature or fix per PR
@@ -111,4 +125,4 @@ This project follows the [Contributor Covenant](CODE_OF_CONDUCT.md).
 
 ## Questions?
 
-Open a [GitHub Discussion](https://github.com/MCP-Audit/MCTS/discussions) or [issue](https://github.com/MCP-Audit/MCTS/issues).
+Open a [GitHub Discussion](https://github.com/MCP-Audit/MCTS/discussions) or an [issue](https://github.com/MCP-Audit/MCTS/issues) using the [labeling guide](docs/contributing/issue-labeling.md).
