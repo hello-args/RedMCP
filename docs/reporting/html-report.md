@@ -161,7 +161,7 @@ security-report.html (single file)
 | `report/assets/icons/` | SVG severity icons |
 | `report/data.py` | ScanReport → dashboard JSON |
 | `report/generators/html_report.py` | Assembly and inlining |
-| `brand/logo-report.png` | Optimized logo embed |
+| `brand/logo-report.png` | Hex icon embed (no wordmark — legible at 44×44) |
 
 Entry: `mcts.reporting.html.write_html_report()` delegates to generator.
 
