@@ -25,6 +25,14 @@ jobs:
       - name: Build
         run: uv build
 
+      - name: Validate distributions
+        run: |
+          uv run --with twine twine check dist/*
+          python -m venv /tmp/mcts-release-smoke
+          /tmp/mcts-release-smoke/bin/pip install --quiet dist/*.whl
+          /tmp/mcts-release-smoke/bin/mcts --version
+          /tmp/mcts-release-smoke/bin/python -c "from mcts import Scanner, ScanConfig"
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
