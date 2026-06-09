@@ -16,7 +16,6 @@ from mcts.analyzers.jailbreak import JailbreakAnalyzer
 from mcts.analyzers.line_jumping import LineJumpingAnalyzer
 from mcts.analyzers.llm_judge import LlmJudgeAnalyzer
 from mcts.analyzers.llm_metadata_triage import LlmMetadataTriageAnalyzer
-from mcts.analyzers.semgrep_adapter import SemgrepAdapterAnalyzer
 from mcts.analyzers.metadata_dedupe import dedupe_metadata_findings
 from mcts.analyzers.metadata_diff import MetadataDiffAnalyzer, save_baseline
 from mcts.analyzers.metadata_integrity import MetadataIntegrityAnalyzer
@@ -28,6 +27,7 @@ from mcts.analyzers.prompt_defense import PromptDefenseAnalyzer
 from mcts.analyzers.prompt_injection import PromptInjectionAnalyzer
 from mcts.analyzers.runtime_events import RuntimeEventsAnalyzer
 from mcts.analyzers.schema_surface import SchemaSurfaceAnalyzer
+from mcts.analyzers.semgrep_adapter import SemgrepAdapterAnalyzer
 from mcts.analyzers.sigma_dedupe import dedupe_sigma_findings
 from mcts.analyzers.sigma_metadata import SigmaMetadataAnalyzer
 from mcts.analyzers.supply_chain import SupplyChainAnalyzer

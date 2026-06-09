@@ -423,11 +423,7 @@ def owasp_mappings(findings: list[Finding]) -> list[dict[str, Any]]:
 def llm_owasp_mappings(findings: list[Finding]) -> dict[str, Any]:
     """OWASP LLM Top 10 coverage — mirrors compliance meta-findings."""
     scorable = [f for f in findings if f.analyzer != "compliance"]
-    covered = {
-        OWASP_LLM_ANALYZER_MAP[f.analyzer]
-        for f in scorable
-        if f.analyzer in OWASP_LLM_ANALYZER_MAP
-    }
+    covered = {OWASP_LLM_ANALYZER_MAP[f.analyzer] for f in scorable if f.analyzer in OWASP_LLM_ANALYZER_MAP}
     expected = set(OWASP_LLM_ANALYZER_MAP.values())
     missing = sorted(expected - covered)
 
@@ -703,9 +699,7 @@ def build_analyzer_results(
     for name, items in sorted(grouped.items()):
         if name in seen:
             continue
-        rows.append(
-            _enrich_analyzer_row(name, items, status="issues", report=report)
-        )
+        rows.append(_enrich_analyzer_row(name, items, status="issues", report=report))
 
     rows.sort(key=lambda row: (0 if row["status"] == "issues" else 1, row["label"]))
     return rows

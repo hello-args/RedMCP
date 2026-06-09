@@ -37,7 +37,9 @@ runs:
       run: |
         set -euo pipefail
         TARGET="${{ inputs.target }}"
-        ARGS=(scan "$TARGET" --no-progress -o mcts-report.json)
+        JSON_OUT="${{ github.workspace }}/mcts-report.json"
+        SARIF_OUT="${{ github.workspace }}/mcts-report.sarif"
+        ARGS=(scan "$TARGET" --no-progress -o "$JSON_OUT")
 
         if [ "${{ inputs.fail-on-critical }}" = "true" ]; then
           ARGS+=(--fail-on-critical)
@@ -47,11 +49,11 @@ runs:
         fi
 
         mcts "${ARGS[@]}"
-        mcts scan "$TARGET" --no-progress --format sarif -o mcts-report.sarif
+        mcts scan "$TARGET" --no-progress --format sarif -o "$SARIF_OUT"
 
     - name: Generate HTML dashboard
       shell: bash
-      run: mcts report mcts-report.json -o mcts-report.html
+      run: mcts report "${{ github.workspace }}/mcts-report.json" -o "${{ github.workspace }}/mcts-report.html"
 
     - name: Upload JSON report
       if: always()

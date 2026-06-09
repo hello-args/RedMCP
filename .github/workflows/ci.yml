@@ -50,8 +50,9 @@ jobs:
           print(f"Regression gate passed for {len(REGRESSION_TECHNIQUES)} techniques (>={REGRESSION_THRESHOLD}%)")
           PY
       - run: |
-          uv run mcts scan examples/vulnerable-mcp-server/server.py --no-progress --format sarif -o mcts-ci.sarif
-          uv run python -c "import json; p=json.load(open('mcts-ci.sarif')); assert p.get('version') and p.get('runs'), 'invalid SARIF'"
+          SARIF_OUT="${{ github.workspace }}/mcts-ci.sarif"
+          uv run mcts scan examples/vulnerable-mcp-server/server.py --no-progress --format sarif -o "$SARIF_OUT"
+          uv run python -c "import json; p=json.load(open('${SARIF_OUT}')); assert p.get('version') and p.get('runs'), 'invalid SARIF'"
       - run: uv run python -c "from pathlib import Path; from mcts.testing.regression_harness import write_regression_report; write_regression_report(Path('regression-report.json'))"
       - uses: actions/upload-artifact@v4
         if: always()

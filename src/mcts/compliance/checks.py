@@ -68,9 +68,7 @@ class ComplianceChecker:
         scorable = [f for f in findings if f.analyzer != "compliance"]
 
         covered_llm = {
-            OWASP_LLM_ANALYZER_MAP[f.analyzer]
-            for f in scorable
-            if f.analyzer in OWASP_LLM_ANALYZER_MAP
+            OWASP_LLM_ANALYZER_MAP[f.analyzer] for f in scorable if f.analyzer in OWASP_LLM_ANALYZER_MAP
         }
         expected_llm = set(OWASP_LLM_ANALYZER_MAP.values())
         missing_llm = expected_llm - covered_llm

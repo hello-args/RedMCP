@@ -45,9 +45,7 @@ def test_run_machine_wide_scans_discovered_servers(tmp_path: Path, monkeypatch) 
     server = tmp_path / "server.py"
     server.write_text("print('hello')\n")
     config = tmp_path / "mcp.json"
-    config.write_text(
-        json.dumps({"mcpServers": {"demo": {"command": "python", "args": [str(server)]}}})
-    )
+    config.write_text(json.dumps({"mcpServers": {"demo": {"command": "python", "args": [str(server)]}}}))
     entry = InventoryEntry(
         client="cursor",
         config_path=str(config),

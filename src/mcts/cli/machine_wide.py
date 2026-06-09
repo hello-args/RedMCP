@@ -32,8 +32,7 @@ def run_machine_wide_cli(
         label = f"[{row.entry.client}] {row.entry.server_name}"
         if row.report is not None:
             console.print(
-                f"  {label} — score {row.report.score.overall}/100, "
-                f"{len(row.report.findings)} finding(s)"
+                f"  {label} — score {row.report.score.overall}/100, {len(row.report.findings)} finding(s)"
             )
         elif row.error:
             console.print(f"  {label} — [dim]skipped: {row.error}[/dim]")

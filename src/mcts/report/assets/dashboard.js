@@ -545,7 +545,6 @@
     const split = document.getElementById("overview-split");
     const topList = document.getElementById("overview-top-findings");
     const passedList = document.getElementById("overview-passed-list");
-    const help = document.getElementById("checks-summary-help");
     if (!split || !topList || !passedList) return;
 
     const severityRank = { critical: 0, high: 1, medium: 2, low: 3 };

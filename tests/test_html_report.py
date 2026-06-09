@@ -7,6 +7,7 @@ from pathlib import Path
 
 from mcts.core.config import ScanConfig
 from mcts.core.scanner import Scanner
+from mcts.mcp.models import CapabilityProfile, MCPServerInfo, MCPTool
 from mcts.report.data import (
     build_capability_matrix,
     build_dashboard_payload,
@@ -18,10 +19,9 @@ from mcts.report.data import (
     risk_rating,
     security_grade,
 )
-from mcts.mcp.models import CapabilityProfile, MCPServerInfo, MCPTool
-from mcts.reporting.models import Finding, Severity, SourceLocation
 from mcts.report.generators.html_report import write_html_report
 from mcts.reporting.html import write_html_report as write_via_reporting
+from mcts.reporting.models import SourceLocation
 
 
 def test_live_scan_no_static_tool_notice(example_server_path: Path) -> None:

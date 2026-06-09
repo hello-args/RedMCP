@@ -455,8 +455,7 @@ def scan(
 
     if machine_wide and (config or url or snapshot or auto):
         console.print(
-            "[red]Error:[/red] --machine-wide cannot be combined with "
-            "--config, --url, --snapshot, or --auto."
+            "[red]Error:[/red] --machine-wide cannot be combined with --config, --url, --snapshot, or --auto."
         )
         raise typer.Exit(code=2)
 
@@ -729,10 +728,7 @@ def scan(
         renderer.render_saved_notice(str(json_path))
         renderer.render_saved_notice(str(html_path))
         renderer.render_saved_notice(str(sarif_path))
-        console.print(
-            f"[dim]  mcts report {json_path}[/dim]  "
-            f"[dim](or open {html_path})[/dim]"
-        )
+        console.print(f"[dim]  mcts report {json_path}[/dim]  [dim](or open {html_path})[/dim]")
 
     _print_discovery_warnings(report.server, stderr_file)
     _check_strict_live(report, config_obj)
