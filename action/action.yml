@@ -28,7 +28,9 @@ runs:
 
     - name: Install MCTS
       shell: bash
-      run: pip install .
+      # Install from the action's checked-out ref so the action version always
+      # matches the scanner code (works before and after PyPI publish).
+      run: pip install "${{ github.action_path }}/.."
 
     - name: Run security scan
       shell: bash

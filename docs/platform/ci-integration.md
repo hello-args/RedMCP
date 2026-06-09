@@ -66,7 +66,7 @@ jobs:
 
 ### What the action does
 
-1. Installs MCTS with dependencies
+1. Installs MCTS from the **pinned action ref** (the checked-out `MCTS` tag/commit), not from PyPI — so `@v1` always runs the matching scanner code
 2. Runs `mcts scan` on `target`
 3. Writes `mcts-report.json` and `mcts-report.sarif`
 4. Runs `mcts report` → `mcts-report.html`

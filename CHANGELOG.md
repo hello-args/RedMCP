@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **PyPI distribution** — publish as `mcp-mcts` on PyPI (`pip install mcp-mcts`); import package remains `mcts`
+- **Public Python API** — `from mcts import Scanner, ScanConfig`
+- **Packaging** — dynamic version from `src/mcts/__init__.py`, `MANIFEST.in`, `uv` dependency groups for dev tooling, CI wheel smoke tests + `twine check`; GitHub Action installs from pinned ref (not PyPI)
 - **Multi-surface scanning** — analyze tools, prompts, resources, and server instructions (`--surfaces`); `SurfaceMetadataAnalyzer`, `PromptDefenseAnalyzer`
 - **Remote MCP transport** — `--url` with streamable HTTP and SSE; Bearer tokens, custom headers, OAuth client credentials (`probe/http_session.py`, `probe/auth.py`)
 - **Static JSON snapshot** — air-gapped scan from exported `tools/list` JSON (`--snapshot`)

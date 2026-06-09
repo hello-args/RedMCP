@@ -63,7 +63,26 @@ For your first scan, the base install is enough.
 
 ## Install
 
-### Full install (recommended)
+### From PyPI (recommended)
+
+> PyPI distribution: **`mcp-mcts`** (import package and CLI: `mcts`). The shorter name `mcts` is already used by another project on PyPI.
+
+```bash
+pip install mcp-mcts
+mcts --version
+mcts scan --help
+```
+
+Add extras when you need them:
+
+```bash
+pip install "mcp-mcts[mcp]"          # live probing + fuzzing
+pip install "mcp-mcts[api]"          # REST API (`mcts serve`)
+pip install "mcp-mcts[supplychain]"    # `--pip-audit` / `--npm-audit`
+pip install "mcp-mcts[all]"            # every optional extra
+```
+
+### From source (contributors)
 
 ```bash
 git clone https://github.com/MCP-Audit/MCTS.git
@@ -83,6 +102,10 @@ uv run mcts scan --help
 If you only want to scan source code without live probing:
 
 ```bash
+# PyPI
+pip install mcp-mcts
+
+# Source
 uv sync
 uv run mcts scan examples/vulnerable-mcp-server/server.py
 ```

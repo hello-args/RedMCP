@@ -255,7 +255,7 @@ mcts scan ./server.py --live --i-understand-live-risk \
 
 ```bash
 export MCTS_LIVE_OK=1
-pip install ".[mcp]"
+pip install "mcp-mcts[mcp]"
 
 mcts scan examples/live-mcp-server/server.py \
   --live --no-progress \

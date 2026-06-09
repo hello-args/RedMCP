@@ -19,7 +19,14 @@ jobs:
           enable-cache: true
           python-version: "3.12"
 
-      - run: uv sync --all-extras
+      - run: uv sync --all-extras --group dev
+      - run: uv build
+      - run: uv run twine check dist/*
+      - run: |
+          python -m venv /tmp/mcts-wheel-smoke
+          /tmp/mcts-wheel-smoke/bin/pip install --quiet dist/*.whl
+          /tmp/mcts-wheel-smoke/bin/mcts --version
+          /tmp/mcts-wheel-smoke/bin/python -c "from mcts import Scanner, ScanConfig"
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run python scripts/compile_sigma_rules.py --source tests/fixtures/sigma_fixtures --validate-min 6
