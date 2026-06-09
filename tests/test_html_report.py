@@ -36,7 +36,7 @@ def test_write_html_report_is_self_contained(example_server_path: Path, tmp_path
 
     html = out.read_text(encoding="utf-8")
     assert "MCTS Security Report" in html
-    assert "data:image/png;base64," in html
+    assert "data:image/svg+xml;base64," in html
     assert 'alt="MCTS logo"' in html
     assert "&#34;use strict&#34;" not in html
     assert '"use strict"' in html

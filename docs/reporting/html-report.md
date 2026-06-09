@@ -145,7 +145,7 @@ report/data.py → build_dashboard_payload()
 report/generators/html_report.py
   ├── Jinja2: templates/dashboard.html
   ├── Inline: assets/styles.css, assets/dashboard.js
-  └── Embed: brand/logo-report.png (base64)
+  └── Embed: report/assets/icons/shield.svg (base64)
         │
         ▼
 security-report.html (single file)
@@ -161,7 +161,7 @@ security-report.html (single file)
 | `report/assets/icons/` | SVG severity icons |
 | `report/data.py` | ScanReport → dashboard JSON |
 | `report/generators/html_report.py` | Assembly and inlining |
-| `brand/logo-report.png` | Hex icon embed (no wordmark — legible at 44×44) |
+| `report/assets/icons/shield.svg` | Sidebar icon embed (SVG data URI) |
 
 Entry: `mcts.reporting.html.write_html_report()` delegates to generator.
 

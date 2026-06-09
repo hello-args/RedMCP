@@ -2,23 +2,19 @@
 
 from __future__ import annotations
 
-import base64
-import os
 import sys
-from pathlib import Path
 
 from rich.console import Console, Group, RenderableType
 from rich.text import Text
 
 from mcts import __version__
-from mcts.brand import LOGO_PATH
 from mcts.ui.layout import center_in_terminal, content_width
 from mcts.ui.theme import Theme
 
 LOGO_WIDTH = 64
 LOGO_MIN_TERMINAL_WIDTH = LOGO_WIDTH + 4
 
-# Legacy ASCII fallbacks (used only when PNG cannot be displayed in the terminal).
+# ASCII wordmark for the terminal scan header.
 MCTS_ASCII = r"""
 ███╗   ███╗ ██████╗████████╗███████╗
 ████╗ ████║██╔════╝╚══██╔══╝██╔════╝
@@ -46,33 +42,8 @@ def _stdout_supports_unicode_logo() -> bool:
         return False
 
 
-def _terminal_supports_inline_image() -> bool:
-    term_program = os.environ.get("TERM_PROGRAM", "")
-    if term_program in ("iTerm.app", "WezTerm", "Apple_Terminal"):
-        return True
-    if os.environ.get("KITTY_WINDOW_ID"):
-        return True
-    term = os.environ.get("TERM", "")
-    return "ghostty" in term.lower() or os.environ.get("GHOSTTY_RESOURCES_DIR") is not None
-
-
-def _print_inline_png(path: Path, *, max_width_px: int = 360) -> bool:
-    """Print PNG via iTerm2/WezTerm inline image protocol (returns False on failure)."""
-    if not path.is_file():
-        return False
-    try:
-        data = base64.b64encode(path.read_bytes()).decode("ascii")
-        payload = f"\033]1337;File=name={path.name};width={max_width_px};inline=1:{data}\a"
-        sys.stdout.write(payload)
-        sys.stdout.write("\n")
-        sys.stdout.flush()
-        return True
-    except OSError:
-        return False
-
-
 def build_logo_text(theme: Theme, *, use_unicode: bool = True) -> Text:
-    """Legacy ASCII logo (terminal fallback only)."""
+    """ASCII wordmark for the terminal header."""
     art = MCTS_ASCII if use_unicode else MCTS_ASCII_PLAIN
     lines = art.splitlines()
     gradient = theme.palette.logo_gradient
@@ -90,11 +61,9 @@ def build_logo_text(theme: Theme, *, use_unicode: bool = True) -> Text:
 
 
 def render_brand_logo(console: Console, theme: Theme, *, layout_width: int) -> bool:
-    """Render the canonical PNG logo when the terminal supports inline images."""
-    del theme, layout_width
-    if not _terminal_supports_inline_image():
-        return False
-    return _print_inline_png(LOGO_PATH)
+    """Terminal scans use the ASCII wordmark; inline PNG logos are not bundled."""
+    del console, theme, layout_width
+    return False
 
 
 def render_header(
