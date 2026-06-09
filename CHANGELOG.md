@@ -58,6 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### FIxed
 
 - `CrossServerAnalyzer` no longer counted in "analyzers run" when inventory is empty (was a silent no-op during `mcts scan`)
+- Docs: updated 'setup-uv' version from '@v4' to '@v7' in CI integration guide.
 
 ### Changed
 
