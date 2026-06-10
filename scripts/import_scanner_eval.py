@@ -21,7 +21,23 @@ def main() -> int:
         help="Path to mcp-scanner evals/behavioral-analysis/data",
     )
     parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Exit 1 when any scanned file is missed (for CI gates)",
+    )
+    parser.add_argument(
+        "--min-recall",
+        type=float,
+        default=None,
+        metavar="RATIO",
+        help="Exit 1 when recall is below this ratio (0.0–1.0, for CI gates)",
+    )
     args = parser.parse_args()
+
+    if args.min_recall is not None and not 0.0 <= args.min_recall <= 1.0:
+        print("--min-recall must be between 0.0 and 1.0", file=sys.stderr)
+        return 2
 
     if not args.data_dir.is_dir():
         print(f"Data directory not found: {args.data_dir}", file=sys.stderr)
@@ -54,6 +70,7 @@ def main() -> int:
 
     scanned = [row for row in rows if row.get("status") in {"detected", "missed"}]
     detected_count = sum(1 for row in scanned if row["status"] == "detected")
+    missed_count = sum(1 for row in scanned if row["status"] == "missed")
     recall = (detected_count / len(scanned)) if scanned else 1.0
 
     if args.json:
@@ -63,6 +80,7 @@ def main() -> int:
                     "total_files": len(rows),
                     "scanned": len(scanned),
                     "detected": detected_count,
+                    "missed": missed_count,
                     "recall": round(recall, 4),
                     "results": rows,
                 },
@@ -77,6 +95,10 @@ def main() -> int:
             elif row.get("status") == "skipped":
                 print(f"  SKIP {row['file']} ({row['reason']})")
 
+    if args.strict and missed_count > 0:
+        return 1
+    if args.min_recall is not None and recall < args.min_recall:
+        return 1
     return 0
 
 

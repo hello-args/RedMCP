@@ -66,3 +66,18 @@ def test_scanner_eval_recall_when_corpus_available() -> None:
         assert "100.0%" in result.stdout or "141/141" in result.stdout
     else:
         assert "1/2" in result.stdout
+
+
+def test_scanner_eval_strict_exits_one_when_corpus_has_misses() -> None:
+    corpus = _behavioral_eval_corpus()
+    if corpus is None or corpus != _DEFAULT_CORPUS:
+        return
+
+    result = subprocess.run(
+        [sys.executable, "scripts/import_scanner_eval.py", str(corpus), "--strict"],
+        capture_output=True,
+        text=True,
+        check=False,
+        cwd=_REPO_ROOT,
+    )
+    assert result.returncode == 1
