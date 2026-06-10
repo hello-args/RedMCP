@@ -51,11 +51,23 @@ def test_go_taint_detects_exec_command() -> None:
     assert "cmd" in result.tainted_params
 
 
+def test_go_taint_propagates_short_var() -> None:
+    source = "func run(input string) error { x := input; return exec.Command(x).Run() }"
+    result = analyze_go_taint(source)
+    assert "exec.Command" in result.sinks
+
+
 def test_rust_taint_detects_command_new() -> None:
     source = "fn run(cmd: &str) { Command::new(cmd).spawn(); }"
     result = analyze_rust_taint(source)
     assert "Command::new" in result.sinks
     assert "cmd" in result.tainted_params
+
+
+def test_rust_taint_propagates_let_binding() -> None:
+    source = "fn run(input: &str) { let arg = input; Command::new(arg).spawn(); }"
+    result = analyze_rust_taint(source)
+    assert "Command::new" in result.sinks
 
 
 def test_behavioral_static_go_mismatch() -> None:
