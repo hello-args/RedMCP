@@ -97,9 +97,7 @@ def _tool_accepts_free_text(tool: MCPTool) -> bool:
     for name, schema in properties.items():
         if not isinstance(schema, dict):
             continue
-        if schema.get("type") == "string" and (
-            _SCHEMA_FREE_TEXT.search(name) or not schema.get("enum")
-        ):
+        if schema.get("type") == "string" and (_SCHEMA_FREE_TEXT.search(name) or not schema.get("enum")):
             return True
     return not properties
 
