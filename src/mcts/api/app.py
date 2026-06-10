@@ -6,9 +6,15 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
+from mcts.api import limits
 from mcts.api.auth import require_api_key
+from mcts.api.limits import (
+    RequestLimitsMiddleware,
+    cap_fanout,
+    run_scan_with_limits,
+)
 from mcts.core.config import ScanConfig
 from mcts.core.scanner import Scanner
 from mcts.mcp.client import MCPClient
@@ -17,6 +23,7 @@ from mcts.readiness.runner import run_readiness
 from mcts.reporting.models import ScanReport
 
 app = FastAPI(title="MCTS API", version="0.1.0")
+app.add_middleware(RequestLimitsMiddleware)
 _auth = [Depends(require_api_key)]
 
 
@@ -44,6 +51,14 @@ class ScanRequest(BaseModel):
     runtime_events: list[dict[str, Any]] = Field(default_factory=list)
     fail_on_critical: bool = False
     min_score: int | None = Field(default=None, ge=0, le=100)
+
+    @field_validator("runtime_events")
+    @classmethod
+    def _limit_runtime_events(cls, value: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        limit = limits.max_runtime_events()
+        if len(value) > limit:
+            raise ValueError(f"runtime_events exceeds maximum length of {limit}")
+        return value
 
 
 class ToolScanRequest(ScanRequest):
@@ -117,6 +132,14 @@ def _scan_server(req: ScanRequest, server: MCPServerInfo) -> dict[str, Any]:
     return report.model_dump()
 
 
+async def _discover_async(req: ScanRequest) -> MCPServerInfo:
+    return await run_scan_with_limits(lambda: _discover(req))
+
+
+async def _scan_server_async(req: ScanRequest, server: MCPServerInfo) -> dict[str, Any]:
+    return await run_scan_with_limits(lambda: _scan_server(req, server))
+
+
 def _filter_server(
     server: MCPServerInfo,
     *,
@@ -154,30 +177,36 @@ def _filter_server(
 
 
 @app.post("/scan", dependencies=_auth)
-def scan_all(req: ScanRequest) -> dict[str, Any]:
-    return _scan_server(req, _discover(req))
+async def scan_all(req: ScanRequest) -> dict[str, Any]:
+    server = await _discover_async(req)
+    return await _scan_server_async(req, server)
 
 
 @app.post("/scan-tool", dependencies=_auth)
-def scan_tool(req: ToolScanRequest) -> dict[str, Any]:
-    server = _filter_server(_discover(req), tool_name=req.tool_name)
-    return _scan_server(req, server)
+async def scan_tool(req: ToolScanRequest) -> dict[str, Any]:
+    server = _filter_server(await _discover_async(req), tool_name=req.tool_name)
+    return await _scan_server_async(req, server)
 
 
 @app.post("/scan-all-tools", dependencies=_auth)
-def scan_all_tools(req: ScanRequest) -> dict[str, Any]:
-    server = _discover(req)
+async def scan_all_tools(req: ScanRequest) -> dict[str, Any]:
+    server = await _discover_async(req)
+    tools = cap_fanout(server.tools, label="tools")
+    reports = []
+    for tool in tools:
+        filtered = _filter_server(server, tool_name=tool.name)
+        reports.append(await _scan_server_async(req, filtered))
     return {
         "server_url": req.url or req.target,
-        "tool_count": len(server.tools),
-        "reports": [_scan_server(req, _filter_server(server, tool_name=tool.name)) for tool in server.tools],
+        "tool_count": len(tools),
+        "reports": reports,
     }
 
 
 @app.post("/scan-prompt", dependencies=_auth)
-def scan_prompt(req: PromptScanRequest) -> dict[str, Any]:
-    server = _filter_server(_discover(req), prompt_name=req.prompt_name)
-    payload = _scan_server(req, server)
+async def scan_prompt(req: PromptScanRequest) -> dict[str, Any]:
+    server = _filter_server(await _discover_async(req), prompt_name=req.prompt_name)
+    payload = await _scan_server_async(req, server)
     return {
         "server_url": req.url or req.target,
         "prompt_name": req.prompt_name,
@@ -186,21 +215,24 @@ def scan_prompt(req: PromptScanRequest) -> dict[str, Any]:
 
 
 @app.post("/scan-all-prompts", dependencies=_auth)
-def scan_all_prompts(req: ScanRequest) -> dict[str, Any]:
-    server = _discover(req)
+async def scan_all_prompts(req: ScanRequest) -> dict[str, Any]:
+    server = await _discover_async(req)
+    prompts = cap_fanout(server.prompts, label="prompts")
+    reports = [
+        await _scan_server_async(req, _filter_server(server, prompt_name=prompt.name))
+        for prompt in prompts
+    ]
     return {
         "server_url": req.url or req.target,
-        "total_prompts": len(server.prompts),
-        "reports": [
-            _scan_server(req, _filter_server(server, prompt_name=prompt.name)) for prompt in server.prompts
-        ],
+        "total_prompts": len(prompts),
+        "reports": reports,
     }
 
 
 @app.post("/scan-resource", dependencies=_auth)
-def scan_resource(req: ResourceScanRequest) -> dict[str, Any]:
-    server = _filter_server(_discover(req), resource_uri=req.resource_uri)
-    payload = _scan_server(req, server)
+async def scan_resource(req: ResourceScanRequest) -> dict[str, Any]:
+    server = _filter_server(await _discover_async(req), resource_uri=req.resource_uri)
+    payload = await _scan_server_async(req, server)
     return {
         "server_url": req.url or req.target,
         "resource_uri": req.resource_uri,
@@ -209,22 +241,24 @@ def scan_resource(req: ResourceScanRequest) -> dict[str, Any]:
 
 
 @app.post("/scan-all-resources", dependencies=_auth)
-def scan_all_resources(req: ScanRequest) -> dict[str, Any]:
-    server = _discover(req)
+async def scan_all_resources(req: ScanRequest) -> dict[str, Any]:
+    server = await _discover_async(req)
+    resources = cap_fanout(server.resources, label="resources")
+    reports = [
+        await _scan_server_async(req, _filter_server(server, resource_uri=resource.uri))
+        for resource in resources
+    ]
     return {
         "server_url": req.url or req.target,
-        "total_resources": len(server.resources),
-        "reports": [
-            _scan_server(req, _filter_server(server, resource_uri=resource.uri))
-            for resource in server.resources
-        ],
+        "total_resources": len(resources),
+        "reports": reports,
     }
 
 
 @app.post("/scan-instructions", dependencies=_auth)
-def scan_instructions(req: ScanRequest) -> dict[str, Any]:
-    server = _filter_server(_discover(req), instructions_only=True)
-    payload = _scan_server(req, server)
+async def scan_instructions(req: ScanRequest) -> dict[str, Any]:
+    server = _filter_server(await _discover_async(req), instructions_only=True)
+    payload = await _scan_server_async(req, server)
     return {
         "server_url": req.url or req.target,
         "instructions": server.instructions,
@@ -233,7 +267,7 @@ def scan_instructions(req: ScanRequest) -> dict[str, Any]:
 
 
 @app.post("/readiness", dependencies=_auth)
-def readiness(req: ReadinessRequest) -> dict[str, Any]:
+async def readiness(req: ReadinessRequest) -> dict[str, Any]:
     config = ScanConfig(
         target=Path(req.target),
         live=req.live or bool(req.url),
@@ -241,17 +275,21 @@ def readiness(req: ReadinessRequest) -> dict[str, Any]:
         live_consent=req.live or bool(req.url),
         readiness_opa=req.enable_opa,
     )
-    try:
-        report = run_readiness(config)
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return {
-        "target": report.target,
-        "tools_checked": report.tools_checked,
-        "readiness_score": report.readiness_score,
-        "production_ready": report.production_ready,
-        "findings": [finding.model_dump() for finding in report.findings],
-    }
+
+    def _run() -> dict[str, Any]:
+        try:
+            report = run_readiness(config)
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return {
+            "target": report.target,
+            "tools_checked": report.tools_checked,
+            "readiness_score": report.readiness_score,
+            "production_ready": report.production_ready,
+            "findings": [finding.model_dump() for finding in report.findings],
+        }
+
+    return await run_scan_with_limits(_run)
 
 
 def create_app() -> FastAPI:
