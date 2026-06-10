@@ -167,9 +167,3 @@ def dedupe_rules(rules: list[MetadataSigmaRule]) -> list[MetadataSigmaRule]:
         seen.add(key)
         unique.append(rule)
     return unique
-
-
-# Backward-compatible aliases for internal callers during transition.
-_load_bundled_rules = load_bundled_rules
-_load_rules_from_directory = load_rules_from_directory
-_dedupe_rules = dedupe_rules
