@@ -68,6 +68,8 @@ Install these only when you need the corresponding feature:
 
 For your first scan, the base install is enough.
 
+If `mcts doctor .` reports `Extra [mcp]` as missing, install that optional extra before using `mcts-mcp`, `mcts scan --live`, or `mcts fuzz`.
+
 ---
 
 ## Install

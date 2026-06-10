@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import builtins
 import json
 
 import pytest
@@ -65,3 +66,23 @@ def test_compare_baselines_tool() -> None:
     payload = json.loads(raw)
     assert "score_delta" in payload
     assert payload["finding_delta"] >= 0
+
+
+def test_create_server_reports_missing_mcp_extra(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_import = builtins.__import__
+
+    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "mcp.server.fastmcp":
+            raise ImportError("No module named 'mcp'")
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+
+    from mcts.mcp_server.server import create_server
+
+    with pytest.raises(RuntimeError) as excinfo:
+        create_server()
+
+    assert "requires the [mcp] extra" in str(excinfo.value)
+    assert 'pip install "mcp-mcts[mcp]"' in str(excinfo.value)
+    assert "mcts doctor ." in str(excinfo.value)

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Doctor + MCP server startup hints** — `mcts doctor` now reports whether the optional `[mcp]` extra is installed, and `mcts-mcp` prints a direct install hint instead of a bare import failure when the extra is missing
+
 ## [0.1.2] - 2026-06-10
 
 ### Added

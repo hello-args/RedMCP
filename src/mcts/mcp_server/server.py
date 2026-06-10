@@ -85,7 +85,12 @@ def create_server():
     try:
         from mcp.server.fastmcp import FastMCP
     except ImportError as exc:
-        raise RuntimeError("MCP server mode requires optional mcp extra: uv sync --extra mcp") from exc
+        raise RuntimeError(
+            "MCP server mode requires the [mcp] extra.\n"
+            'Install with: pip install "mcp-mcts[mcp]"\n'
+            "Or, from a repo checkout: uv sync --extra mcp\n"
+            "Run `mcts doctor .` to verify optional extras."
+        ) from exc
 
     app = FastMCP("mcts")
     app.tool()(scan_mcp_target)
