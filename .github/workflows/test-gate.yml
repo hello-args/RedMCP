@@ -28,6 +28,7 @@ jobs:
           /tmp/mcts-wheel-smoke/bin/python -c "from mcts import Scanner, ScanConfig"
       - run: uv run ruff check .
       - run: uv run ruff format --check .
+      - run: bash scripts/cli_smoke.sh
       - run: uv run python scripts/compile_sigma_rules.py --source tests/fixtures/sigma_fixtures --validate-min 6
       - run: uv run python scripts/compile_sigma_rules.py --check
       - run: uv run pytest -m "not integration"
