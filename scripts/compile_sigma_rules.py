@@ -64,12 +64,9 @@ def rules_to_json(rules: list[MetadataSigmaRule]) -> str:
 
 
 def compile_rules(source: Path, *, merge_bundled: bool = True) -> list[MetadataSigmaRule]:
-    from mcts.taxonomy.sigma.loader import _dedupe_rules, _load_bundled_rules, _load_rules_from_directory
+    from mcts.taxonomy.sigma.loader import compile_metadata_rules
 
-    compiled = _load_rules_from_directory(source)
-    if merge_bundled:
-        compiled = _dedupe_rules(_load_bundled_rules() + compiled)
-    return _dedupe_rules(compiled)
+    return compile_metadata_rules(source, merge_bundled=merge_bundled)
 
 
 def main() -> int:

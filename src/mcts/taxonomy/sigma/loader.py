@@ -42,30 +42,40 @@ class MetadataSigmaRule:
 
 
 def load_metadata_rules(extra_root: Path | None = None) -> list[MetadataSigmaRule]:
-    rules = _load_bundled_rules()
+    rules = load_bundled_rules()
     if extra_root is not None:
-        rules.extend(_load_rules_from_directory(extra_root))
-    return _dedupe_rules(rules)
+        rules.extend(load_rules_from_directory(extra_root))
+    return dedupe_rules(rules)
+
+
+def compile_metadata_rules(source: Path, *, merge_bundled: bool = True) -> list[MetadataSigmaRule]:
+    """Compile Sigma YAML fixtures from *source* into metadata rules."""
+    compiled = load_rules_from_directory(source)
+    if merge_bundled:
+        compiled = dedupe_rules(load_bundled_rules() + compiled)
+    return dedupe_rules(compiled)
 
 
 @lru_cache(maxsize=4)
 def _load_bundled_rules_cached(extra_root_str: str | None) -> tuple[MetadataSigmaRule, ...]:
     extra = Path(extra_root_str) if extra_root_str else None
-    return tuple(_dedupe_rules(_load_bundled_rules() + (_load_rules_from_directory(extra) if extra else [])))
+    return tuple(
+        dedupe_rules(load_bundled_rules() + (load_rules_from_directory(extra) if extra else []))
+    )
 
 
 def cached_metadata_rules(extra_root: Path | None = None) -> list[MetadataSigmaRule]:
     return list(_load_bundled_rules_cached(str(extra_root) if extra_root else None))
 
 
-def _load_bundled_rules() -> list[MetadataSigmaRule]:
+def load_bundled_rules() -> list[MetadataSigmaRule]:
     if not _BUNDLED_RULES.exists():
         return []
     payload = json.loads(_BUNDLED_RULES.read_text(encoding="utf-8"))
     return [_rule_from_dict(row) for row in payload if isinstance(row, dict)]
 
 
-def _load_rules_from_directory(root: Path) -> list[MetadataSigmaRule]:
+def load_rules_from_directory(root: Path) -> list[MetadataSigmaRule]:
     if not root.exists():
         return []
 
@@ -149,7 +159,7 @@ def _rule_from_dict(row: dict[str, Any]) -> MetadataSigmaRule:
     )
 
 
-def _dedupe_rules(rules: list[MetadataSigmaRule]) -> list[MetadataSigmaRule]:
+def dedupe_rules(rules: list[MetadataSigmaRule]) -> list[MetadataSigmaRule]:
     seen: set[tuple[str, str, str]] = set()
     unique: list[MetadataSigmaRule] = []
     for rule in rules:
@@ -159,3 +169,9 @@ def _dedupe_rules(rules: list[MetadataSigmaRule]) -> list[MetadataSigmaRule]:
         seen.add(key)
         unique.append(rule)
     return unique
+
+
+# Backward-compatible aliases for internal callers during transition.
+_load_bundled_rules = load_bundled_rules
+_load_rules_from_directory = load_rules_from_directory
+_dedupe_rules = dedupe_rules
