@@ -29,6 +29,7 @@ MCTS is a security analysis tool. Only scan MCP servers you own or have explicit
 
 - Live probing and fuzzing start subprocesses — see [Live Scanning](docs/scanning/live-scanning.md) and [Protocol Fuzzing](docs/scanning/fuzzing.md) for consent requirements
 - CI usage: [CI Integration](docs/platform/ci-integration.md)
+- REST API: set `MCTS_API_KEY` for production; see [REST API threat model](docs/platform/rest-api.md#threat-model)
 
 HTML reports are self-contained files with embedded scan data. They do not transmit data to MCTS or third parties beyond CDN loads for Chart.js and Inter fonts when you open the file in a browser.
 

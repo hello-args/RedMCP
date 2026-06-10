@@ -36,7 +36,19 @@ mcts serve --host 127.0.0.1 --port 8080
 # OpenAPI docs: http://127.0.0.1:8080/docs
 ```
 
-When `MCTS_API_KEY` is set in the environment, every endpoint except `/health` requires an `X-API-Key` header matching that value. When unset, the API accepts unauthenticated requests (local development only).
+When `MCTS_API_KEY` is set, every endpoint except `/health` requires an `X-API-Key` header. When unset, loopback binds (`127.0.0.1`) are allowed with a startup warning. Binding to a non-loopback address without a key requires `--allow-unauthenticated`.
+
+---
+
+## Threat model
+
+| Risk | Mitigation |
+|------|------------|
+| Unauthenticated remote access | Set `MCTS_API_KEY`; do not use `--allow-unauthenticated` in production |
+| Live MCP probing via API | Set `understand_live_risk: true`, header `X-MCTS-Live-Consent: 1`, or server env `MCTS_LIVE_OK=1` |
+| Resource exhaustion | Rate limits and fan-out caps (`MCTS_API_*` env vars — see [Rate limits](#rate-limits)) |
+
+Only expose the API on trusted networks. `/health` stays public for load balancers.
 
 ---
 
@@ -76,6 +88,16 @@ curl -s -X POST http://127.0.0.1:8080/scan \
 ```
 
 Implementation: `api/auth.py` (`require_api_key`).
+
+### Live scan consent
+
+Live or remote scans (`live: true` or `url`) require the same consent as the CLI:
+
+- Request body: `"understand_live_risk": true`
+- Header: `X-MCTS-Live-Consent: 1`
+- Server environment: `MCTS_LIVE_OK=1`
+
+Without consent the API returns HTTP 403.
 
 ---
 

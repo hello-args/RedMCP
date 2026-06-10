@@ -5,11 +5,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field, field_validator
 
 from mcts.api import limits
 from mcts.api.auth import require_api_key
+from mcts.api.live_consent import require_api_live_consent
 from mcts.api.limits import (
     RequestLimitsMiddleware,
     cap_fanout,
@@ -51,6 +52,7 @@ class ScanRequest(BaseModel):
     runtime_events: list[dict[str, Any]] = Field(default_factory=list)
     fail_on_critical: bool = False
     min_score: int | None = Field(default=None, ge=0, le=100)
+    understand_live_risk: bool = False
 
     @field_validator("runtime_events")
     @classmethod
@@ -79,6 +81,7 @@ class ReadinessRequest(BaseModel):
     url: str | None = None
     live: bool = False
     enable_opa: bool = False
+    understand_live_risk: bool = False
 
 
 @app.get("/health")
@@ -86,7 +89,19 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-def _build_config(req: ScanRequest, *, live_consent: bool | None = None) -> ScanConfig:
+def _build_config(req: ScanRequest, *, request: Request | None = None) -> ScanConfig:
+    require_api_live_consent(
+        live=req.live,
+        remote_url=req.url,
+        understand_live_risk=req.understand_live_risk,
+        request=request,
+    )
+    from mcts.api.live_consent import api_live_consent_granted
+
+    live_consent = api_live_consent_granted(
+        understand_live_risk=req.understand_live_risk,
+        request=request,
+    )
     return ScanConfig(
         target=Path(req.target),
         live=req.live or bool(req.url),
@@ -97,7 +112,7 @@ def _build_config(req: ScanRequest, *, live_consent: bool | None = None) -> Scan
         resource_mime_allowlist=req.resource_mime_allowlist,
         pip_audit=req.pip_audit,
         protocol_probe=req.protocol_probe,
-        live_consent=live_consent if live_consent is not None else (req.live or bool(req.url)),
+        live_consent=live_consent,
         hide_safe=req.hide_safe,
         tool_filter=req.tool_filter,
         analyzer_filter=req.analyzer_filter,
@@ -115,16 +130,16 @@ def _build_config(req: ScanRequest, *, live_consent: bool | None = None) -> Scan
     )
 
 
-def _discover(req: ScanRequest) -> MCPServerInfo:
-    config = _build_config(req)
+def _discover(req: ScanRequest, *, request: Request | None = None) -> MCPServerInfo:
+    config = _build_config(req, request=request)
     try:
         return MCPClient(config.target, config).discover()
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
-def _scan_server(req: ScanRequest, server: MCPServerInfo) -> dict[str, Any]:
-    config = _build_config(req)
+def _scan_server(req: ScanRequest, server: MCPServerInfo, *, request: Request | None = None) -> dict[str, Any]:
+    config = _build_config(req, request=request)
     try:
         report: ScanReport = Scanner(config).analyze_server(server)
     except Exception as exc:
@@ -132,12 +147,12 @@ def _scan_server(req: ScanRequest, server: MCPServerInfo) -> dict[str, Any]:
     return report.model_dump()
 
 
-async def _discover_async(req: ScanRequest) -> MCPServerInfo:
-    return await run_scan_with_limits(lambda: _discover(req))
+async def _discover_async(req: ScanRequest, *, request: Request) -> MCPServerInfo:
+    return await run_scan_with_limits(lambda: _discover(req, request=request))
 
 
-async def _scan_server_async(req: ScanRequest, server: MCPServerInfo) -> dict[str, Any]:
-    return await run_scan_with_limits(lambda: _scan_server(req, server))
+async def _scan_server_async(req: ScanRequest, server: MCPServerInfo, *, request: Request) -> dict[str, Any]:
+    return await run_scan_with_limits(lambda: _scan_server(req, server, request=request))
 
 
 def _filter_server(
@@ -177,25 +192,25 @@ def _filter_server(
 
 
 @app.post("/scan", dependencies=_auth)
-async def scan_all(req: ScanRequest) -> dict[str, Any]:
-    server = await _discover_async(req)
-    return await _scan_server_async(req, server)
+async def scan_all(req: ScanRequest, request: Request) -> dict[str, Any]:
+    server = await _discover_async(req, request=request)
+    return await _scan_server_async(req, server, request=request)
 
 
 @app.post("/scan-tool", dependencies=_auth)
-async def scan_tool(req: ToolScanRequest) -> dict[str, Any]:
-    server = _filter_server(await _discover_async(req), tool_name=req.tool_name)
-    return await _scan_server_async(req, server)
+async def scan_tool(req: ToolScanRequest, request: Request) -> dict[str, Any]:
+    server = _filter_server(await _discover_async(req, request=request), tool_name=req.tool_name)
+    return await _scan_server_async(req, server, request=request)
 
 
 @app.post("/scan-all-tools", dependencies=_auth)
-async def scan_all_tools(req: ScanRequest) -> dict[str, Any]:
-    server = await _discover_async(req)
+async def scan_all_tools(req: ScanRequest, request: Request) -> dict[str, Any]:
+    server = await _discover_async(req, request=request)
     tools = cap_fanout(server.tools, label="tools")
     reports = []
     for tool in tools:
         filtered = _filter_server(server, tool_name=tool.name)
-        reports.append(await _scan_server_async(req, filtered))
+        reports.append(await _scan_server_async(req, filtered, request=request))
     return {
         "server_url": req.url or req.target,
         "tool_count": len(tools),
@@ -204,9 +219,9 @@ async def scan_all_tools(req: ScanRequest) -> dict[str, Any]:
 
 
 @app.post("/scan-prompt", dependencies=_auth)
-async def scan_prompt(req: PromptScanRequest) -> dict[str, Any]:
-    server = _filter_server(await _discover_async(req), prompt_name=req.prompt_name)
-    payload = await _scan_server_async(req, server)
+async def scan_prompt(req: PromptScanRequest, request: Request) -> dict[str, Any]:
+    server = _filter_server(await _discover_async(req, request=request), prompt_name=req.prompt_name)
+    payload = await _scan_server_async(req, server, request=request)
     return {
         "server_url": req.url or req.target,
         "prompt_name": req.prompt_name,
@@ -215,11 +230,12 @@ async def scan_prompt(req: PromptScanRequest) -> dict[str, Any]:
 
 
 @app.post("/scan-all-prompts", dependencies=_auth)
-async def scan_all_prompts(req: ScanRequest) -> dict[str, Any]:
-    server = await _discover_async(req)
+async def scan_all_prompts(req: ScanRequest, request: Request) -> dict[str, Any]:
+    server = await _discover_async(req, request=request)
     prompts = cap_fanout(server.prompts, label="prompts")
     reports = [
-        await _scan_server_async(req, _filter_server(server, prompt_name=prompt.name)) for prompt in prompts
+        await _scan_server_async(req, _filter_server(server, prompt_name=prompt.name), request=request)
+        for prompt in prompts
     ]
     return {
         "server_url": req.url or req.target,
@@ -229,9 +245,9 @@ async def scan_all_prompts(req: ScanRequest) -> dict[str, Any]:
 
 
 @app.post("/scan-resource", dependencies=_auth)
-async def scan_resource(req: ResourceScanRequest) -> dict[str, Any]:
-    server = _filter_server(await _discover_async(req), resource_uri=req.resource_uri)
-    payload = await _scan_server_async(req, server)
+async def scan_resource(req: ResourceScanRequest, request: Request) -> dict[str, Any]:
+    server = _filter_server(await _discover_async(req, request=request), resource_uri=req.resource_uri)
+    payload = await _scan_server_async(req, server, request=request)
     return {
         "server_url": req.url or req.target,
         "resource_uri": req.resource_uri,
@@ -240,11 +256,11 @@ async def scan_resource(req: ResourceScanRequest) -> dict[str, Any]:
 
 
 @app.post("/scan-all-resources", dependencies=_auth)
-async def scan_all_resources(req: ScanRequest) -> dict[str, Any]:
-    server = await _discover_async(req)
+async def scan_all_resources(req: ScanRequest, request: Request) -> dict[str, Any]:
+    server = await _discover_async(req, request=request)
     resources = cap_fanout(server.resources, label="resources")
     reports = [
-        await _scan_server_async(req, _filter_server(server, resource_uri=resource.uri))
+        await _scan_server_async(req, _filter_server(server, resource_uri=resource.uri), request=request)
         for resource in resources
     ]
     return {
@@ -255,9 +271,9 @@ async def scan_all_resources(req: ScanRequest) -> dict[str, Any]:
 
 
 @app.post("/scan-instructions", dependencies=_auth)
-async def scan_instructions(req: ScanRequest) -> dict[str, Any]:
-    server = _filter_server(await _discover_async(req), instructions_only=True)
-    payload = await _scan_server_async(req, server)
+async def scan_instructions(req: ScanRequest, request: Request) -> dict[str, Any]:
+    server = _filter_server(await _discover_async(req, request=request), instructions_only=True)
+    payload = await _scan_server_async(req, server, request=request)
     return {
         "server_url": req.url or req.target,
         "instructions": server.instructions,
@@ -266,12 +282,23 @@ async def scan_instructions(req: ScanRequest) -> dict[str, Any]:
 
 
 @app.post("/readiness", dependencies=_auth)
-async def readiness(req: ReadinessRequest) -> dict[str, Any]:
+async def readiness(req: ReadinessRequest, request: Request) -> dict[str, Any]:
+    require_api_live_consent(
+        live=req.live,
+        remote_url=req.url,
+        understand_live_risk=req.understand_live_risk,
+        request=request,
+    )
+    from mcts.api.live_consent import api_live_consent_granted
+
     config = ScanConfig(
         target=Path(req.target),
         live=req.live or bool(req.url),
         remote_url=req.url,
-        live_consent=req.live or bool(req.url),
+        live_consent=api_live_consent_granted(
+            understand_live_risk=req.understand_live_risk,
+            request=request,
+        ),
         readiness_opa=req.enable_opa,
     )
 

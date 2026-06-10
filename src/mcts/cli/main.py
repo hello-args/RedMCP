@@ -1275,6 +1275,13 @@ def serve_api(
     host: Annotated[str, typer.Option("--host")] = "127.0.0.1",
     port: Annotated[int, typer.Option("--port")] = 8080,
     reload: Annotated[bool, typer.Option("--reload")] = False,
+    allow_unauthenticated: Annotated[
+        bool,
+        typer.Option(
+            "--allow-unauthenticated",
+            help="Allow serving without MCTS_API_KEY on non-loopback interfaces",
+        ),
+    ] = False,
 ) -> None:
     """Start the MCTS REST API server."""
     try:
@@ -1283,7 +1290,9 @@ def serve_api(
         console.print("[red]REST API requires optional api extra: uv sync --extra api[/red]")
         raise typer.Exit(code=2) from exc
     from mcts.api.app import app as api_app
+    from mcts.api.startup import validate_serve_options
 
+    validate_serve_options(host, allow_unauthenticated=allow_unauthenticated)
     uvicorn.run(api_app, host=host, port=port, reload=reload)
 
 
