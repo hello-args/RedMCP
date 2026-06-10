@@ -2,26 +2,31 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from mcts.analyzers.base import BaseAnalyzer
 from mcts.mcp.models import MCPServerInfo, MCPTool
+from mcts.probe.jailbreak import summarize_jailbreak_events
 from mcts.reporting.models import Finding, Severity
 
 
 class JailbreakAnalyzer(BaseAnalyzer):
-    """Measures agent manipulation surface from tool capabilities."""
+    """Measures agent manipulation surface from tool capabilities and live probes."""
 
     name = "jailbreak"
 
     def analyze(self, server: MCPServerInfo) -> list[Finding]:
         findings: list[Finding] = []
+        live_summary = summarize_jailbreak_events(server.runtime_events)
+        if live_summary["accepted_count"]:
+            findings.append(self._live_finding(live_summary))
         score = self._manipulation_score(server.tools)
-
         if score >= 8:
             severity = Severity.HIGH
         elif score >= 5:
             severity = Severity.MEDIUM
         else:
-            return []
+            return findings
 
         findings.append(
             Finding(
@@ -42,10 +47,35 @@ class JailbreakAnalyzer(BaseAnalyzer):
                     "executes_commands": sum(
                         1 for t in server.tools if t.capability and t.capability.executes_commands
                     ),
+                    "analysis_mode": "static_heuristic",
                 },
             )
         )
         return findings
+
+    def _live_finding(self, summary: dict[str, Any]) -> Finding:
+        accepted = int(summary["accepted_count"])
+        severity = Severity.CRITICAL if accepted >= 2 else Severity.HIGH
+        return Finding(
+            id="jailbreak-live-payload-accepted",
+            analyzer=self.name,
+            title="Live jailbreak probe accepted override instructions",
+            description=(
+                f"{accepted} safe jailbreak payload(s) were accepted against live MCP surfaces. "
+                "The server metadata or input schema suggests instruction override may succeed at runtime."
+            ),
+            severity=severity,
+            recommendation=(
+                "Harden system instructions, validate tool inputs, and block override phrases "
+                "before executing privileged tools."
+            ),
+            technique_id="MCTS-T-1007",
+            confidence=0.85,
+            evidence={
+                **summary,
+                "analysis_mode": "live_probe",
+            },
+        )
 
     def _manipulation_score(self, tools: list[MCPTool]) -> int:
         score = 0

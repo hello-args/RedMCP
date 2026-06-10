@@ -144,11 +144,16 @@ class Scanner:
             from mcts.probe.behavioral import events_from_behavioral_probe
             from mcts.probe.events import events_from_live_server, merge_runtime_events
 
-            runtime_events = merge_runtime_events(
+            groups = [
                 runtime_events,
                 events_from_live_server(server_info),
                 events_from_behavioral_probe(server_info, multi_turn=self.config.behavioral_probe),
-            )
+            ]
+            if self.config.enable_jailbreak_live and self.config.live_consent:
+                from mcts.probe.jailbreak import events_from_jailbreak_probe
+
+                groups.append(events_from_jailbreak_probe(server_info))
+            runtime_events = merge_runtime_events(*groups)
         elif self.config.behavioral_probe:
             from mcts.probe.behavioral import events_from_behavioral_probe
             from mcts.probe.events import merge_runtime_events

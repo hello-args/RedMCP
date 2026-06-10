@@ -279,6 +279,13 @@ def scan(
             help="Enable multi-turn MCTS-T-1026 behavioral probe events (auto with --live)",
         ),
     ] = False,
+    enable_jailbreak_live: Annotated[
+        bool,
+        typer.Option(
+            "--enable-jailbreak-live",
+            help="Send safe jailbreak payloads during live scans (requires --i-understand-live-risk)",
+        ),
+    ] = False,
     url: Annotated[
         str | None,
         typer.Option("--url", help="Remote MCP server URL (SSE or streamable HTTP)"),
@@ -519,6 +526,13 @@ def scan(
         )
         raise typer.Exit(code=2)
 
+    if enable_jailbreak_live and not needs_live:
+        console.print(
+            "[red]Live jailbreak probing requires --live or --url.[/red] "
+            "Pass --enable-jailbreak-live only with a live scan."
+        )
+        raise typer.Exit(code=2)
+
     if config and not server:
         console.print("[red]Error:[/red] --config requires --server.")
         raise typer.Exit(code=2)
@@ -621,6 +635,7 @@ def scan(
         semantic_secrets=semantic_secrets,
         runtime_events=runtime_event_rows,
         behavioral_probe=behavioral_probe or needs_live,
+        enable_jailbreak_live=enable_jailbreak_live,
         surfaces=surface_list,
         resource_mime_allowlist=resource_mime_list,
         remote_url=url,

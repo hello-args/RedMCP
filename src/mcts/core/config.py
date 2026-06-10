@@ -59,6 +59,7 @@ class ScanConfig(BaseModel):
     semantic_secrets: bool = False
     runtime_events: list[dict[str, Any]] = Field(default_factory=list)
     behavioral_probe: bool = False
+    enable_jailbreak_live: bool = False
     fail_on_category: dict[str, int] = Field(default_factory=dict)
     # P0 — multi-surface + remote transport
     surfaces: list[str] = Field(default_factory=lambda: list(DEFAULT_SURFACES))
