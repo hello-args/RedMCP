@@ -21,8 +21,13 @@ DEFAULT_RATE_LIMIT_PER_MINUTE = 30
 DEFAULT_MAX_LIST_ITEMS = 100
 DEFAULT_MAX_RUNTIME_EVENTS = 500
 
-_scan_semaphore: asyncio.Semaphore | None = None
-_scan_semaphore_limit = 0
+
+class _ScanConcurrencyState:
+    semaphore: asyncio.Semaphore | None = None
+    limit: int = 0
+
+
+_scan_concurrency = _ScanConcurrencyState()
 _rate_lock = threading.Lock()
 _rate_buckets: dict[str, list[float]] = defaultdict(list)
 
@@ -62,11 +67,10 @@ def max_runtime_events() -> int:
 
 
 def _scan_semaphore_for(limit: int) -> asyncio.Semaphore:
-    global _scan_semaphore, _scan_semaphore_limit
-    if _scan_semaphore is None or _scan_semaphore_limit != limit:
-        _scan_semaphore = asyncio.Semaphore(limit)
-        _scan_semaphore_limit = limit
-    return _scan_semaphore
+    if _scan_concurrency.semaphore is None or _scan_concurrency.limit != limit:
+        _scan_concurrency.semaphore = asyncio.Semaphore(limit)
+        _scan_concurrency.limit = limit
+    return _scan_concurrency.semaphore
 
 
 def _client_key(request: Request) -> str:
