@@ -21,6 +21,16 @@ def tool_name_for(surface: ScanSurface) -> str | None:
     return surface.name if surface.kind == ScanSurfaceKind.TOOL else None
 
 
+def is_intentional_context_surface(surface: ScanSurface) -> bool:
+    """Return True for repo prompt templates / SKILL.md files discovered as LLM context.
+
+    These surfaces are context payloads by design, not executable MCP tool metadata. Keep
+    high-signal checks such as hidden Unicode, but avoid low-confidence findings where
+    ordinary prompt-template instructions or length are the only signal.
+    """
+    return surface.is_intentional_context_file()
+
+
 def surface_text_fields(surface: ScanSurface) -> list[tuple[str, str]]:
     rows: list[tuple[str, str]] = [
         ("name", surface.name),
