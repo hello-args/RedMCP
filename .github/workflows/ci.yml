@@ -25,6 +25,7 @@ jobs:
       - run: uv run python scripts/compile_sigma_rules.py --source tests/fixtures/sigma_fixtures --validate-min 6
       - run: uv run python scripts/compile_sigma_rules.py --check
       - run: uv run pytest
+      - run: uv run python scripts/run_behavioral_regression.py --gate-defaults
       - run: |
           uv run python - <<'PY'
           from mcts.testing.regression_harness import REGRESSION_THRESHOLD, REGRESSION_TECHNIQUES, evaluate_technique
