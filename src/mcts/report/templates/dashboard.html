@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>MCTS Security Report</title>
-  <script>{{ chart_js | safe }}</script>
+  {{ chart_script | safe }}
   <style>{{ styles | safe }}</style>
 </head>
 <body>
@@ -378,6 +378,6 @@
 
   <script type="application/json" id="mcts-report-data">{{ report_json | safe }}</script>
   <script type="application/json" id="mcts-icons-data">{{ icons_json | safe }}</script>
-  <script>{{ dashboard_js | safe }}</script>
+  {{ dashboard_script | safe }}
 </body>
 </html>
