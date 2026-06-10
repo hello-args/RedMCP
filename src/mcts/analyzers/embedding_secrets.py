@@ -37,8 +37,13 @@ SEMANTIC_REFERENCE_PHRASES: tuple[str, ...] = (
 
 _OBFUSCATED_SECRET = re.compile(r"(?i)(sk-[a-z0-9-]{10,}|ghp_[a-z0-9]{20,}|AKIA[0-9A-Z]{12,})")
 
-_EMBEDDING_MODEL: Any | None = None
-_EMBEDDING_MODEL_UNAVAILABLE = False
+
+class _EmbeddingModelState:
+    model: Any | None = None
+    unavailable: bool = False
+
+
+_EMBEDDING_STATE = _EmbeddingModelState()
 
 
 class EmbeddingSecretsAnalyzer(BaseAnalyzer):
@@ -107,31 +112,29 @@ def _semantic_credential_hit(text: str, threshold: float) -> bool:
 
 def _load_embedding_model() -> Any | None:
     """Load sentence-transformers model once; degrade gracefully when offline."""
-    global _EMBEDDING_MODEL, _EMBEDDING_MODEL_UNAVAILABLE
-
-    if _EMBEDDING_MODEL_UNAVAILABLE:
+    if _EMBEDDING_STATE.unavailable:
         return None
-    if _EMBEDDING_MODEL is not None:
-        return _EMBEDDING_MODEL
+    if _EMBEDDING_STATE.model is not None:
+        return _EMBEDDING_STATE.model
 
     try:
         from sentence_transformers import SentenceTransformer
     except ImportError:
-        _EMBEDDING_MODEL_UNAVAILABLE = True
+        _EMBEDDING_STATE.unavailable = True
         return None
 
     local_only = os.getenv("HF_HUB_OFFLINE", "").lower() in {"1", "true", "yes"}
     try:
-        _EMBEDDING_MODEL = SentenceTransformer(
+        _EMBEDDING_STATE.model = SentenceTransformer(
             "all-MiniLM-L6-v2",
             local_files_only=local_only,
         )
     except Exception as exc:
         logger.debug("Embedding model unavailable; using phrase fallback only: %s", exc)
-        _EMBEDDING_MODEL_UNAVAILABLE = True
+        _EMBEDDING_STATE.unavailable = True
         return None
 
-    return _EMBEDDING_MODEL
+    return _EMBEDDING_STATE.model
 
 
 def _finding(tool: Any, mode: str, confidence: float) -> Finding:
