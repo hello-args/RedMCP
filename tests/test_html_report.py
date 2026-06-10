@@ -292,6 +292,9 @@ def test_write_html_report_is_self_contained(example_server_path: Path, tmp_path
     assert "card-interactive" in html
     assert "Issues to Fix" in html
     assert "overview-split" in html
+    assert "fonts.googleapis.com" not in html
+    assert "cdn.jsdelivr.net" not in html
+    assert "typeof Chart" in html or "Chart.register" in html or "Chart(" in html
 
     start = html.index('id="mcts-report-data">') + len('id="mcts-report-data">')
     end = html.index("</script>", start)

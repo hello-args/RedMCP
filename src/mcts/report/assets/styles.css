@@ -21,7 +21,7 @@
   --section-gap: 24px;
   --card-pad: 24px;
   --transition: 200ms ease;
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 *,
