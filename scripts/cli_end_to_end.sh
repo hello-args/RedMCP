@@ -21,8 +21,10 @@ echo "== readiness heuristics =="
 uv run mcts readiness examples/baseline-mcp-server/server.py
 
 echo "== raw envelope output =="
-uv run mcts scan examples/baseline-mcp-server/server.py --format raw -o /tmp/mcts-raw.json --no-progress
-python3 -c "import json; p=json.load(open('/tmp/mcts-raw.json')); assert 'scan_results' in p"
+RAW=$(mktemp /tmp/mcts-raw.XXXXXX.json)
+trap 'rm -f "$RAW"' EXIT
+uv run mcts scan examples/baseline-mcp-server/server.py --format raw -o "$RAW" --no-progress
+python3 -c "import json, sys; p=json.load(open(sys.argv[1])); assert 'scan_results' in p" "$RAW"
 
 echo "== pytest =="
 uv run pytest tests/ -q --tb=no

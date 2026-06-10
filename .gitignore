@@ -34,3 +34,9 @@ issues/
 .vscode/
 *.swp
 .DS_Store
+
+# Scan artifacts
+*.sarif
+mcts-report.*
+regression-report.json
+inventory.json
