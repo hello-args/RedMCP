@@ -154,6 +154,8 @@ Pull requests to `main` require the **test** CI check to pass.
 ./scripts/enable-branch-protection.sh MCP-Audit/MCTS
 ```
 
+The script is **idempotent**: re-running it updates the existing `Protect main` ruleset instead of creating duplicates. Use `--dry-run` to preview without applying changes.
+
 **Option B — GitHub UI**
 
 1. Go to **Settings → Rules → Rulesets → New branch ruleset**
