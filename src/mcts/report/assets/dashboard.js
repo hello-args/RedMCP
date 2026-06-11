@@ -452,6 +452,16 @@
     }
   }
 
+  function appendTextNode(parent, text) {
+    parent.appendChild(document.createTextNode(String(text)));
+  }
+
+  function appendStrongText(parent, text) {
+    const strong = document.createElement("strong");
+    strong.textContent = String(text);
+    parent.appendChild(strong);
+  }
+
   function fillMetricsHeadline() {
     const el = document.getElementById("metrics-headline");
     if (!el) return;
@@ -459,6 +469,8 @@
     const score = DATA.score?.overall ?? 0;
     const tools = DATA.meta?.tools_discovered || 0;
     const cs = DATA.checks_summary || {};
+    const totalIssues = Number(s.total) || 0;
+    const toolCount = Number(tools) || 0;
     const parts = [
       s.critical ? `${s.critical} critical` : null,
       s.high ? `${s.high} high` : null,
@@ -466,26 +478,36 @@
       s.low ? `${s.low} low` : null,
     ].filter(Boolean);
     const breakdown = parts.length ? ` — ${parts.join(", ")}` : "";
-    let scoreLine;
+    const issueWord = totalIssues === 1 ? "" : "s";
+    const toolWord = toolCount === 1 ? "" : "s";
+
+    el.replaceChildren();
     if (DATA.score_v2) {
       const v2 = DATA.score_v2;
-      scoreLine =
-        `MCTS found <strong>${s.total || 0} security issue${s.total === 1 ? "" : "s"}</strong> across ` +
-        `<strong>${tools} tool${tools === 1 ? "" : "s"}</strong>${breakdown}. ` +
-        `Overall absolute risk is <strong>${v2.absolute_risk}</strong> (${v2.risk_level}).`;
+      appendTextNode(el, "MCTS found ");
+      appendStrongText(el, totalIssues);
+      appendTextNode(el, ` security issue${issueWord} across `);
+      appendStrongText(el, toolCount);
+      appendTextNode(el, ` tool${toolWord}${breakdown}. Overall absolute risk is `);
+      appendStrongText(el, v2.absolute_risk);
+      appendTextNode(el, ` (${v2.risk_level}).`);
       if (v2.security_score != null) {
-        scoreLine += ` Benchmark score: <strong>${v2.security_score}/100</strong>.`;
+        appendTextNode(el, " Benchmark score: ");
+        appendStrongText(el, `${v2.security_score}/100`);
+        appendTextNode(el, ".");
       }
     } else {
-      scoreLine =
-        `MCTS found <strong>${s.total || 0} issue${s.total === 1 ? "" : "s"}</strong> across ` +
-        `<strong>${tools} tool${tools === 1 ? "" : "s"}</strong>${breakdown}. ` +
-        `Security rating: <strong>${score}/100</strong> (higher is better, not a percentage).`;
+      appendTextNode(el, "MCTS found ");
+      appendStrongText(el, totalIssues);
+      appendTextNode(el, ` issue${issueWord} across `);
+      appendStrongText(el, toolCount);
+      appendTextNode(el, ` tool${toolWord}${breakdown}. Security rating: `);
+      appendStrongText(el, `${score}/100`);
+      appendTextNode(el, " (higher is better, not a percentage).");
     }
     if (cs.analyzers_run) {
-      scoreLine += ` ${cs.analyzers_passed} of ${cs.analyzers_run} checks passed.`;
+      appendTextNode(el, ` ${cs.analyzers_passed} of ${cs.analyzers_run} checks passed.`);
     }
-    el.innerHTML = scoreLine;
   }
 
   function fillIssuesSummary() {
@@ -519,7 +541,12 @@
 
     const total = s.total || 0;
     if (totalEl) totalEl.textContent = String(total);
-    if (totalFoot) totalFoot.innerHTML = `<strong>${total}</strong>`;
+    if (totalFoot) {
+      totalFoot.replaceChildren();
+      const strong = document.createElement("strong");
+      strong.textContent = String(total);
+      totalFoot.appendChild(strong);
+    }
     if (toolsStat) {
       const tools = DATA.meta?.tools_discovered || 0;
       toolsStat.textContent = `${tools} MCP tool${tools === 1 ? "" : "s"} discovered and analyzed (not an issue count)`;

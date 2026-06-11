@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-06-12
+
+### Security
+
+- HTML dashboard metrics headline no longer assigns report JSON to `innerHTML`; values are rendered via `textContent` and text nodes to prevent DOM XSS (CodeQL `js/xss-through-dom`, alert #38)
+
 ## [0.1.3] - 2026-06-12
 
 ### Added
