@@ -48,6 +48,7 @@ def write_html_report(report: ScanReport, output: Path) -> None:
         logo_src=logo_data_uri(for_report=True),
         icons_json=json.dumps(_load_icons()),
         app_version=report.version,
+        hide_legacy_score_card=report.score_v2 is not None,
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(html, encoding="utf-8")

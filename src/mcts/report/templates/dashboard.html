@@ -118,7 +118,7 @@
           </div>
 
           <div class="metrics-primary-row">
-            <div class="card score-card card-interactive" id="score-card" data-card-action="scroll:score-breakdown-section" aria-label="View area sub-scores">
+            <div class="card score-card card-interactive" id="score-card" data-card-action="scroll:score-breakdown-section" aria-label="View area sub-scores"{% if hide_legacy_score_card %} hidden{% endif %}>
               <span class="card-cta">View sub-scores →</span>
               <div class="score-title-row">
                 <h3 id="score-card-title">Security Score</h3>
@@ -162,7 +162,7 @@
           </div>
         </div>
 
-        <div class="v2-score-section" id="v2-score-section" hidden>
+        <div class="v2-score-section" id="v2-score-section"{% if not hide_legacy_score_card %} hidden{% endif %}>
           <h3 class="metrics-section-heading">Multi-factor risk (v2)</h3>
           <p class="metrics-section-intro" id="v2-metrics-intro">
             Absolute risk sums factor increments on tool-attributed findings. Higher = worse.

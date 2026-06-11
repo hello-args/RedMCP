@@ -1255,6 +1255,14 @@ body.modal-open {
   background: linear-gradient(180deg, rgba(239, 68, 68, 0.08), rgba(11, 23, 48, 1));
 }
 
+#score-card[hidden] {
+  display: none !important;
+}
+
+.metrics-primary-row:has(#score-card[hidden]) {
+  grid-template-columns: 1fr;
+}
+
 .score-title-row {
   display: flex;
   align-items: center;

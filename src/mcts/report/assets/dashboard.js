@@ -278,6 +278,11 @@
       const el = document.getElementById(id);
       if (el) el.textContent = val;
     });
+    const legacyCard = document.getElementById("score-card");
+    if (DATA.score_v2 && legacyCard) {
+      legacyCard.hidden = true;
+      return;
+    }
     const pill = document.getElementById("risk-pill");
     const gaugeScore = document.getElementById("gauge-score-value");
     const gradeEl = document.getElementById("security-grade");

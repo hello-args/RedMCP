@@ -363,6 +363,7 @@ def test_html_includes_v2_section_when_scoring_both(
     write_html_report(report, out)
     html = out.read_text(encoding="utf-8")
     assert "v2-score-section" in html
+    assert 'id="score-card"' in html and "hidden" in html.split('id="score-card"')[1].split(">")[0]
     assert "v2-dimension-radar" in html
     assert "v2-contributors-table" in html
     assert "v2-categories-card" in html
