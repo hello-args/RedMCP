@@ -41,6 +41,26 @@ def test_auto_multiple_servers_requires_flag(tmp_path: Path) -> None:
     assert exc.value.multiple_servers == ["a", "b"]
 
 
+def test_auto_multiple_config_files_error(tmp_path: Path) -> None:
+    (tmp_path / ".mcp.json").write_text(json.dumps({"mcpServers": {"a": {"command": "python"}}}))
+    cursor = tmp_path / ".cursor"
+    cursor.mkdir()
+    (cursor / "mcp.json").write_text(json.dumps({"mcpServers": {"b": {"command": "python"}}}))
+    base = ScanConfig(target=tmp_path)
+    with pytest.raises(AutoScanError, match="Multiple MCP config files"):
+        resolve_auto_scan(tmp_path, base)
+
+
+def test_auto_multiple_entrypoints_error(tmp_path: Path) -> None:
+    (tmp_path / "server.py").write_text("FastMCP\n@tool\ndef a(): pass\n")
+    nested = tmp_path / "pkg"
+    nested.mkdir()
+    (nested / "bridge.py").write_text("FastMCP\n@tool\ndef b(): pass\n")
+    base = ScanConfig(target=tmp_path)
+    with pytest.raises(AutoScanError, match="Multiple MCP entrypoint candidates"):
+        resolve_auto_scan(tmp_path, base)
+
+
 def test_auto_server_flag(tmp_path: Path) -> None:
     config = tmp_path / ".mcp.json"
     config.write_text(json.dumps({"mcpServers": {"a": {"command": "python"}, "b": {"command": "python"}}}))

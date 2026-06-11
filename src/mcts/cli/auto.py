@@ -26,10 +26,25 @@ def resolve_auto_scan(
     """Resolve scan target/config for --auto mode (static only)."""
     root = target.expanduser().resolve()
     candidates = find_entrypoint_candidates(root) if root.is_dir() else []
+    if len(candidates) > 1:
+        listed = ", ".join(str(path.relative_to(root)) for path in candidates[:5])
+        raise AutoScanError(
+            f"Multiple MCP entrypoint candidates under {root}; pass TARGET explicitly. Candidates: {listed}"
+        )
     if len(candidates) == 1:
         return base_config.model_copy(update={"target": candidates[0]})
 
     configs = find_mcp_configs(root) if root.is_dir() else []
+    if len(configs) > 1:
+        lines: list[str] = []
+        for cfg in configs:
+            servers = list_servers(cfg)
+            rel = cfg.relative_to(root).as_posix()
+            lines.append(f"{rel}: {', '.join(servers) if servers else '(no servers)'}")
+        raise AutoScanError(
+            "Multiple MCP config files found; pass --config and --server explicitly.\n"
+            + "\n".join(f"  • {line}" for line in lines)
+        )
     if len(configs) == 1:
         servers = list_servers(configs[0])
         if auto_server:
