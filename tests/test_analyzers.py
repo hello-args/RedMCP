@@ -24,3 +24,52 @@ def test_data_leakage_scans_source_files(example_server_path: Path) -> None:
     report = Scanner(ScanConfig(target=example_server_path)).run()
     source_findings = [f for f in report.findings if f.analyzer == "data_leakage" and f.location]
     assert source_findings or any(f.analyzer == "data_leakage" for f in report.findings)
+
+
+def test_docker_dedupe_dockerfile_and_containerfile(tmp_path: Path) -> None:
+    """Dockerfile + Containerfile with same FROM → only 1 HIGH finding."""
+    from mcts.analyzers.supply_chain import SupplyChainAnalyzer
+    from mcts.mcp.models import MCPServerInfo
+
+    (tmp_path / "Dockerfile").write_text("FROM python:3.11-slim\n")
+    (tmp_path / "Containerfile").write_text("FROM python:3.11-slim\n")
+    findings = SupplyChainAnalyzer(tmp_path).analyze(MCPServerInfo(name="x"))
+    docker_highs = [f for f in findings if "Docker base" in f.title]
+    assert len(docker_highs) == 1
+
+
+def test_docker_dedupe_same_file_not_scanned_twice(tmp_path: Path) -> None:
+    """Same Dockerfile must not produce duplicate findings."""
+    from mcts.analyzers.supply_chain import SupplyChainAnalyzer
+    from mcts.mcp.models import MCPServerInfo
+
+    (tmp_path / "Dockerfile").write_text("FROM python:3.11-slim\n")
+    findings = SupplyChainAnalyzer(tmp_path).analyze(MCPServerInfo(name="x"))
+    docker_highs = [f for f in findings if "Docker base" in f.title]
+    assert len(docker_highs) == 1
+
+
+def test_docker_dedupe_multistage_same_image(tmp_path: Path) -> None:
+    """Multi-stage build with same FROM → only 1 HIGH finding."""
+    from mcts.analyzers.supply_chain import SupplyChainAnalyzer
+    from mcts.mcp.models import MCPServerInfo
+
+    (tmp_path / "Dockerfile").write_text(
+        "FROM node:20 AS builder\nFROM node:20 AS runtime\n"
+    )
+    findings = SupplyChainAnalyzer(tmp_path).analyze(MCPServerInfo(name="x"))
+    docker_highs = [f for f in findings if "Docker base" in f.title]
+    assert len(docker_highs) == 1
+
+
+def test_docker_digest_pinned_not_flagged(tmp_path: Path) -> None:
+    """Digest-pinned images must never be flagged."""
+    from mcts.analyzers.supply_chain import SupplyChainAnalyzer
+    from mcts.mcp.models import MCPServerInfo
+
+    (tmp_path / "Dockerfile").write_text(
+        "FROM python:3.11@sha256:abcdef1234567890\n"
+    )
+    findings = SupplyChainAnalyzer(tmp_path).analyze(MCPServerInfo(name="x"))
+    docker_highs = [f for f in findings if "Docker base" in f.title]
+    assert len(docker_highs) == 0
