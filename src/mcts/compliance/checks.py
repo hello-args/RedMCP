@@ -63,7 +63,7 @@ OWASP_ANALYZER_MAP = OWASP_LLM_ANALYZER_MAP
 class ComplianceChecker:
     """Maps findings to OWASP LLM + MCP Top 10 coverage gaps (meta-findings only)."""
 
-    def check(self, findings: list[Finding]) -> list[Finding]:
+    def check(self, findings: list[Finding], *, tools_discovered: int = 0) -> list[Finding]:
         compliance_findings: list[Finding] = []
         scorable = [f for f in findings if f.analyzer != "compliance"]
 
@@ -88,7 +88,7 @@ class ComplianceChecker:
                 )
             )
 
-        if missing_mcp and scorable:
+        if missing_mcp and scorable and tools_discovered > 0:
             compliance_findings.append(
                 Finding(
                     id="compliance-mcp-top10-gaps",
