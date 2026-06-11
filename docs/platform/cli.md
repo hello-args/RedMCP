@@ -30,12 +30,14 @@ Read-only preflight checks before your first scan (no live probes).
 ```bash
 mcts doctor .
 mcts doctor /path/to/repo --deep
+mcts doctor . --json -o doctor-report.json
 ```
 
 | Flag | Description |
 |------|-------------|
 | `--deep` | Optional import dry-run for config servers |
-| `--json` | Machine-readable output |
+| `--json` | Machine-readable output to stdout |
+| `--output`, `-o` | Write doctor JSON report (default: `mcts_analysis/doctor-report.json`) |
 
 Exit **0** when checks pass; **1** on failures; **2** on user error.
 
@@ -248,10 +250,12 @@ mcts scan ./server.py --terminal-format by_severity \
 Targeted scans without passing `--surfaces`:
 
 ```bash
-mcts scan-prompts <target> [--snapshot path.json]
-mcts scan-resources <target> [--snapshot path.json] [--resource-mime text/plain]
-mcts scan-instructions <target> [--snapshot path.json]
+mcts scan-prompts <target> [-o report.json] [--no-progress] [--snapshot path.json]
+mcts scan-resources <target> [-o report.json] [--no-progress] [--snapshot path.json] [--resource-mime text/plain]
+mcts scan-instructions <target> [-o report.json] [--no-progress] [--snapshot path.json]
 ```
+
+Each subcommand writes matching HTML and SARIF siblings derived from the JSON basename (for example `scan-prompts-report.json` → `.html` / `.sarif`).
 
 For agent repos with prompts in markdown (not MCP `prompts/list`), repository discovery is enabled by default on static scans:
 

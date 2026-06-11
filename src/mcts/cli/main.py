@@ -1205,6 +1205,10 @@ def fuzz(
         Path | None,
         typer.Option("--output", "-o", help="Write fuzz findings JSON"),
     ] = None,
+    no_progress: Annotated[
+        bool,
+        typer.Option("--no-progress", help="Skip pre-report progress animation"),
+    ] = False,
     understand_live_risk: Annotated[
         bool,
         typer.Option(
@@ -1285,6 +1289,7 @@ def fuzz(
         remote_transport=transport,
         bearer_token=bearer_token,
         remote_headers=remote_headers,
+        no_progress=no_progress,
     )
     _validate_live_launch(fuzz_config)
 
@@ -1352,6 +1357,10 @@ def _parse_headers(header: list[str] | None) -> dict[str, str]:
 def readiness(
     target: Annotated[Path, typer.Argument(help="MCP server path or repo")],
     output: Annotated[Path | None, typer.Option("--output", "-o")] = None,
+    no_progress: Annotated[
+        bool,
+        typer.Option("--no-progress", help="Skip pre-report progress animation"),
+    ] = False,
     enable_opa: Annotated[
         bool,
         typer.Option("--opa", help="Enable optional OPA Rego policy checks"),
@@ -1366,7 +1375,12 @@ def readiness(
 
     from mcts.readiness.runner import run_readiness
 
-    config = ScanConfig(target=target, readiness_opa=enable_opa, readiness_llm=enable_llm)
+    config = ScanConfig(
+        target=target,
+        readiness_opa=enable_opa,
+        readiness_llm=enable_llm,
+        no_progress=no_progress,
+    )
     report = run_readiness(config)
     console.print(
         f"[bold]Readiness[/bold] — score {report.readiness_score}/100, "
@@ -1425,23 +1439,40 @@ def _surface_scan(
     snapshot: Path | None = None,
     *,
     artifact_name: str,
+    output: Path | None = None,
+    no_progress: bool = False,
+    resource_mime_allowlist: list[str] | None = None,
 ) -> None:
     """Run a scan limited to specific MCP surfaces."""
+    from mcts.ui.theme import ThemeName, get_theme
+
     config = ScanConfig(
         target=target,
         surfaces=surfaces,
         snapshot_path=snapshot,
         surface_scoped_analyzers=True,
         discover_instructions=True,
+        resource_mime_allowlist=resource_mime_allowlist or [],
+        no_progress=no_progress,
     )
-    report = Scanner(config).run()
+
+    def _run_scan():
+        return Scanner(config).run()
+
+    theme = get_theme(ThemeName.MINIMAL.value)
+    report = run_with_progress(
+        _run_scan,
+        theme=theme,
+        console=console,
+        enabled=not no_progress,
+    )
     console.print(f"[bold]MCTS[/bold] — {len(report.findings)} finding(s) on surfaces: {', '.join(surfaces)}")
     for finding in report.findings[:15]:
         console.print(f"  [{finding.severity.value}] {finding.title}")
 
     json_path, html_path, sarif_path = persist_scan_artifacts(
         report,
-        json_path=resolve_output_path(None, artifact_name),
+        json_path=resolve_output_path(output, artifact_name),
     )
     console.print(f"[green]Saved[/green] {json_path}, {html_path}, {sarif_path}")
 
@@ -1453,9 +1484,24 @@ def scan_prompts(
         Path | None,
         typer.Option("--snapshot", help="Static JSON snapshot with prompts"),
     ] = None,
+    output: Annotated[
+        Path | None,
+        typer.Option("--output", "-o", help="Write scan JSON report"),
+    ] = None,
+    no_progress: Annotated[
+        bool,
+        typer.Option("--no-progress", help="Skip pre-report progress animation"),
+    ] = False,
 ) -> None:
     """Scan prompts and server instructions only."""
-    _surface_scan(target, ["prompt", "instruction"], snapshot, artifact_name="scan-prompts-report.json")
+    _surface_scan(
+        target,
+        ["prompt", "instruction"],
+        snapshot,
+        artifact_name="scan-prompts-report.json",
+        output=output,
+        no_progress=no_progress,
+    )
 
 
 @app.command("scan-resources")
@@ -1469,25 +1515,26 @@ def scan_resources(
         str | None,
         typer.Option("--resource-mime", help="Comma-separated MIME allowlist"),
     ] = None,
+    output: Annotated[
+        Path | None,
+        typer.Option("--output", "-o", help="Write scan JSON report"),
+    ] = None,
+    no_progress: Annotated[
+        bool,
+        typer.Option("--no-progress", help="Skip pre-report progress animation"),
+    ] = False,
 ) -> None:
     """Scan MCP resources only."""
     mime_list = [p.strip() for p in resource_mime.split(",") if p.strip()] if resource_mime else []
-    config = ScanConfig(
-        target=target,
-        surfaces=["resource"],
-        snapshot_path=snapshot,
+    _surface_scan(
+        target,
+        ["resource"],
+        snapshot,
+        artifact_name="scan-resources-report.json",
+        output=output,
+        no_progress=no_progress,
         resource_mime_allowlist=mime_list,
     )
-    report = Scanner(config).run()
-    console.print(f"[bold]MCTS[/bold] — {len(report.findings)} resource finding(s)")
-    for finding in report.findings[:15]:
-        console.print(f"  [{finding.severity.value}] {finding.title}")
-
-    json_path, html_path, sarif_path = persist_scan_artifacts(
-        report,
-        json_path=resolve_output_path(None, "scan-resources-report.json"),
-    )
-    console.print(f"[green]Saved[/green] {json_path}, {html_path}, {sarif_path}")
 
 
 @app.command("scan-instructions")
@@ -1497,9 +1544,24 @@ def scan_instructions(
         Path | None,
         typer.Option("--snapshot", help="Static JSON snapshot with instructions"),
     ] = None,
+    output: Annotated[
+        Path | None,
+        typer.Option("--output", "-o", help="Write scan JSON report"),
+    ] = None,
+    no_progress: Annotated[
+        bool,
+        typer.Option("--no-progress", help="Skip pre-report progress animation"),
+    ] = False,
 ) -> None:
     """Scan server instructions only."""
-    _surface_scan(target, ["instruction"], snapshot, artifact_name="scan-instructions-report.json")
+    _surface_scan(
+        target,
+        ["instruction"],
+        snapshot,
+        artifact_name="scan-instructions-report.json",
+        output=output,
+        no_progress=no_progress,
+    )
 
 
 @app.command()
@@ -1515,6 +1577,14 @@ def doctor(
             help="Run import validation for MCP server modules (requires .mcp.json or other MCP config)",
         ),
     ] = False,
+    output: Annotated[
+        Path | None,
+        typer.Option(
+            "--output",
+            "-o",
+            help=f"Write doctor JSON report (default: {ANALYSIS_DIR_NAME}/doctor-report.json)",
+        ),
+    ] = None,
     json_output: Annotated[
         bool,
         typer.Option("--json", help="Emit machine-readable JSON"),
@@ -1523,7 +1593,7 @@ def doctor(
     """Preflight checks before your first scan (no live probes)."""
     from mcts.cli.doctor import run_doctor
 
-    code = run_doctor(path, deep=deep, json_output=json_output)
+    code = run_doctor(path, deep=deep, json_output=json_output, output=output)
     if code:
         raise typer.Exit(code=code)
 
@@ -1644,12 +1714,17 @@ def scan_mcp(
         Path | None,
         typer.Option("--output", "-o", help="Write manifest probe JSON"),
     ] = None,
+    no_progress: Annotated[
+        bool,
+        typer.Option("--no-progress", help="Accepted for CI script parity (no animation today)"),
+    ] = False,
     understand_live_risk: Annotated[
         bool,
         typer.Option("--i-understand-live-risk", help="Consent to live remote probing"),
     ] = False,
 ) -> None:
     """Pre-connect remote MCP manifest probe (tools/list metadata)."""
+    _ = no_progress
     import json
 
     from mcts.probe.consent import live_consent_granted

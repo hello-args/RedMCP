@@ -33,7 +33,13 @@ _OPTIONAL_CLI_CHECKS = (
 )
 
 
-def run_doctor(path: Path, *, deep: bool = False, json_output: bool = False) -> int:
+def run_doctor(
+    path: Path,
+    *,
+    deep: bool = False,
+    json_output: bool = False,
+    output: Path | None = None,
+) -> int:
     """Run read-only preflight checks. Returns exit code (0 ok, 1 failures, 2 user error)."""
     root = path.expanduser().resolve()
     if not root.exists():
@@ -101,23 +107,26 @@ def run_doctor(path: Path, *, deep: bool = False, json_output: bool = False) -> 
     if deep:
         warnings += _check_optional_toolchain(checks)
 
-    if json_output:
+    payload = {
+        "path": str(root),
+        "checks": [{"status": s, "label": label, "detail": d} for s, label, d in checks],
+        "failures": failures,
+        "warnings": warnings,
+    }
+
+    if json_output or output is not None:
         import json
 
         from mcts.output.analysis_dir import resolve_output_path
 
-        payload = {
-            "path": str(root),
-            "checks": [{"status": s, "label": label, "detail": d} for s, label, d in checks],
-            "failures": failures,
-            "warnings": warnings,
-        }
+        output_path = resolve_output_path(output, "doctor-report.json")
         text = json.dumps(payload, indent=2)
-        output_path = resolve_output_path(None, "doctor-report.json")
         output_path.write_text(text, encoding="utf-8")
-        console.print_json(text)
+        if json_output:
+            console.print_json(text)
         console.print(f"[green]Saved[/green] {output_path}")
-    else:
+
+    if not json_output:
         console.print(f"[bold]mcts doctor[/bold] {path}\n")
         for status, label, detail in checks:
             icon = {"pass": "[green]✓[/green]", "warn": "[yellow]⚠[/yellow]", "fail": "[red]✗[/red]"}[status]
