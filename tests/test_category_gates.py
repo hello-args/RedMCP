@@ -48,6 +48,7 @@ def test_category_gate_passes_below_limit() -> None:
     ]
     assert not category_gate_failures(findings, {"permissions": 10})
 
+
 def test_category_gate_boundary_score_equals_limit() -> None:
     """score == limit should FAIL with inclusive message."""
     failures = category_gate_failures([], {"permissions": 0})

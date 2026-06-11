@@ -137,40 +137,40 @@ class SupplyChainAnalyzer(BaseAnalyzer):
         return findings
 
     def _scan_dockerfile(self, root: Path) -> list[Finding]:
-    findings: list[Finding] = []
-    # dedupe file paths — _find_files and glob overlap on same files
-    seen_paths: set[Path] = set()
-    for path in _find_files(root, "Dockerfile"):
-        seen_paths.add(path.resolve())
-    for path in root.glob("**/Dockerfile*"):
-        if path.is_file():
+        findings: list[Finding] = []
+        # dedupe file paths — _find_files and glob overlap on same files
+        seen_paths: set[Path] = set()
+        for path in _find_files(root, "Dockerfile"):
             seen_paths.add(path.resolve())
-    for path in root.glob("**/Containerfile*"):
-        if path.is_file():
-            seen_paths.add(path.resolve())
-    # dedupe by normalized image ref across all files
-    seen_images: set[str] = set()
-    for path in sorted(seen_paths):
-        text = path.read_text(encoding="utf-8", errors="ignore")
-        for match in DOCKER_FROM.finditer(text):
-            image = match.group(1)
-            if "@sha256:" not in image and (":latest" in image.lower() or ":" not in image):
-                norm = image.split("@")[0].lower()
-                if norm in seen_images:
-                    continue
-                seen_images.add(norm)
-                findings.append(
-                    _finding(
-                        path,
-                        f"supply-docker-{hash(norm) & 0xFFFF:04x}",
-                        "Docker base image not digest-pinned",
-                        f"FROM {image}",
-                        Severity.HIGH,
-                        "MCTS-T-1015",
-                        evidence={"image": image},
+        for path in root.glob("**/Dockerfile*"):
+            if path.is_file():
+                seen_paths.add(path.resolve())
+        for path in root.glob("**/Containerfile*"):
+            if path.is_file():
+                seen_paths.add(path.resolve())
+        # dedupe by normalized image ref across all files
+        seen_images: set[str] = set()
+        for path in sorted(seen_paths):
+            text = path.read_text(encoding="utf-8", errors="ignore")
+            for match in DOCKER_FROM.finditer(text):
+                image = match.group(1)
+                if "@sha256:" not in image and (":latest" in image.lower() or ":" not in image):
+                    norm = image.split("@")[0].lower()
+                    if norm in seen_images:
+                        continue
+                    seen_images.add(norm)
+                    findings.append(
+                        _finding(
+                            path,
+                            f"supply-docker-{hash(norm) & 0xFFFF:04x}",
+                            "Docker base image not digest-pinned",
+                            f"FROM {image}",
+                            Severity.HIGH,
+                            "MCTS-T-1015",
+                            evidence={"image": image},
+                        )
                     )
-                )
-    return findings
+        return findings
 
 
 def _find_files(root: Path, name: str) -> list[Path]:

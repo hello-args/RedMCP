@@ -284,8 +284,7 @@ def scan(
         int | None,
         typer.Option("--max-critical", help="Exit 1 if critical finding count exceeds this"),
     ] = None,
-    
-   fail_on_category: Annotated[
+    fail_on_category: Annotated[
         list[str] | None,
         typer.Option(
             "--fail-on-category",
@@ -296,7 +295,6 @@ def scan(
             ),
         ),
     ] = None,
-    
     theme: Annotated[
         str,
         typer.Option(
