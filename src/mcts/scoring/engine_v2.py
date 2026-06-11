@@ -51,20 +51,18 @@ def dimension_raw_sums(findings: list[Finding], ctx: ScoringContext) -> dict[str
 
 
 def compute_dimension_scores(findings: list[Finding], ctx: ScoringContext) -> dict[str, int]:
+    """Relative factor load per axis on this scan (0–100; highest axis = 100)."""
     dim_raw = dimension_raw_sums(findings, ctx)
-    return {dim: normalize_dim(dim_raw[dim], dim, ctx) for dim in FACTOR_DIMENSIONS}
+    return {dim: normalize_dim(dim_raw[dim], dim_raw) for dim in FACTOR_DIMENSIONS}
 
 
-def normalize_dim(raw: float, dim: str, ctx: ScoringContext) -> int:
+def normalize_dim(raw: float, dim_raw: dict[str, float]) -> int:
     if raw <= 0:
         return 0
-    corpus_p95 = None
-    if ctx.corpus_stats:
-        corpus_p95 = ctx.corpus_stats.dimension_p95.get(dim)
-    if corpus_p95 and corpus_p95 > 0:
-        return min(100, round(100 * raw / corpus_p95))
-    denom = max(ctx.last_absolute_risk or raw, 1.0)
-    return min(100, round(100 * raw / denom))
+    max_raw = max(dim_raw.values()) if dim_raw else 0.0
+    if max_raw <= 0:
+        return 0
+    return min(100, round(100 * raw / max_raw))
 
 
 def build_top_contributors(

@@ -105,7 +105,7 @@ Every `ScanReport` includes `score` (legacy). With v2/both, `score_v2` is added.
     "absolute_risk": 2260,
     "risk_level": "critical",
     "security_score": 9,
-    "dimension_scores": { "exploitability": 100, "reachability": 85 },
+    "dimension_scores": { "blast_radius": 100, "reachability": 90, "threat_maturity": 25 },
     "top_contributors": [ "..." ],
     "basis": { "scorable_count": 12, "excluded_non_scorable": 7 }
   }

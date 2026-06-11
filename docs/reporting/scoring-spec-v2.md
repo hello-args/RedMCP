@@ -90,15 +90,16 @@ Per-finding contributor fields: `risk_contribution`, `confidence` (effective × 
 
 ### `dimension_scores` normalization (§7.5)
 
-Per-axis raw sum = Σ factor increment for that axis across scorable findings. Normalized 0–100 (higher = worse):
+Per-axis raw sum = Σ factor increment for that axis across scorable findings. Normalized **relative to this scan** (0–100; highest-loaded axis = 100):
 
 ```
 if raw <= 0 → 0
-elif corpus dimension_p95[axis] > 0 → min(100, round(100 × raw / p95))
-else → min(100, round(100 × raw / max(absolute_risk, 1)))
+else → min(100, round(100 × raw / max(raw across all axes on this scan)))
 ```
 
-`dimension_p95` per axis is recomputed from corpus scans via `scripts/calibrate_scoring_weights.py --write-package-stats`.
+This shapes the factor radar (which axes dominate on the current server). Corpus-wide benchmarking uses `absolute_risk` and `security_score`, not per-axis tiles.
+
+Packaged `dimension_p95` in corpus stats is retained for calibration scripts but is not used for `dimension_scores` display.
 
 ## CI gates
 

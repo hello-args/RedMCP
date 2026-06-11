@@ -6,7 +6,12 @@ from unittest.mock import patch
 
 from mcts.reporting.models import Finding, Severity
 from mcts.scoring.context import scorable_findings_v2
-from mcts.scoring.engine_v2 import RiskScoringEngineV2, finding_risk
+from mcts.scoring.engine_v2 import (
+    RiskScoringEngineV2,
+    compute_dimension_scores,
+    dimension_raw_sums,
+    finding_risk,
+)
 from mcts.scoring.factors import ScoringContext
 from mcts.scoring.models import RiskFactorVector
 from mcts.scoring.weights import load_weights
@@ -150,6 +155,46 @@ def test_absolute_risk_invariant_to_confidence() -> None:
     score_high = engine.score(ctx_high, legacy_overall=50)
     assert score_low.absolute_risk == score_high.absolute_risk
     assert score_low.confidence_score != score_high.confidence_score
+
+
+def test_dimension_scores_are_relative_not_flat() -> None:
+    """Radar axes must differ when factor loads differ (not all corpus-saturated 100)."""
+    weights = load_weights("manual_v1")
+    findings = [
+        Finding(
+            id="exec",
+            analyzer="command_execution",
+            title="Exec",
+            description="d",
+            severity=Severity.HIGH,
+            recommendation="fix",
+            tool="run",
+        ),
+        Finding(
+            id="perm",
+            analyzer="permissions",
+            title="Perm",
+            description="delete all",
+            severity=Severity.CRITICAL,
+            recommendation="fix",
+            tool="wipe",
+        ),
+    ]
+    ctx = ScoringContext(
+        findings=findings,
+        tools=[],
+        attack_graph={},
+        scan_scope="entrypoint",
+        weights=weights,
+        corpus_stats=None,
+        chain_factors={},
+    )
+    raw = dimension_raw_sums(findings, ctx)
+    scores = compute_dimension_scores(findings, ctx)
+    assert max(scores.values()) == 100
+    assert min(scores.values()) < 100
+    assert scores["threat_maturity"] < scores["exploitability"]
+    assert sum(raw.values()) > 0
 
 
 def test_attack_chains_excluded_from_scorable() -> None:
