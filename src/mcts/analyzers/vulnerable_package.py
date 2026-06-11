@@ -23,10 +23,20 @@ class VulnerablePackageAnalyzer(BaseAnalyzer):
     def analyze(self, server: MCPServerInfo) -> list[Finding]:
         del server
         if not shutil.which("pip-audit"):
-            return []
+            return [
+                _skip_finding(
+                    "pip-audit CLI not found on PATH",
+                    "Install pip-audit (`uv sync --extra supplychain`) or remove --pip-audit.",
+                )
+            ]
         req = self._find_requirements()
         if req is None:
-            return []
+            return [
+                _skip_finding(
+                    "no requirements.txt or pyproject.toml found in scan target",
+                    "Add a Python dependency manifest or scan a directory that contains one.",
+                )
+            ]
         return self._audit_file(req)
 
     def _find_requirements(self) -> Path | None:
@@ -80,3 +90,17 @@ class VulnerablePackageAnalyzer(BaseAnalyzer):
                     )
                 )
         return findings
+
+
+def _skip_finding(reason: str, recommendation: str) -> Finding:
+    return Finding(
+        id="pip-audit-skipped",
+        analyzer="vulnerable_package",
+        title="pip-audit scan skipped",
+        description=reason,
+        severity=Severity.LOW,
+        recommendation=recommendation,
+        technique_id=None,
+        confidence=1.0,
+        evidence={"skipped": True, "reason": reason},
+    )
