@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from mcts.analyzers.base import BaseAnalyzer
-from mcts.analyzers.surface_context import scan_surfaces
+from mcts.analyzers.surface_context import is_intentional_context_surface, scan_surfaces
 from mcts.analyzers.surfaces import ScanSurfaceKind
 from mcts.mcp.models import MCPServerInfo
 from mcts.reporting.models import Finding, Severity
@@ -37,6 +37,8 @@ class PromptDefenseAnalyzer(BaseAnalyzer):
     def analyze(self, server: MCPServerInfo) -> list[Finding]:
         findings: list[Finding] = []
         for surface in scan_surfaces(server, _PROMPT_SURFACES):
+            if is_intentional_context_surface(surface):
+                continue
             text = surface.all_text()
             if len(text) < 40:
                 continue

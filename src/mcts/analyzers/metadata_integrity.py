@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from mcts.analyzers.base import BaseAnalyzer
 from mcts.analyzers.surface_context import (
+    is_intentional_context_surface,
     scan_surfaces,
     surface_location,
     surface_text_fields,
@@ -40,7 +41,8 @@ class MetadataIntegrityAnalyzer(BaseAnalyzer):
         loc = surface_location(surface)
         tool_name = surface.name if surface.kind == ScanSurfaceKind.TOOL else None
 
-        if not self.skip_poison_checks:
+        intentional_context = is_intentional_context_surface(surface)
+        if not self.skip_poison_checks and not intentional_context:
             for field, text in surface_text_fields(surface):
                 for label, severity in scan_text_poison(text) + scan_text_templates(text):
                     findings.append(
@@ -56,7 +58,7 @@ class MetadataIntegrityAnalyzer(BaseAnalyzer):
                     )
 
         description = surface.description or ""
-        if len(description) > EXCESSIVE_LENGTH:
+        if len(description) > EXCESSIVE_LENGTH and not intentional_context:
             findings.append(
                 Finding(
                     id=f"meta-excessive-desc-{surface.label}",
