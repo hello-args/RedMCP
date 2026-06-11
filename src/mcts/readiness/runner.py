@@ -75,9 +75,7 @@ def run_readiness(config: ScanConfig) -> ReadinessReport:
 
     score = readiness_score(findings)
     production_ready = (
-        bool(server.tools)
-        and score >= 70
-        and not any(f.severity == Severity.CRITICAL for f in findings)
+        bool(server.tools) and score >= 70 and not any(f.severity == Severity.CRITICAL for f in findings)
     )
     for finding in findings:
         finding.evidence.setdefault("readiness_score", score)
