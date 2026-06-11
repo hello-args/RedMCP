@@ -1433,6 +1433,13 @@ def serve_api(
     uvicorn.run(api_app, host=host, port=port, reload=reload)
 
 
+# Surfaces whose findings originate from discovered instruction files
+# (SKILL.md, prompt manifests, server instructions). A resource-only scan
+# must not walk these, otherwise it inherits prompt-surface findings and
+# pollutes resource CI gates.
+_INSTRUCTION_DISCOVERY_SURFACES = frozenset({"prompt", "instruction"})
+
+
 def _surface_scan(
     target: Path,
     surfaces: list[str],
@@ -1451,7 +1458,7 @@ def _surface_scan(
         surfaces=surfaces,
         snapshot_path=snapshot,
         surface_scoped_analyzers=True,
-        discover_instructions=True,
+        discover_instructions=not _INSTRUCTION_DISCOVERY_SURFACES.isdisjoint(surfaces),
         resource_mime_allowlist=resource_mime_allowlist or [],
         no_progress=no_progress,
     )
