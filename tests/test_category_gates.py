@@ -47,3 +47,26 @@ def test_category_gate_passes_below_limit() -> None:
         )
     ]
     assert not category_gate_failures(findings, {"permissions": 10})
+
+def test_category_gate_boundary_score_equals_limit() -> None:
+    """score == limit should FAIL with inclusive message."""
+    failures = category_gate_failures([], {"permissions": 0})
+    assert len(failures) == 1
+    assert "inclusive gate" in failures[0]
+    assert ">=" in failures[0]
+    assert "0" in failures[0]
+
+
+def test_category_gate_score_zero_limit_one_passes() -> None:
+    """score=0, limit=1 should NOT fail — score is below limit."""
+    failures = category_gate_failures([], {"permissions": 1})
+    assert len(failures) == 0
+
+
+def test_category_gate_failure_message_never_says_passed_alone() -> None:
+    """Failure message must not imply CI pass when gate fails."""
+    failures = category_gate_failures([], {"permissions": 0})
+    assert len(failures) == 1
+    message = failures[0]
+    assert "inclusive gate" in message
+    assert ">=" in message
