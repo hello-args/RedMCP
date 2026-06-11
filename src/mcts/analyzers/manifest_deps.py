@@ -69,9 +69,7 @@ def iter_pyproject_dependencies(path: Path) -> list[DeclaredDependency]:
                     continue
                 for entry in entries:
                     if isinstance(entry, str):
-                        deps.extend(
-                            _dependency_from_pep508(entry, f"project.optional-dependencies.{group}")
-                        )
+                        deps.extend(_dependency_from_pep508(entry, f"project.optional-dependencies.{group}"))
 
     tool = data.get("tool")
     if isinstance(tool, dict):
