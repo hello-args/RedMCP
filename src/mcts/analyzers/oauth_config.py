@@ -94,7 +94,18 @@ DEPUTY_KEYS = (
     "impersonate",
 )
 
-URL_PATTERN = re.compile(r"https?://[^\s\"']+", re.I)
+_OAUTH_KEY_NAMES = {key.lower() for key in OAUTH_URL_KEYS}
+
+JSON_SCAN_SKIP_DIRS = frozenset(
+    {
+        "data",
+        "fixtures",
+        "test_data",
+        "processed",
+        "__fixtures__",
+        "tests",
+    }
+)
 
 
 class OAuthConfigAnalyzer(BaseAnalyzer):
@@ -147,7 +158,7 @@ class OAuthConfigAnalyzer(BaseAnalyzer):
             return findings
         seen.add(finding_key)
 
-        if parsed.scheme == "http" and host:
+        if parsed.scheme == "http" and host and _is_oauth_endpoint_key_path(key_path):
             findings.append(
                 _oauth_finding(
                     finding_id=f"oauth-http-{abs(hash(finding_key))}",
@@ -496,18 +507,25 @@ def _json_files_under(root: Path) -> list[Path]:
     for path in root.rglob("*.json"):
         if any(part.startswith(".") for part in path.parts):
             continue
+        if any(part in JSON_SCAN_SKIP_DIRS for part in path.parts):
+            continue
         files.append(path)
     return files[:50]
+
+
+def _is_oauth_endpoint_key_path(key_path: str) -> bool:
+    if not key_path or key_path == "$text":
+        return False
+    leaf = key_path.rsplit(".", 1)[-1].lower()
+    if leaf in _OAUTH_KEY_NAMES:
+        return True
+    return "oauth" in leaf
 
 
 def _extract_oauth_urls(source: str) -> list[tuple[str, str]]:
     payload = _load_json(source)
     if payload is None:
-        try:
-            text = Path(source).read_text(encoding="utf-8", errors="ignore")
-        except OSError:
-            return []
-        return _urls_from_text(text)
+        return []
 
     urls: list[tuple[str, str]] = []
     _walk_json(payload, "$", urls)
@@ -518,23 +536,17 @@ def _walk_json(node: object, prefix: str, out: list[tuple[str, str]]) -> None:
     if isinstance(node, dict):
         for key, value in node.items():
             key_path = f"{prefix}.{key}"
-            if isinstance(value, str):
-                if key.lower() in {k.lower() for k in OAUTH_URL_KEYS} or "oauth" in key.lower():
-                    if value.startswith("http"):
-                        out.append((value, key_path))
-                elif value.startswith("http") and any(
-                    marker in value.lower() for marker in ("oauth", "authorize", "token")
-                ):
-                    out.append((value, key_path))
-            else:
+            if (
+                isinstance(value, str)
+                and (key.lower() in _OAUTH_KEY_NAMES or "oauth" in key.lower())
+                and value.startswith("http")
+            ):
+                out.append((value, key_path))
+            elif not isinstance(value, str):
                 _walk_json(value, key_path, out)
     elif isinstance(node, list):
         for index, item in enumerate(node):
             _walk_json(item, f"{prefix}[{index}]", out)
-
-
-def _urls_from_text(text: str) -> list[tuple[str, str]]:
-    return [(match.group(0), "$text") for match in URL_PATTERN.finditer(text)]
 
 
 def _iter_oauth_blocks(node: object, prefix: str = "$") -> list[tuple[str, dict]]:
