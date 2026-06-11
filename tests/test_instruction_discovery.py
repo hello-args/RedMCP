@@ -83,7 +83,8 @@ def test_prompt_template_files_do_not_get_context_noise_findings(tmp_path: Path)
     (prompts / "review_prompt.md").write_text(
         "# Review prompt\n"
         "You must always follow this review checklist and mention whether token handling is safe.\n"
-        + "Repeat the review checklist.\n" * 120
+        + "Repeat the review checklist.\n"
+        * 120
     )
 
     config = ScanConfig(
@@ -118,9 +119,7 @@ def test_skill_md_keeps_dedicated_skill_scanner_without_prompt_noise(tmp_path: P
         surface_scoped_analyzers=True,
     )
     report = Scanner(config).run()
-    skill_findings = [
-        f for f in report.findings if f.location and str(f.location.file).endswith("SKILL.md")
-    ]
+    skill_findings = [f for f in report.findings if f.location and str(f.location.file).endswith("SKILL.md")]
 
     assert any(f.analyzer == "skill_md" for f in skill_findings)
     assert not [
