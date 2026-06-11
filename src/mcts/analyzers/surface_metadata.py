@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from mcts.analyzers.base import BaseAnalyzer
-from mcts.analyzers.surface_context import scan_surfaces
+from mcts.analyzers.surface_context import is_intentional_context_surface, scan_surfaces
 from mcts.analyzers.surfaces import ScanSurface, ScanSurfaceKind, parse_surfaces
 from mcts.analyzers.tpa_patterns import scan_text_poison, scan_text_templates
 from mcts.mcp.models import MCPServerInfo
@@ -28,18 +28,24 @@ class SurfaceMetadataAnalyzer(BaseAnalyzer):
         findings: list[Finding] = []
         loc = SourceLocation(file=surface.source_file or "", line=surface.source_line)
 
-        for field, text in (
-            ("name", surface.name),
-            ("description", surface.description),
-            ("extra", surface.extra_text),
-        ):
-            if not text:
-                continue
-            for label, severity in scan_text_poison(text) + scan_text_templates(text):
-                fid = f"surface-poison-{surface.label}-{field}-{label}"
-                findings.append(self._finding(surface, fid, label, severity, field, loc))
+        intentional_context = is_intentional_context_surface(surface)
+        if not intentional_context:
+            for field, text in (
+                ("name", surface.name),
+                ("description", surface.description),
+                ("extra", surface.extra_text),
+            ):
+                if not text:
+                    continue
+                for label, severity in scan_text_poison(text) + scan_text_templates(text):
+                    fid = f"surface-poison-{surface.label}-{field}-{label}"
+                    findings.append(self._finding(surface, fid, label, severity, field, loc))
 
-        if surface.kind != ScanSurfaceKind.TOOL and len(surface.description) > 800:
+        if (
+            surface.kind != ScanSurfaceKind.TOOL
+            and len(surface.description) > 800
+            and not intentional_context
+        ):
             findings.append(
                 Finding(
                     id=f"surface-excessive-{surface.label}",
