@@ -74,6 +74,17 @@ def test_run_semgrep_scan_missing_cli(tmp_path: Path) -> None:
     assert payload["errors"]
 
 
+def test_findings_from_payload_reports_semgrep_skip_reason() -> None:
+    payload = {
+        "results": [],
+        "errors": [{"message": "semgrep CLI not found on PATH"}],
+    }
+    findings = _findings_from_payload(payload, analyzer="semgrep_sast")
+    assert len(findings) == 1
+    assert findings[0].id == "semgrep-skipped"
+    assert "not found on PATH" in findings[0].description
+
+
 def test_run_semgrep_scan_parses_json(tmp_path: Path) -> None:
     rules = tmp_path / "rules.yaml"
     rules.write_text("rules: []\n", encoding="utf-8")
