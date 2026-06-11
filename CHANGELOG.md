@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-12
+
 ### Added
 
 - **Scoring v2 (multi-factor risk)** — parallel `score_v2.absolute_risk` with factor classifiers, attack-chain multipliers, corpus-calibrated `security_score`, and explainable `top_contributors`; legacy `score.overall` unchanged (invariant I1)
@@ -58,6 +60,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Print MCP Surface / Supply Chain / Dependency Hygiene breakdown when `--min-score` or `--ci` gate fails.
 - Validate resolvable live launch configuration before the consent gate on `mcts snapshot` and `mcts fuzz`.
 - **Doctor + MCP server startup hints** — `mcts doctor` now reports whether the optional `[mcp]` extra is installed, and `mcts-mcp` prints a direct install hint instead of a bare import failure when the extra is missing (#219).
+- **GitHub issue templates** — structured bug, feature, security, and documentation forms aligned with `type:*` / `priority:P*` label taxonomy
+- **Branch rulesets** — `main` + `main_*` release branches (maintainer merge) and admin-only `develop` integration branch
 
 ## [0.1.2] - 2026-06-10
 
