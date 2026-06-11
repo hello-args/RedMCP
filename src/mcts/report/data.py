@@ -482,11 +482,12 @@ def llm_owasp_mappings(findings: list[Finding]) -> dict[str, Any]:
     }
 
 
-def mcp_owasp_mappings(findings: list[Finding]) -> dict[str, Any]:
+def mcp_owasp_mappings(findings: list[Finding], *, tools_discovered: int | None = None) -> dict[str, Any]:
     """OWASP MCP Top 10 coverage — mirrors compliance meta-findings."""
     scorable = [f for f in findings if f.analyzer != "compliance"]
     covered = {MCP_ANALYZER_MAP[f.analyzer] for f in scorable if f.analyzer in MCP_ANALYZER_MAP}
     missing = sorted(set(OWASP_MCP_TOP10) - covered)
+    assessable_gaps = tools_discovered is None or tools_discovered > 0
 
     for finding in findings:
         if finding.analyzer != "compliance":
@@ -520,7 +521,7 @@ def mcp_owasp_mappings(findings: list[Finding]) -> dict[str, Any]:
                     "affected_tools": sorted(affected),
                 }
             )
-        elif scorable and full_label in missing:
+        elif scorable and full_label in missing and assessable_gaps:
             rows.append(
                 {
                     "id": mcp_id,
@@ -534,10 +535,11 @@ def mcp_owasp_mappings(findings: list[Finding]) -> dict[str, Any]:
             )
 
     rows.sort(key=lambda r: (0 if r["status"] == "findings" else 1, -r["finding_count"], r["id"]))
+    display_gaps = missing if assessable_gaps else []
     return {
         "categories": rows,
-        "gaps": missing,
-        "gap_count": len(missing),
+        "gaps": display_gaps,
+        "gap_count": len(display_gaps),
         "has_scorable_findings": bool(scorable),
     }
 
@@ -928,7 +930,7 @@ def build_dashboard_payload(report: ScanReport) -> dict[str, Any]:
         "analyzers": analyzer_results,
         "attack_graph": build_attack_graph(report),
         "owasp": llm_owasp_mappings(report.findings),
-        "owasp_mcp": mcp_owasp_mappings(report.findings),
+        "owasp_mcp": mcp_owasp_mappings(report.findings, tools_discovered=len(report.server.tools)),
         "technique_map": build_technique_map(report.findings),
         "capability_matrix": build_capability_matrix(report),
         "recommendations": build_recommendations(report.findings),
