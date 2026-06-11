@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Log when `--pip-audit` is skipped (missing CLI or dependency manifest) and keep CVE findings when the audit runs successfully.
 - Allow `mcts scan --url https://host/mcp` without an explicit TARGET positional argument.
 - Fail `mcts readiness` when zero MCP tools are discovered instead of reporting production-ready with `tools_checked: 0`.
+- Write distinct HTML and SARIF artifacts for `scan-prompts`, `scan-resources`, and `scan-instructions` instead of overwriting `scan-report.html`.
 
 ### Changed
 
