@@ -36,6 +36,28 @@ def run_readiness(config: ScanConfig) -> ReadinessReport:
         if llm and llm.is_available():
             findings.extend(llm.analyze_tool(tool_def, tool.name))
 
+    if not server.tools:
+        findings.append(
+            Finding(
+                id="readiness-no-tools-discovered",
+                analyzer="readiness",
+                title="No MCP tools discovered",
+                description=(
+                    "Readiness checks apply to MCP tools, but discovery found zero tools. "
+                    "Agent repos with only SKILL.md or prompt markdown need a discoverable MCP "
+                    "entrypoint, or use live/snapshot discovery before running readiness."
+                ),
+                severity=Severity.HIGH,
+                recommendation=(
+                    "Point readiness at an MCP server entrypoint, run static discovery on tool "
+                    "sources, or export tools via mcts snapshot for offline scans."
+                ),
+                technique_id=None,
+                confidence=0.9,
+                evidence={"readiness_rule": "HEUR-000", "tools_discovered": 0},
+            )
+        )
+
     if not server.version or server.version == "0.0.0":
         findings.append(
             Finding(
@@ -52,7 +74,9 @@ def run_readiness(config: ScanConfig) -> ReadinessReport:
         )
 
     score = readiness_score(findings)
-    production_ready = score >= 70 and not any(f.severity == Severity.CRITICAL for f in findings)
+    production_ready = (
+        bool(server.tools) and score >= 70 and not any(f.severity == Severity.CRITICAL for f in findings)
+    )
     for finding in findings:
         finding.evidence.setdefault("readiness_score", score)
         finding.evidence.setdefault("production_ready", production_ready)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
+from pathlib import Path
 
 from mcts.mcp.models import MCPServerInfo
 
@@ -30,6 +31,7 @@ class ScanSurface:
     mime_type: str | None = None
     source_file: str | None = None
     source_line: int | None = None
+    discovered_via: str = "static"
 
     @property
     def label(self) -> str:
@@ -42,6 +44,23 @@ class ScanSurface:
         if self.uri:
             parts.append(self.uri)
         return "\n".join(p for p in parts if p)
+
+    def is_intentional_context_file(self) -> bool:
+        """Return True for repo markdown meant to be loaded as agent context.
+
+        Prompt templates and SKILL.md files are usually long and imperative by
+        design. Keep hard scanners for secrets/exfil/shell/Unicode, but suppress
+        generic length/imperative-language heuristics for these context files.
+        """
+        if self.kind not in {ScanSurfaceKind.PROMPT, ScanSurfaceKind.INSTRUCTION}:
+            return False
+        if not self.source_file:
+            return self.discovered_via == "skill-md"
+        path = Path(self.source_file)
+        name = path.name.lower()
+        if self.discovered_via == "skill-md" or name == "skill.md":
+            return True
+        return "prompt" in name and name.endswith((".md", ".markdown", ".mdx"))
 
 
 def parse_surfaces(raw: list[str] | None) -> frozenset[ScanSurfaceKind]:
@@ -77,6 +96,7 @@ def iter_surfaces(
                     extra_text=schema_text,
                     source_file=tool.source_file,
                     source_line=tool.source_line,
+                    discovered_via=tool.discovered_via,
                 )
             )
 
@@ -91,6 +111,7 @@ def iter_surfaces(
                     extra_text=arg_text,
                     source_file=prompt.source_file,
                     source_line=prompt.source_line,
+                    discovered_via=prompt.discovered_via,
                 )
             )
 
@@ -109,6 +130,7 @@ def iter_surfaces(
                     extra_text=extra,
                     uri=resource.uri,
                     mime_type=resource.mime_type,
+                    discovered_via="resource",
                 )
             )
 
@@ -121,6 +143,7 @@ def iter_surfaces(
                 description=server.instructions,
                 source_file=source_file,
                 source_line=1,
+                discovered_via="instruction-file" if source_file else "static",
             )
         )
 
