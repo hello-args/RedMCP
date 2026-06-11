@@ -6,6 +6,7 @@ import re
 
 from mcts.analyzers.base import BaseAnalyzer
 from mcts.analyzers.surface_context import (
+    is_intentional_context_surface,
     scan_surfaces,
     surface_location,
     surface_text_fields,
@@ -43,9 +44,10 @@ class PromptInjectionAnalyzer(BaseAnalyzer):
         tool = tool_for_surface(server, surface)
         tool_name = tool.name if tool else None
 
+        intentional_context = is_intentional_context_surface(surface)
         for field, text in surface_text_fields(surface):
             findings.extend(self._unicode_findings(surface, text, field, loc, tool_name))
-            if field == "description":
+            if field == "description" and not intentional_context:
                 findings.extend(self._description_only_findings(surface, text, loc, tool, tool_name))
 
         return findings

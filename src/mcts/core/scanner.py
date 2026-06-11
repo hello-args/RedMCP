@@ -203,7 +203,7 @@ class Scanner:
         findings = dedupe_metadata_findings(findings)
         findings = dedupe_sigma_findings(findings)
         findings = enrich_findings(findings)
-        findings.extend(self.compliance.check(findings))
+        findings.extend(self.compliance.check(findings, tools_discovered=len(server_info.tools)))
         analyzers_executed.append("compliance")
         score = self.scoring.score(findings)
         summary = ScanSummary.from_findings(findings)

@@ -86,17 +86,64 @@ mcts fuzz . --config ~/.cursor/mcp.json --server my-server \
   --fuzz-level safe --i-understand-live-risk -o fuzz.json
 ```
 
+### Remote fuzz (HTTP/SSE)
+
+Fuzz a remote MCP endpoint over HTTP or SSE instead of spawning a local subprocess:
+
+```bash
+# Streamable HTTP (default transport)
+mcts fuzz --url https://mcp.example.com/mcp \
+  --fuzz-level safe \
+  --i-understand-live-risk
+
+# With Bearer token authentication
+mcts fuzz --url https://mcp.example.com/mcp \
+  --bearer-token "$MCP_TOKEN" \
+  --fuzz-level standard \
+  --i-understand-live-risk
+
+# SSE transport
+mcts fuzz --url https://mcp.example.com/sse \
+  --transport sse \
+  --i-understand-live-risk
+
+# Custom headers
+mcts fuzz --url https://mcp.example.com/mcp \
+  --header "X-API-Key: secret" \
+  --header "X-Tenant: acme" \
+  --i-understand-live-risk -o fuzz.json
+```
+
+`--url` is mutually exclusive with `--command` and `--config`. When `--url` is
+provided, MCTS sends raw JSON-RPC POST requests to the endpoint using `httpx`
+and classifies the responses with the same rules as stdio fuzz.
+
 ---
 
 ## Consent
 
 | Flag / env | Required for |
 |------------|--------------|
-| `--i-understand-live-risk` | Starting any fuzz session (subprocess) |
+| `--i-understand-live-risk` | Starting any fuzz session (stdio subprocess **or** remote HTTP/SSE) |
 | `MCTS_LIVE_OK=1` | CI bypass for live consent |
 | `--i-understand-fuzz-risk` | **aggressive** level only |
 
 Without live consent, exit code **2**. Without fuzz-risk consent on aggressive, exit code **2**.
+
+### Remote probing consent
+
+Remote fuzzing (`--url`) carries the same consent requirement as local stdio
+fuzzing. Sending fuzz probes to a remote MCP server can trigger unexpected
+behavior, consume resources, or expose security weaknesses. **Always** obtain
+authorization from the server operator before running remote fuzz.
+
+- Never fuzz production endpoints without explicit approval.
+- Use `--fuzz-level safe` (default) for initial assessments — it never invokes
+  `tools/call`.
+- Bearer tokens and custom headers supplied via `--bearer-token` / `--header`
+  are sent with every probe request. Treat them like credentials — do not log
+  them or commit them to source control.
+- Set `MCTS_LIVE_OK=1` in CI to bypass the interactive consent gate.
 
 ---
 
@@ -196,13 +243,27 @@ Use **safe** level on trusted fixture servers only:
 
 Never run **aggressive** fuzz against production or third-party servers.
 
+### Remote fuzz CI example
+
+```yaml
+- name: Remote protocol fuzz (safe)
+  env:
+    MCTS_LIVE_OK: "1"
+    MCP_TOKEN: ${{ secrets.MCP_BEARER_TOKEN }}
+  run: |
+    mcts fuzz --url https://staging-mcp.example.com/mcp \
+      --bearer-token "$MCP_TOKEN" \
+      --fuzz-level safe --i-understand-live-risk -o fuzz.json
+    mcts scan . --runtime-events fuzz.json --no-progress -o report.json
+```
+
 ---
 
 ## Planned fuzz capabilities
 
 | Capability | Status | GAP | Notes |
 |------------|--------|-----|-------|
-| Remote protocol fuzz (`mcts fuzz --url`) | Planned | GAP-190 | HTTP/SSE targets |
+| Remote protocol fuzz (`mcts fuzz --url`) | **Shipped** | GAP-190 | HTTP/SSE via `--url`, `--transport`, `--bearer-token` |
 | WebSocket MCP transport fuzz | Missing | GAP-187 | WebSocket transport coverage |
 | Docker MCP server auto-detection | Missing | GAP-188 | Container-launched servers |
 | Deeper aggressive corpus | Partial | GAP-186 | Expanded dynamic analyzer corpus |

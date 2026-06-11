@@ -7,11 +7,17 @@ import re
 from pathlib import Path
 
 from mcts.analyzers.base import BaseAnalyzer
+from mcts.analyzers.manifest_deps import (
+    UNPINNED_PATTERN,
+    is_unpinned_spec,
+    iter_pyproject_dependencies,
+    load_locked_versions,
+    normalize_package_name,
+)
 from mcts.core.config import DEFAULT_EXCLUDE_DIRS
 from mcts.mcp.models import MCPServerInfo
 from mcts.reporting.models import Finding, Severity, SourceLocation
 
-UNPINNED_PATTERN = re.compile(r"(\^|~|\*|latest|>=|<=|>|<)", re.I)
 SUSPICIOUS_NPM_SCRIPT = re.compile(r"(postinstall|preinstall|prepare)", re.I)
 DOCKER_FROM = re.compile(r"^\s*FROM\s+(\S+)", re.I | re.M)
 NPM_EXEC = re.compile(r"\b(npx|npm)\s+(install|-g|exec)\b", re.I)
@@ -83,22 +89,28 @@ class SupplyChainAnalyzer(BaseAnalyzer):
     def _scan_pyproject(self, root: Path) -> list[Finding]:
         findings: list[Finding] = []
         for path in _find_files(root, "pyproject.toml"):
-            text = path.read_text(encoding="utf-8", errors="ignore")
-            for line_no, line in enumerate(text.splitlines(), start=1):
-                if UNPINNED_PATTERN.search(line) and any(
-                    token in line for token in ('"', "dependencies", "requires")
-                ):
-                    findings.append(
-                        _finding(
-                            path,
-                            f"supply-unpinned-py-{line_no}",
-                            "Unpinned Python dependency",
-                            line.strip(),
-                            Severity.MEDIUM,
-                            "MCTS-T-1014",
-                            line=line_no,
-                        )
+            manifest_root = path.parent
+            locked = load_locked_versions(manifest_root)
+            for dep in iter_pyproject_dependencies(path):
+                if not is_unpinned_spec(dep.spec):
+                    continue
+                if normalize_package_name(dep.name) in locked:
+                    continue
+                findings.append(
+                    _finding(
+                        path,
+                        f"supply-unpinned-py-{normalize_package_name(dep.name)}",
+                        f"Unpinned Python dependency: {dep.name}",
+                        f"{dep.section}: {dep.name} = {dep.spec!r}",
+                        Severity.MEDIUM,
+                        "MCTS-T-1014",
+                        evidence={
+                            "package": dep.name,
+                            "spec": dep.spec,
+                            "section": dep.section,
+                        },
                     )
+                )
         return findings
 
     def _scan_requirements(self, root: Path) -> list[Finding]:

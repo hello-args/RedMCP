@@ -12,6 +12,7 @@ from rich.console import Console
 from mcts import __version__
 from mcts.core.config import ScanConfig
 from mcts.core.scanner import Scanner
+from mcts.discovery.static_json import StaticJsonError
 from mcts.output.analysis_dir import (
     ANALYSIS_DIR_NAME,
     analysis_path,
@@ -125,6 +126,30 @@ def _print_startup_error(exc) -> None:
     )
 
 
+def _validate_live_launch(config: ScanConfig) -> None:
+    """Resolve stdio launch parameters without starting a subprocess."""
+    if config.remote_url:
+        return
+
+    from mcts.discovery.config import ConfigDiscoveryError
+    from mcts.discovery.live_config import resolve_live_config
+
+    try:
+        resolve_live_config(config)
+    except ValueError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+    except ConfigDiscoveryError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+
+def _require_config_server(config: Path | None, server: str | None) -> None:
+    if config and not server:
+        console.print("[red]Error:[/red] --config requires --server.")
+        raise typer.Exit(code=2)
+
+
 def _print_discovery_hints(target: Path) -> None:
     from mcts.discovery.onboarding import format_discovery_hints
 
@@ -139,11 +164,35 @@ def _print_discovery_hints(target: Path) -> None:
         console.print(f"  [dim]{line}[/dim]")
 
 
+def _print_min_score_gate_failure(report, min_score: int) -> None:
+    overall = report.score.overall
+    console.print(f"[red]CI gate failed:[/red] overall score {overall}/100 (minimum {min_score})")
+    breakdown = getattr(report, "score_breakdown", None)
+    if breakdown is None:
+        return
+    buckets = [
+        ("MCP Surface", breakdown.mcp_surface),
+        ("Supply Chain", breakdown.supply_chain),
+        ("Dependency Hygiene", breakdown.dependency_hygiene),
+    ]
+    lowest_label, lowest_score = min(buckets, key=lambda item: item[1])
+    console.print("[yellow]Score breakdown:[/yellow]")
+    for label, score in buckets:
+        suffix = " ← primary failure driver" if label == lowest_label else ""
+        console.print(f"  {label}: {score}/100{suffix}")
+    console.print(f"  Composite: {breakdown.composite}/100")
+    if lowest_score < min_score:
+        console.print(
+            f"[dim]Lowest bucket ({lowest_label}) is below the overall minimum; "
+            "review findings in that area before changing MCP tool code.[/dim]"
+        )
+
+
 def _check_gates(report, config: ScanConfig) -> None:
     if config.fail_on_critical and report.summary.critical > 0:
         raise typer.Exit(code=1)
     if config.min_score is not None and report.score.overall < config.min_score:
-        console.print(f"[red]Score {report.score.overall} is below minimum {config.min_score}[/red]")
+        _print_min_score_gate_failure(report, config.min_score)
         raise typer.Exit(code=1)
     if config.max_critical is not None and report.summary.critical > config.max_critical:
         console.print(
@@ -477,7 +526,10 @@ def scan(
     ] = None,
     ci: Annotated[
         bool,
-        typer.Option("--ci", help="Apply CI gate preset (fail-on-critical, min-score 70)"),
+        typer.Option(
+            "--ci",
+            help="Apply CI gate preset (fail-on-critical, min-score 70) and print score breakdown on failure",
+        ),
     ] = False,
     policy: Annotated[
         Path | None,
@@ -535,8 +587,8 @@ def scan(
         )
         raise typer.Exit(code=2)
 
-    if not machine_wide and target is None:
-        console.print("[red]Error:[/red] TARGET is required unless --machine-wide is set.")
+    if not machine_wide and target is None and not url:
+        console.print("[red]Error:[/red] TARGET is required unless --machine-wide or --url is set.")
         raise typer.Exit(code=2)
 
     if target is None:
@@ -710,6 +762,12 @@ def scan(
         surface_scoped_analyzers=surface_scoped,
     )
 
+    try:
+        gov = load_policy(config_obj.governance_policy)
+    except (FileNotFoundError, ValueError) as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
     if machine_wide:
         try:
             resolved_theme = get_theme(theme)
@@ -769,7 +827,7 @@ def scan(
             enabled=not no_progress,
             terminal_width=term_width,
         )
-    except (LiveProbeConsentError, MCPStartupError, MCPProbeError, ValueError) as exc:
+    except (LiveProbeConsentError, MCPStartupError, MCPProbeError, StaticJsonError, ValueError) as exc:
         if isinstance(exc, MCPStartupError):
             _print_startup_error(exc)
         else:
@@ -825,11 +883,6 @@ def scan(
     _check_strict_live(report, config_obj)
     _check_strict_discovery(report, config_obj)
     _check_gates(report, config_obj)
-    try:
-        gov = load_policy(config_obj.governance_policy)
-    except (FileNotFoundError, ValueError) as exc:
-        console.print(f"[red]Error:[/red] {exc}")
-        raise typer.Exit(code=2) from exc
     if gov is not None:
         violations = evaluate_policy(
             policy=gov,
@@ -1112,9 +1165,9 @@ def fuzz(
     target: Annotated[
         Path,
         typer.Argument(
-            help="Path to MCP server entrypoint (use . with --config)",
+            help="Path to MCP server entrypoint (use . with --config or --url)",
         ),
-    ],
+    ] = Path("."),
     fuzz_level: Annotated[
         str,
         typer.Option(
@@ -1139,15 +1192,35 @@ def fuzz(
         str | None,
         typer.Option("--server", help="Server name inside --config mcpServers"),
     ] = None,
+    url: Annotated[
+        str | None,
+        typer.Option("--url", help="Remote MCP server URL (SSE or streamable HTTP)"),
+    ] = None,
+    transport: Annotated[
+        str,
+        typer.Option("--transport", help="Remote transport: streamable-http or sse"),
+    ] = "streamable-http",
+    bearer_token: Annotated[
+        str | None,
+        typer.Option("--bearer-token", help="Bearer token for remote MCP server"),
+    ] = None,
+    header: Annotated[
+        list[str] | None,
+        typer.Option("--header", help="Custom HTTP header (Name: Value). Repeatable."),
+    ] = None,
     output: Annotated[
         Path | None,
         typer.Option("--output", "-o", help="Write fuzz findings JSON"),
     ] = None,
+    no_progress: Annotated[
+        bool,
+        typer.Option("--no-progress", help="Skip pre-report progress animation"),
+    ] = False,
     understand_live_risk: Annotated[
         bool,
         typer.Option(
             "--i-understand-live-risk",
-            help="Consent to start a live MCP server subprocess",
+            help="Consent to probe a live MCP server (subprocess or remote)",
         ),
     ] = False,
     understand_fuzz_risk: Annotated[
@@ -1162,7 +1235,7 @@ def fuzz(
         typer.Option("--theme", help="Terminal theme: cyber, minimal, github"),
     ] = ThemeName.CYBER.value,
 ) -> None:
-    """Run safe read-only MCP protocol fuzz probes against a stdio server."""
+    """Run safe read-only MCP protocol fuzz probes against a stdio or remote server."""
     import json
 
     from mcts.analyzers.runtime_events import events_from_fuzz_findings
@@ -1172,19 +1245,20 @@ def fuzz(
     from mcts.probe.startup_errors import MCPStartupError
     from mcts.taxonomy.mapper import enrich_findings
 
-    if target == Path(".") and config is None:
+    is_remote = bool(url)
+
+    if url and command:
+        console.print("[red]Error:[/red] --url and --command are mutually exclusive.")
+        raise typer.Exit(code=2)
+
+    if url and config:
+        console.print("[red]Error:[/red] --url and --config are mutually exclusive.")
+        raise typer.Exit(code=2)
+
+    if not is_remote and target == Path(".") and config is None:
         _print_discovery_hints(target)
 
-    if not live_consent_granted(flag=understand_live_risk):
-        console.print(
-            "[red]Fuzzing requires live server consent.[/red] Pass --i-understand-live-risk "
-            "or set MCTS_LIVE_OK=1 in CI."
-        )
-        raise typer.Exit(code=2)
-
-    if config and not server:
-        console.print("[red]Error:[/red] --config requires --server.")
-        raise typer.Exit(code=2)
+    _require_config_server(config, server)
 
     level = fuzz_level.lower()
     if level not in {item.value for item in FuzzLevel}:
@@ -1200,6 +1274,7 @@ def fuzz(
 
     scan_target = config if (config and target == Path(".")) else target
     live_args = [part.strip() for part in args.split(",") if part.strip()] if args else []
+    remote_headers = _parse_headers(header)
 
     try:
         resolved_theme = get_theme(theme)
@@ -1217,7 +1292,26 @@ def fuzz(
         fuzz_level=level,
         fuzz_consent=understand_fuzz_risk,
         theme=resolved_theme.name.value,
+        remote_url=url,
+        remote_transport=transport,
+        bearer_token=bearer_token,
+        remote_headers=remote_headers,
+        no_progress=no_progress,
     )
+    _validate_live_launch(fuzz_config)
+
+    if not live_consent_granted(flag=understand_live_risk):
+        if is_remote:
+            console.print(
+                "[red]Remote fuzzing sends test probes to a live MCP endpoint.[/red] "
+                "Pass --i-understand-live-risk or set MCTS_LIVE_OK=1 in CI."
+            )
+        else:
+            console.print(
+                "[red]Fuzzing requires live server consent.[/red] Pass --i-understand-live-risk "
+                "or set MCTS_LIVE_OK=1 in CI."
+            )
+        raise typer.Exit(code=2)
 
     try:
         result = FuzzRunner(fuzz_config).run()
@@ -1233,6 +1327,7 @@ def fuzz(
 
     findings = enrich_findings(result.findings)
     runtime_event_rows = events_from_fuzz_findings(findings)
+    target_label = url or str(scan_target)
     console.print(f"[bold]MCTS fuzz[/bold] — level={result.level.value}, probes={result.probes_run}")
     if not findings:
         console.print("[green]No fuzz findings — server handled probes cleanly.[/green]")
@@ -1241,7 +1336,7 @@ def fuzz(
             console.print(f"  [{finding.severity.value}] {finding.title}")
 
     payload = {
-        "target": str(scan_target),
+        "target": target_label,
         "fuzz_level": result.level.value,
         "probes_run": result.probes_run,
         "runtime_events": runtime_event_rows,
@@ -1269,6 +1364,10 @@ def _parse_headers(header: list[str] | None) -> dict[str, str]:
 def readiness(
     target: Annotated[Path, typer.Argument(help="MCP server path or repo")],
     output: Annotated[Path | None, typer.Option("--output", "-o")] = None,
+    no_progress: Annotated[
+        bool,
+        typer.Option("--no-progress", help="Skip pre-report progress animation"),
+    ] = False,
     enable_opa: Annotated[
         bool,
         typer.Option("--opa", help="Enable optional OPA Rego policy checks"),
@@ -1283,7 +1382,12 @@ def readiness(
 
     from mcts.readiness.runner import run_readiness
 
-    config = ScanConfig(target=target, readiness_opa=enable_opa, readiness_llm=enable_llm)
+    config = ScanConfig(
+        target=target,
+        readiness_opa=enable_opa,
+        readiness_llm=enable_llm,
+        no_progress=no_progress,
+    )
     report = run_readiness(config)
     console.print(
         f"[bold]Readiness[/bold] — score {report.readiness_score}/100, "
@@ -1305,6 +1409,9 @@ def readiness(
         )
     )
     console.print(f"[green]Saved[/green] {output_path}")
+
+    if report.tools_checked == 0:
+        raise typer.Exit(code=1)
 
 
 @app.command(name="serve")
@@ -1339,23 +1446,44 @@ def _surface_scan(
     snapshot: Path | None = None,
     *,
     artifact_name: str,
+    output: Path | None = None,
+    no_progress: bool = False,
+    resource_mime_allowlist: list[str] | None = None,
 ) -> None:
     """Run a scan limited to specific MCP surfaces."""
+    from mcts.ui.theme import ThemeName, get_theme
+
     config = ScanConfig(
         target=target,
         surfaces=surfaces,
         snapshot_path=snapshot,
         surface_scoped_analyzers=True,
         discover_instructions=True,
+        resource_mime_allowlist=resource_mime_allowlist or [],
+        no_progress=no_progress,
     )
-    report = Scanner(config).run()
+
+    def _run_scan():
+        return Scanner(config).run()
+
+    theme = get_theme(ThemeName.MINIMAL.value)
+    try:
+        report = run_with_progress(
+            _run_scan,
+            theme=theme,
+            console=console,
+            enabled=not no_progress,
+        )
+    except StaticJsonError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
     console.print(f"[bold]MCTS[/bold] — {len(report.findings)} finding(s) on surfaces: {', '.join(surfaces)}")
     for finding in report.findings[:15]:
         console.print(f"  [{finding.severity.value}] {finding.title}")
 
     json_path, html_path, sarif_path = persist_scan_artifacts(
         report,
-        json_path=resolve_output_path(None, artifact_name),
+        json_path=resolve_output_path(output, artifact_name),
     )
     console.print(f"[green]Saved[/green] {json_path}, {html_path}, {sarif_path}")
 
@@ -1367,9 +1495,24 @@ def scan_prompts(
         Path | None,
         typer.Option("--snapshot", help="Static JSON snapshot with prompts"),
     ] = None,
+    output: Annotated[
+        Path | None,
+        typer.Option("--output", "-o", help="Write scan JSON report"),
+    ] = None,
+    no_progress: Annotated[
+        bool,
+        typer.Option("--no-progress", help="Skip pre-report progress animation"),
+    ] = False,
 ) -> None:
     """Scan prompts and server instructions only."""
-    _surface_scan(target, ["prompt", "instruction"], snapshot, artifact_name="scan-prompts-report.json")
+    _surface_scan(
+        target,
+        ["prompt", "instruction"],
+        snapshot,
+        artifact_name="scan-prompts-report.json",
+        output=output,
+        no_progress=no_progress,
+    )
 
 
 @app.command("scan-resources")
@@ -1383,25 +1526,26 @@ def scan_resources(
         str | None,
         typer.Option("--resource-mime", help="Comma-separated MIME allowlist"),
     ] = None,
+    output: Annotated[
+        Path | None,
+        typer.Option("--output", "-o", help="Write scan JSON report"),
+    ] = None,
+    no_progress: Annotated[
+        bool,
+        typer.Option("--no-progress", help="Skip pre-report progress animation"),
+    ] = False,
 ) -> None:
     """Scan MCP resources only."""
     mime_list = [p.strip() for p in resource_mime.split(",") if p.strip()] if resource_mime else []
-    config = ScanConfig(
-        target=target,
-        surfaces=["resource"],
-        snapshot_path=snapshot,
+    _surface_scan(
+        target,
+        ["resource"],
+        snapshot,
+        artifact_name="scan-resources-report.json",
+        output=output,
+        no_progress=no_progress,
         resource_mime_allowlist=mime_list,
     )
-    report = Scanner(config).run()
-    console.print(f"[bold]MCTS[/bold] — {len(report.findings)} resource finding(s)")
-    for finding in report.findings[:15]:
-        console.print(f"  [{finding.severity.value}] {finding.title}")
-
-    json_path, html_path, sarif_path = persist_scan_artifacts(
-        report,
-        json_path=resolve_output_path(None, "scan-resources-report.json"),
-    )
-    console.print(f"[green]Saved[/green] {json_path}, {html_path}, {sarif_path}")
 
 
 @app.command("scan-instructions")
@@ -1411,9 +1555,24 @@ def scan_instructions(
         Path | None,
         typer.Option("--snapshot", help="Static JSON snapshot with instructions"),
     ] = None,
+    output: Annotated[
+        Path | None,
+        typer.Option("--output", "-o", help="Write scan JSON report"),
+    ] = None,
+    no_progress: Annotated[
+        bool,
+        typer.Option("--no-progress", help="Skip pre-report progress animation"),
+    ] = False,
 ) -> None:
     """Scan server instructions only."""
-    _surface_scan(target, ["instruction"], snapshot, artifact_name="scan-instructions-report.json")
+    _surface_scan(
+        target,
+        ["instruction"],
+        snapshot,
+        artifact_name="scan-instructions-report.json",
+        output=output,
+        no_progress=no_progress,
+    )
 
 
 @app.command()
@@ -1424,8 +1583,19 @@ def doctor(
     ] = Path("."),
     deep: Annotated[
         bool,
-        typer.Option("--deep", help="Run optional import dry-run checks for config servers"),
+        typer.Option(
+            "--deep",
+            help="Run import validation for MCP server modules (requires .mcp.json or other MCP config)",
+        ),
     ] = False,
+    output: Annotated[
+        Path | None,
+        typer.Option(
+            "--output",
+            "-o",
+            help=f"Write doctor JSON report (default: {ANALYSIS_DIR_NAME}/doctor-report.json)",
+        ),
+    ] = None,
     json_output: Annotated[
         bool,
         typer.Option("--json", help="Emit machine-readable JSON"),
@@ -1434,7 +1604,7 @@ def doctor(
     """Preflight checks before your first scan (no live probes)."""
     from mcts.cli.doctor import run_doctor
 
-    code = run_doctor(path, deep=deep, json_output=json_output)
+    code = run_doctor(path, deep=deep, json_output=json_output, output=output)
     if code:
         raise typer.Exit(code=code)
 
@@ -1492,16 +1662,7 @@ def snapshot(
     from mcts.probe.startup_errors import MCPStartupError
     from mcts.snapshot.export import export_snapshot
 
-    if not live_consent_granted(flag=understand_live_risk):
-        console.print(
-            "[red]Snapshot export requires live consent.[/red] Pass --i-understand-live-risk "
-            "or set MCTS_LIVE_OK=1 in CI."
-        )
-        raise typer.Exit(code=2)
-
-    if config and not server:
-        console.print("[red]Error:[/red] --config requires --server.")
-        raise typer.Exit(code=2)
+    _require_config_server(config, server)
 
     scan_target = config if (config and target == Path(".")) else target
     live_args = [part.strip() for part in args.split(",") if part.strip()] if args else []
@@ -1516,10 +1677,22 @@ def snapshot(
         stderr_file=stderr_file,
         expand_vars=expand_vars,
     )
+    _validate_live_launch(snap_config)
+
+    if not live_consent_granted(flag=understand_live_risk):
+        console.print(
+            "[red]Snapshot export requires live consent.[/red] Pass --i-understand-live-risk "
+            "or set MCTS_LIVE_OK=1 in CI."
+        )
+        raise typer.Exit(code=2)
+
     try:
         payload = export_snapshot(snap_config)
     except MCPStartupError as exc:
         _print_startup_error(exc)
+        raise typer.Exit(code=2) from exc
+    except ValueError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
     except RuntimeError as exc:
         console.print(f"[red]Error:[/red] {exc}")
@@ -1552,12 +1725,17 @@ def scan_mcp(
         Path | None,
         typer.Option("--output", "-o", help="Write manifest probe JSON"),
     ] = None,
+    no_progress: Annotated[
+        bool,
+        typer.Option("--no-progress", help="Accepted for CI script parity (no animation today)"),
+    ] = False,
     understand_live_risk: Annotated[
         bool,
         typer.Option("--i-understand-live-risk", help="Consent to live remote probing"),
     ] = False,
 ) -> None:
     """Pre-connect remote MCP manifest probe (tools/list metadata)."""
+    _ = no_progress
     import json
 
     from mcts.probe.consent import live_consent_granted

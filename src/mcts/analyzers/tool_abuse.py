@@ -4,10 +4,9 @@ from __future__ import annotations
 
 from mcts.analyzers.base import BaseAnalyzer
 from mcts.analyzers.path_traversal import SENSITIVE_PATH_TARGETS, TRAVERSAL_PAYLOADS
-from mcts.mcp.models import MCPServerInfo, MCPTool
+from mcts.analyzers.tool_classification import is_file_access_tool
+from mcts.mcp.models import MCPServerInfo
 from mcts.reporting.models import Finding, Severity
-
-FILE_TOOL_HINTS = ("read", "file", "path", "open", "load", "fetch")
 
 
 class ToolAbuseAnalyzer(BaseAnalyzer):
@@ -18,7 +17,7 @@ class ToolAbuseAnalyzer(BaseAnalyzer):
     def analyze(self, server: MCPServerInfo) -> list[Finding]:
         findings: list[Finding] = []
         for tool in server.tools:
-            if self._is_file_tool(tool):
+            if is_file_access_tool(tool):
                 findings.append(
                     Finding(
                         id=f"abuse-path-{tool.name}",
@@ -39,7 +38,3 @@ class ToolAbuseAnalyzer(BaseAnalyzer):
                     )
                 )
         return findings
-
-    def _is_file_tool(self, tool: MCPTool) -> bool:
-        haystack = f"{tool.name} {tool.description}".lower()
-        return any(hint in haystack for hint in FILE_TOOL_HINTS)

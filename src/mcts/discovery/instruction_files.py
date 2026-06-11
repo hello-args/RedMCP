@@ -19,6 +19,12 @@ DEFAULT_INSTRUCTION_GLOBS: tuple[str, ...] = (
     "**/INSTRUCTIONS.md",
 )
 
+DEFAULT_INSTRUCTION_SKIP_PREFIXES: tuple[str, ...] = (
+    "docs/prompts/",
+    "doc/prompts/",
+    "design/",
+)
+
 DEFAULT_SKILLS_DIR_NAMES: tuple[str, ...] = (
     "skills",
     "agent/skills",
@@ -207,6 +213,9 @@ def _path_allowed(config: ScanConfig, path: Path, target: ScanTarget) -> bool:
         rel_str = str(path)
 
     if any(part in config.exclude_dirs for part in path.parts):
+        return False
+    rel_normalized = rel_str.replace("\\", "/").lower()
+    if any(rel_normalized.startswith(prefix) for prefix in DEFAULT_INSTRUCTION_SKIP_PREFIXES):
         return False
     return not (config.exclude_globs and any(fnmatch(rel_str, g) for g in config.exclude_globs))
 

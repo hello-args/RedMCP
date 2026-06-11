@@ -81,6 +81,12 @@ def test_min_score_gate_fails(example_server_path: Path) -> None:
         ["scan", str(example_server_path), "--min-score", "99", "--no-progress", "--no-save"],
     )
     assert result.exit_code == 1
+    assert "CI gate failed" in result.stdout
+    assert "Score breakdown:" in result.stdout
+    assert "MCP Surface:" in result.stdout
+    assert "Supply Chain:" in result.stdout
+    assert "Dependency Hygiene:" in result.stdout
+    assert "primary failure driver" in result.stdout
 
 
 def test_min_score_gate_passes_on_baseline_server() -> None:

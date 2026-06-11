@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import importlib.util as importlib_util
+import os
+import shutil
 import sys
 from pathlib import Path
 
 from rich.console import Console
+from rich.markup import escape
 
 from mcts import __version__
 from mcts.discovery.config import (
@@ -18,8 +22,24 @@ from mcts.discovery.onboarding import find_entrypoint_candidates, find_mcp_confi
 
 console = Console()
 
+_OPTIONAL_EXTRA_CHECKS = (
+    ("[mcp] extra", "mcp", "mcp-mcts[mcp]"),
+    ("[api] extra", "fastapi", "mcp-mcts[api]"),
+)
+_OPTIONAL_CLI_CHECKS = (
+    ("semgrep CLI", "semgrep"),
+    ("pip-audit CLI", "pip-audit"),
+    ("opa CLI", "opa"),
+)
 
-def run_doctor(path: Path, *, deep: bool = False, json_output: bool = False) -> int:
+
+def run_doctor(
+    path: Path,
+    *,
+    deep: bool = False,
+    json_output: bool = False,
+    output: Path | None = None,
+) -> int:
     """Run read-only preflight checks. Returns exit code (0 ok, 1 failures, 2 user error)."""
     root = path.expanduser().resolve()
     if not root.exists():
@@ -67,32 +87,50 @@ def run_doctor(path: Path, *, deep: bool = False, json_output: bool = False) -> 
         checks.append(("warn", "Entrypoint candidate", "none found"))
         warnings += 1
 
-    if deep and configs:
-        for cfg in configs[:1]:
-            for server_name in sorted(load_servers_dict(cfg))[:2]:
-                _deep_import_check(cfg, server_name, checks)
+    if deep:
+        if not configs:
+            checks.append(("warn", "Deep checks", "skipped — no MCP config found"))
+            warnings += 1
+        else:
+            for cfg in configs[:1]:
+                try:
+                    server_names = sorted(load_servers_dict(cfg))[:2]
+                except ConfigDiscoveryError:
+                    server_names = []
+                if not server_names:
+                    checks.append(("warn", "Deep checks", "skipped — no servers in config"))
+                    warnings += 1
+                    continue
+                for server_name in server_names:
+                    _deep_import_check(cfg, server_name, checks)
 
-    if json_output:
+    if deep:
+        warnings += _check_optional_toolchain(checks)
+
+    payload = {
+        "path": str(root),
+        "checks": [{"status": s, "label": label, "detail": d} for s, label, d in checks],
+        "failures": failures,
+        "warnings": warnings,
+    }
+
+    if json_output or output is not None:
         import json
 
         from mcts.output.analysis_dir import resolve_output_path
 
-        payload = {
-            "path": str(root),
-            "checks": [{"status": s, "label": label, "detail": d} for s, label, d in checks],
-            "failures": failures,
-            "warnings": warnings,
-        }
+        output_path = resolve_output_path(output, "doctor-report.json")
         text = json.dumps(payload, indent=2)
-        output_path = resolve_output_path(None, "doctor-report.json")
         output_path.write_text(text, encoding="utf-8")
-        console.print_json(text)
+        if json_output:
+            console.print_json(text)
         console.print(f"[green]Saved[/green] {output_path}")
-    else:
+
+    if not json_output:
         console.print(f"[bold]mcts doctor[/bold] {path}\n")
         for status, label, detail in checks:
             icon = {"pass": "[green]✓[/green]", "warn": "[yellow]⚠[/yellow]", "fail": "[red]✗[/red]"}[status]
-            console.print(f"{icon} {label}: {detail}")
+            console.print(f"{icon} {escape(label)}: {escape(detail)}")
         if root.is_dir():
             hints = format_discovery_hints(root)
             if hints:
@@ -137,6 +175,13 @@ def _deep_import_check(config_path: Path, server_name: str, checks: list[tuple[s
             module = live.args[idx + 1].split(":")[0]
             break
     if not module:
+        checks.append(
+            (
+                "warn",
+                "Deep checks",
+                f"skipped for {server_name!r} — no -m module in launch args",
+            )
+        )
         return
     cwd = Path(live.cwd or ".")
     result = subprocess.run(
@@ -150,6 +195,31 @@ def _deep_import_check(config_path: Path, server_name: str, checks: list[tuple[s
         tail = (result.stderr or result.stdout or "").strip().splitlines()
         line = tail[-1] if tail else "import failed"
         checks.append(("warn", f"Import {module}", line[:120]))
+
+
+def _check_optional_toolchain(checks: list[tuple[str, str, str]]) -> int:
+    warnings = 0
+    for label, module, extra in _OPTIONAL_EXTRA_CHECKS:
+        if importlib_util.find_spec(module):
+            checks.append(("pass", label, f"module {module!r} importable"))
+        else:
+            checks.append(("warn", label, f"module {module!r} not found; install {extra} to enable"))
+            warnings += 1
+
+    for label, executable in _OPTIONAL_CLI_CHECKS:
+        found = shutil.which(executable)
+        if found:
+            checks.append(("pass", label, f"found at {found}"))
+        else:
+            checks.append(("warn", label, "not found on PATH"))
+            warnings += 1
+
+    if os.environ.get("MCTS_LLM_API_KEY"):
+        checks.append(("pass", "MCTS_LLM_API_KEY", "set"))
+    else:
+        checks.append(("warn", "MCTS_LLM_API_KEY", "not set"))
+        warnings += 1
+    return warnings
 
 
 def _rel(path: Path, root: Path) -> str:

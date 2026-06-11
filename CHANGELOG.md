@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Reject invalid `--snapshot` JSON such as scan-report artifacts, empty tool lists, or tool rows without names before scan analysis starts.
+- Validate governance `--policy` files before scan execution so missing or invalid policy files fail before reports are written.
+- Fail `--auto` with a clear error when multiple MCP config files or entrypoint candidates are found instead of silently scanning the repo root.
+- Warn in `mcts readiness` when `--opa` or `--llm-judge` is requested but optional dependencies are missing.
+- Surface a clear skip reason when `--semgrep` is enabled but the Semgrep CLI is unavailable or the scan fails before producing results.
+- Return exit code 2 with a clear message when `mcts snapshot` cannot resolve a live launch configuration.
+- Log when `--pip-audit` is skipped (missing CLI or dependency manifest) and keep CVE findings when the audit runs successfully.
+- Allow `mcts scan --url https://host/mcp` without an explicit TARGET positional argument.
+- Fail `mcts readiness` when zero MCP tools are discovered instead of reporting production-ready with `tools_checked: 0`.
+- Suppress misleading OWASP MCP Top 10 coverage-gap meta-findings when zero MCP tools were discovered.
+- Write distinct HTML and SARIF artifacts for `scan-prompts`, `scan-resources`, and `scan-instructions` instead of overwriting `scan-report.html`.
+- Document PEP 508 `pypi:package==version` syntax for `mcts vet` alongside existing `@` pin form.
+- Parse `pyproject.toml` dependencies with structured TOML instead of line heuristics so Poetry metadata and tool config are not flagged as unpinned packages (#155, #160).
+- Skip unpinned-range findings for packages pinned in adjacent `poetry.lock`, `uv.lock`, or `Pipfile.lock` (#151).
+- Add `-o` / `--output` to `mcts doctor` and surface scan subcommands for CI artifact paths (#156, #157).
+- Accept `--no-progress` on `readiness`, `fuzz`, `scan-mcp`, and surface scan subcommands for shared CI scripts (#158).
+- Explain when `mcts doctor --deep` import checks are skipped (no MCP config or no `-m` module in launch args).
+- Scope OAuth HTTP findings to OAuth config keys and skip fixture/data JSON during repo scans (#164).
+- Classify SQL database tools separately from filesystem tools so names like `read_query` are not flagged for path traversal (#165).
+- Exclude design prompt markdown under `docs/prompts/` from default instruction discovery (#162).
+
+### Changed
+
+- Print MCP Surface / Supply Chain / Dependency Hygiene breakdown when `--min-score` or `--ci` gate fails.
+- Validate resolvable live launch configuration before the consent gate on `mcts snapshot` and `mcts fuzz`.
+
 ## [0.1.2] - 2026-06-10
 
 ### Added

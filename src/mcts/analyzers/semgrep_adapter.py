@@ -112,4 +112,28 @@ def _findings_from_payload(payload: dict, *, analyzer: str) -> list[Finding]:
                 },
             )
         )
+    if not findings:
+        for err in payload.get("errors") or []:
+            if not isinstance(err, dict):
+                continue
+            message = str(err.get("message") or "").strip()
+            if not message:
+                continue
+            findings.append(
+                Finding(
+                    id="semgrep-skipped",
+                    analyzer=analyzer,
+                    title="Semgrep scan skipped",
+                    description=message,
+                    severity=Severity.LOW,
+                    recommendation=(
+                        "Install the semgrep CLI (`uv sync --extra semgrep`) or remove --semgrep "
+                        "when SAST is not required."
+                    ),
+                    technique_id=None,
+                    confidence=1.0,
+                    evidence={"skipped": True, "reason": message},
+                )
+            )
+            break
     return findings

@@ -45,8 +45,14 @@ def persist_scan_artifacts(
     report = _report_with_scan_history(report)
 
     json_out = resolve_output_path(json_path, "scan-report.json")
-    html_out = resolve_output_path(html_path, "scan-report.html")
-    sarif_out = resolve_output_path(sarif_path, "scan-report.sarif")
+    if html_path is None:
+        html_out = json_out.with_suffix(".html")
+    else:
+        html_out = resolve_output_path(html_path, "scan-report.html")
+    if sarif_path is None:
+        sarif_out = json_out.with_suffix(".sarif")
+    else:
+        sarif_out = resolve_output_path(sarif_path, "scan-report.sarif")
 
     if write_json:
         json_out.write_text(report.model_dump_json(indent=2), encoding="utf-8")

@@ -35,6 +35,26 @@ def test_jailbreak_analyzer_reports_live_acceptance() -> None:
     assert any(f.id == "jailbreak-live-payload-accepted" for f in findings)
 
 
+def test_benign_server_produces_no_accepted_events() -> None:
+    server = MCPServerInfo(
+        name="safe-server",
+        instructions="This server manages database records securely.",
+        tools=[
+            MCPTool(
+                name="list_records",
+                description="List all database records",
+                input_schema={"type": "object", "properties": {"limit": {"type": "integer"}}},
+            )
+        ],
+    )
+    events = events_from_jailbreak_probe(server)
+    assert events
+    accepted = [e for e in events if e.get("accepted")]
+    assert not accepted, f"Benign server should have 0 accepted events, got {len(accepted)}"
+    summary = summarize_jailbreak_events(events)
+    assert summary["accepted_count"] == 0
+
+
 def test_scanner_merges_jailbreak_events_when_enabled() -> None:
     server = MCPServerInfo(
         name="demo",

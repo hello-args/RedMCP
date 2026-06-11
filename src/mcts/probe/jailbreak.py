@@ -103,9 +103,9 @@ def _tool_accepts_free_text(tool: MCPTool) -> bool:
 
 
 def _evaluate_payload(payload_text: str, surface: dict[str, str]) -> tuple[bool, float]:
-    combined = f"{surface.get('text', '')}\n{payload_text}"
-    if _ACCEPTANCE_RE.search(combined):
+    surface_text = surface.get("text", "")
+    if _ACCEPTANCE_RE.search(surface_text):
         return True, 0.82
-    if surface.get("kind") == "tool_input" and len(surface.get("text", "")) < 12:
+    if surface.get("kind") == "tool_input" and len(surface_text) < 12:
         return True, 0.75
     return False, 0.9

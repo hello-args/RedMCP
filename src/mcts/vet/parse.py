@@ -34,14 +34,24 @@ def parse_package_spec(spec: str) -> PackageSpec:
 
 
 def _split_name_version(rest: str) -> tuple[str, str | None]:
+    if "==" in rest:
+        name, version = rest.split("==", 1)
+        return name, version or None
+
     if rest.startswith("@"):
         if rest.count("@") >= 2:
             name, version = rest.rsplit("@", 1)
+            return name, version or None
+        if ":" in rest:
+            name, version = rest.rsplit(":", 1)
             return name, version or None
         return rest, None
 
     if "@" in rest:
         name, version = rest.rsplit("@", 1)
+        return name, version or None
+    if ":" in rest:
+        name, version = rest.rsplit(":", 1)
         return name, version or None
     return rest, None
 

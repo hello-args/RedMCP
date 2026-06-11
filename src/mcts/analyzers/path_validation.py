@@ -5,10 +5,10 @@ from __future__ import annotations
 import re
 
 from mcts.analyzers.base import BaseAnalyzer
-from mcts.mcp.models import MCPServerInfo, MCPTool
+from mcts.analyzers.tool_classification import is_file_access_tool
+from mcts.mcp.models import MCPServerInfo
 from mcts.reporting.models import Finding, Severity, SourceLocation
 
-FILE_TOOL_HINTS = ("read", "file", "path", "open", "load")
 CANONICALIZATION_HINTS = re.compile(
     r"\b(resolve|realpath|abspath|canonicalize|normpath|is_relative_to|startswith)\b",
     re.I,
@@ -23,7 +23,7 @@ class PathValidationAnalyzer(BaseAnalyzer):
     def analyze(self, server: MCPServerInfo) -> list[Finding]:
         findings: list[Finding] = []
         for tool in server.tools:
-            if not self._is_file_tool(tool):
+            if not is_file_access_tool(tool):
                 continue
             snippet = tool.handler_snippet or ""
             if tool.source_file and tool.source_file in server.source_files:
@@ -45,7 +45,3 @@ class PathValidationAnalyzer(BaseAnalyzer):
                     )
                 )
         return findings
-
-    def _is_file_tool(self, tool: MCPTool) -> bool:
-        haystack = f"{tool.name} {tool.description}".lower()
-        return any(hint in haystack for hint in FILE_TOOL_HINTS)

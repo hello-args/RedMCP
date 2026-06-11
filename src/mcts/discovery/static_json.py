@@ -47,21 +47,30 @@ def load_snapshot(
 def _load_combined_snapshot(path: Path) -> MCPServerInfo:
     payload = _read_json(path)
     if isinstance(payload, list):
+        tools = _validate_tool_rows(payload)
         return MCPServerInfo(
             name="static-snapshot",
-            tools=[_tool_from_dict(row) for row in payload if isinstance(row, dict)],
+            tools=[_tool_from_dict(row) for row in tools],
             transport="static-json",
             discovery_mode="static-json",
         )
     if not isinstance(payload, dict):
         raise StaticJsonError(f"Snapshot must be object or array: {path}")
+    if _looks_like_scan_report(payload):
+        raise StaticJsonError("Invalid snapshot: file looks like a scan report, not a tools/list snapshot")
 
-    tools = _extract_list(payload, ("tools", "result", "items"))
     prompts = _extract_list(payload, ("prompts",))
     resources = _extract_list(payload, ("resources",))
     instructions = payload.get("instructions")
     if isinstance(instructions, dict):
         instructions = instructions.get("text") or instructions.get("instructions")
+    tools = _extract_snapshot_tools(payload)
+
+    if not any([tools, prompts, resources, instructions]):
+        raise StaticJsonError(
+            "Invalid snapshot: expected tools/list export or combined snapshot "
+            "with tools, prompts, resources, or instructions"
+        )
 
     return MCPServerInfo(
         name=str(payload.get("name") or payload.get("server_name") or "static-snapshot"),
@@ -72,6 +81,43 @@ def _load_combined_snapshot(path: Path) -> MCPServerInfo:
         transport="static-json",
         discovery_mode="static-json",
     )
+
+
+def _looks_like_scan_report(payload: dict[str, Any]) -> bool:
+    return "score" in payload and "findings" in payload
+
+
+def _extract_snapshot_tools(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    for key in ("tools", "items"):
+        if key in payload:
+            value = payload.get(key)
+            if isinstance(value, list):
+                return _validate_tool_rows(value)
+            raise StaticJsonError(f"Invalid snapshot: {key} must be an array")
+
+    result = payload.get("result")
+    if isinstance(result, dict) and "tools" in result:
+        tools = result.get("tools")
+        if isinstance(tools, list):
+            return _validate_tool_rows(tools)
+        raise StaticJsonError("Invalid snapshot: result.tools must be an array")
+
+    return []
+
+
+def _validate_tool_rows(rows: list[Any]) -> list[dict[str, Any]]:
+    if not rows:
+        raise StaticJsonError("Invalid snapshot: tools array is empty")
+
+    tools: list[dict[str, Any]] = []
+    for index, row in enumerate(rows):
+        if not isinstance(row, dict):
+            raise StaticJsonError(f"Invalid snapshot: tools[{index}] must be an object")
+        name = row.get("name")
+        if not isinstance(name, str) or not name.strip():
+            raise StaticJsonError(f"Invalid snapshot: tools[{index}] missing required 'name' field")
+        tools.append(row)
+    return tools
 
 
 def _read_json(path: Path) -> Any:

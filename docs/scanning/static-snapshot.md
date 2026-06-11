@@ -27,6 +27,8 @@ MCTS reads the JSON, extracts tool names, descriptions, and schemas, and runs th
 
 **Use snapshot when** the authoritative source is an exported MCP `tools/list` (or combined prompts/resources JSON) from a live server — not when prompts live only as markdown files in your repo.
 
+Snapshot mode expects a real MCP metadata export. Do not pass `mcts_analysis/scan-report.json` or another MCTS scan report as `--snapshot`; those files are reports about a scan, not `tools/list` inputs.
+
 ---
 
 ## Snapshot vs repository markdown discovery
@@ -133,7 +135,7 @@ mcts snapshot . \
 mcts scan . --snapshot tools-snapshot.json -o report.json
 ```
 
-Alternative: extract `server.tools` from a prior live scan JSON, or use your MCP client's `tools/list` JSON-RPC response directly.
+Alternative: use your MCP client's `tools/list` JSON-RPC response directly.
 
 ---
 
