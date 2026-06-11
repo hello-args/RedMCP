@@ -6,10 +6,22 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
+from typer.testing import CliRunner
+
+from mcts.cli.main import app
 from mcts.core.config import ScanConfig
 from mcts.core.scanner import Scanner
 from mcts.mcp.models import MCPServerInfo, MCPTool
 from mcts.snapshot.export import export_snapshot, snapshot_dict_from_server
+
+runner = CliRunner()
+
+
+def test_snapshot_missing_launch_config_exit_2(tmp_path: Path) -> None:
+    result = runner.invoke(app, ["snapshot", str(tmp_path), "--i-understand-live-risk"])
+    assert result.exit_code == 2
+    assert "Live scan requires" in result.output
+    assert "Traceback" not in result.output
 
 
 def test_snapshot_dict_shape() -> None:

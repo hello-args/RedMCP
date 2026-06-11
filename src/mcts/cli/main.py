@@ -125,6 +125,30 @@ def _print_startup_error(exc) -> None:
     )
 
 
+def _validate_live_launch(config: ScanConfig) -> None:
+    """Resolve stdio launch parameters without starting a subprocess."""
+    if config.remote_url:
+        return
+
+    from mcts.discovery.config import ConfigDiscoveryError
+    from mcts.discovery.live_config import resolve_live_config
+
+    try:
+        resolve_live_config(config)
+    except ValueError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+    except ConfigDiscoveryError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
+
+def _require_config_server(config: Path | None, server: str | None) -> None:
+    if config and not server:
+        console.print("[red]Error:[/red] --config requires --server.")
+        raise typer.Exit(code=2)
+
+
 def _print_discovery_hints(target: Path) -> None:
     from mcts.discovery.onboarding import format_discovery_hints
 
@@ -1196,22 +1220,7 @@ def fuzz(
     if not is_remote and target == Path(".") and config is None:
         _print_discovery_hints(target)
 
-    if not live_consent_granted(flag=understand_live_risk):
-        if is_remote:
-            console.print(
-                "[red]Remote fuzzing sends test probes to a live MCP endpoint.[/red] "
-                "Pass --i-understand-live-risk or set MCTS_LIVE_OK=1 in CI."
-            )
-        else:
-            console.print(
-                "[red]Fuzzing requires live server consent.[/red] Pass --i-understand-live-risk "
-                "or set MCTS_LIVE_OK=1 in CI."
-            )
-        raise typer.Exit(code=2)
-
-    if config and not server:
-        console.print("[red]Error:[/red] --config requires --server.")
-        raise typer.Exit(code=2)
+    _require_config_server(config, server)
 
     level = fuzz_level.lower()
     if level not in {item.value for item in FuzzLevel}:
@@ -1250,6 +1259,20 @@ def fuzz(
         bearer_token=bearer_token,
         remote_headers=remote_headers,
     )
+    _validate_live_launch(fuzz_config)
+
+    if not live_consent_granted(flag=understand_live_risk):
+        if is_remote:
+            console.print(
+                "[red]Remote fuzzing sends test probes to a live MCP endpoint.[/red] "
+                "Pass --i-understand-live-risk or set MCTS_LIVE_OK=1 in CI."
+            )
+        else:
+            console.print(
+                "[red]Fuzzing requires live server consent.[/red] Pass --i-understand-live-risk "
+                "or set MCTS_LIVE_OK=1 in CI."
+            )
+        raise typer.Exit(code=2)
 
     try:
         result = FuzzRunner(fuzz_config).run()
@@ -1528,16 +1551,7 @@ def snapshot(
     from mcts.probe.startup_errors import MCPStartupError
     from mcts.snapshot.export import export_snapshot
 
-    if not live_consent_granted(flag=understand_live_risk):
-        console.print(
-            "[red]Snapshot export requires live consent.[/red] Pass --i-understand-live-risk "
-            "or set MCTS_LIVE_OK=1 in CI."
-        )
-        raise typer.Exit(code=2)
-
-    if config and not server:
-        console.print("[red]Error:[/red] --config requires --server.")
-        raise typer.Exit(code=2)
+    _require_config_server(config, server)
 
     scan_target = config if (config and target == Path(".")) else target
     live_args = [part.strip() for part in args.split(",") if part.strip()] if args else []
@@ -1552,10 +1566,22 @@ def snapshot(
         stderr_file=stderr_file,
         expand_vars=expand_vars,
     )
+    _validate_live_launch(snap_config)
+
+    if not live_consent_granted(flag=understand_live_risk):
+        console.print(
+            "[red]Snapshot export requires live consent.[/red] Pass --i-understand-live-risk "
+            "or set MCTS_LIVE_OK=1 in CI."
+        )
+        raise typer.Exit(code=2)
+
     try:
         payload = export_snapshot(snap_config)
     except MCPStartupError as exc:
         _print_startup_error(exc)
+        raise typer.Exit(code=2) from exc
+    except ValueError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
     except RuntimeError as exc:
         console.print(f"[red]Error:[/red] {exc}")
