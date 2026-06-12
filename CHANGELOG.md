@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Remote streamable HTTP probes pass auth headers through the MCP SDK `http_client` hook instead of the removed `headers` argument, while preserving the SSE header path (#148).
+
 ## [0.1.4] - 2026-06-12
 
 ### Security
