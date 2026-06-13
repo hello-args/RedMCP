@@ -33,6 +33,7 @@ class ScanConfig(BaseModel):
     fail_on_critical: bool = False
     min_score: int | None = Field(default=None, ge=0, le=100)
     max_critical: int | None = Field(default=None, ge=0)
+    max_high: int | None = Field(default=None, ge=0)
     enable_jailbreak: bool = True
     enable_attack_chains: bool = True
     timeout_seconds: int = Field(default=120, ge=1)
@@ -132,10 +133,12 @@ class ScanConfig(BaseModel):
     max_risk_level: str | None = None
     min_category_score_v2: dict[str, int] = Field(default_factory=dict)
     findings_trust_mode: str = "off"
+    findings_trust_mode_explicit: bool = False
+    ignore_policy: bool = False
     fail_on_priority_min: int | None = Field(default=None, ge=0, le=100)
     min_evidence_strength: str | None = None
-    enforce_bronze_facts: bool = False
-    collapse_template_severity: bool = False
+    enforce_bronze_facts: bool | None = None
+    collapse_template_severity: bool | None = None
 
     @field_validator("min_evidence_strength")
     @classmethod

@@ -123,6 +123,13 @@ def _taxonomy_reference(taxon_id: str) -> dict[str, Any]:
     }
 
 
+def _sarif_security_severity(finding: Finding) -> str:
+    """Align GitHub security-severity with display when trust adjusted severity is set."""
+    if finding.display_severity is not None:
+        return SARIF_SECURITY_SEVERITY[effective_severity(finding)]
+    return SARIF_SECURITY_SEVERITY[effective_impact(finding)]
+
+
 def _build_rules(findings: list[Finding]) -> dict[str, dict[str, Any]]:
     rules: dict[str, dict[str, Any]] = {}
     for finding in findings:
@@ -138,7 +145,7 @@ def _build_rules(findings: list[Finding]) -> dict[str, dict[str, Any]]:
             "properties": {
                 "analyzer": finding.analyzer,
                 "technique_id": finding.technique_id,
-                "security-severity": SARIF_SECURITY_SEVERITY[effective_impact(finding)],
+                "security-severity": _sarif_security_severity(finding),
             },
         }
     return rules
@@ -189,7 +196,7 @@ def _finding_to_result(finding: Finding, rules: dict[str, dict[str, Any]], targe
             "shortDescription": {"text": finding.title},
             "fullDescription": {"text": finding.description},
             "properties": {
-                "security-severity": SARIF_SECURITY_SEVERITY[effective_impact(finding)],
+                "security-severity": _sarif_security_severity(finding),
             },
         }
     return result

@@ -218,6 +218,10 @@ mcts scan ./server.py --fail-on-critical --min-score 70
 # v2 (default scoring includes score_v2)
 mcts scan ./server.py --fail-on-critical --max-absolute-risk 500 --max-risk-level high
 
+# Trust-aware CI — overlap chains capped for gates/SARIF; template severity preserved for scoring
+mcts scan ./server.py --ci-trust
+# equivalent: --findings-trust-mode enforce --fail-on-critical --min-score 70
+
 mcts scan . -o report.sarif --format sarif
 ```
 

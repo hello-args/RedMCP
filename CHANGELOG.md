@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Findings trust Phases 1–B2** — evidence provenance (`evidence.facts`, `confidence_factors`), `rule_stability` + `FindingBuilder`, priority gates (`--fail-on-priority-min`, `--min-evidence-strength`), v2 scoring on display severity under enforce
-- **Phase 3 (partial)** — `runtime_evidence.py` tags taint-flow and live-probe findings with `runtime_validation` and evidence tier
+- **Phase 3** — `runtime_evidence.py` tags taint-flow, live-probe, and live-proxy findings; boosts `priority_score` for validated runtime evidence
+- **FindingBuilder adoption (complete)** — all analyzer paths emit bronze `evidence.facts` (optional skip rows use `build_skip_finding`)
+- **FindingBuilder adoption (batch 2)** — `attack_chains`, `supply_chain`, `toxic_flows`, `semgrep_adapter` emit bronze `evidence.facts`
 - **Phase B3 opt-in** — `--collapse-template-severity` copies display into template `severity` under enforce
 - **Vet trust adapter** — `mcts vet --findings-trust-mode` bridges `VetFinding` through shared trust pipeline
 - **Governance policy merge** — `.mcts/policy.yaml` fills unset scan flags before scan; CLI overrides policy
@@ -22,8 +23,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Global thin-evidence caps** — low-confidence findings without facts default to `weak` strength
 - **B2 residual paths** — disagreement factor and readiness score honor display severity under enforce
 
+- **API `ignore_policy`** — REST `ScanRequest.ignore_policy` skips YAML merge for one-off scans
+- **API gate parity** — `max_critical`, `fail_on_category`, `findings_trust_mode_explicit`; optional bronze/collapse flags inherit policy when null
+- **Inventory scan-all gates** — `collect_gate_violations()` per server (aligned with `mcts scan`)
+- **`--ignore-policy` on inventory/vet/fuzz** — auxiliary CLI paths can opt out of policy merge
+- **Optional analyzer skip rows** — `npm_audit`, `yara_metadata`, `cloud_inspect`, `llm_judge`, `llm_metadata_triage`, `virustotal` emit hygiene findings when deps/keys missing
+- **`--ignore-policy` on pentest/readiness** — auxiliary CLI paths can opt out of policy merge
+- **GitHub Action** — `max-high`, `max-critical`, and `ignore-policy` inputs
+
 ### Fixed
 
+- **Validator hardening** — removed standalone `evidence.hop_count` and `evidence.path` proven-path bypasses; chain level matches associated graph path
+- **Auxiliary trust explicit parity** — vet/fuzz/inventory/readiness/pentest set `findings_trust_mode_explicit` when `--findings-trust-mode` is passed; API readiness adds `ignore_policy` + explicit flag
+- **Pentest warn parity** — verdict and ranking use display severity when trust ≠ off (aligned with fuzz/vet exit)
+- **Validator `path_status`** — stale `evidence.path_status=proven` no longer bypasses graph checks
+- **B3 pipeline** — post-collapse gates and score breakdown covered in tests + acceptance script
+- **Compliance critical threshold** — `multiple-critical` uses template severity in warn/off (aligned with CI gates); display under enforce
+- **Trust edge fixes (2026-06)** — `_has_proven_path` requires associated `finding_ids`; machine-wide runs `collect_gate_violations()` per server; fuzz/vet exit uses display severity under warn/enforce; toxic_flows unique finding IDs; fuzz evidence at build time; API `max_critical` + optional bronze flags
+- **Governance deduplication** — CLI/API use single `collect_gate_violations()` path; `evaluate_policy()` is allowlist/blocklist only (numeric gates via merged `ScanConfig` + scan gates)
+- **Fuzz FindingBuilder** — fuzz findings emit bronze `evidence.facts`
+- **Governance parity** — `max_high` merged into `ScanConfig` and enforced in scan gates; REST API uses `collect_gate_violations()` (scan + YAML policy)
+- **Bronze gate enforce-only** — aligned with priority/severity gates
+- **Phase 3 scoring wire-up** — validated runtime/taint findings set `risk_tags`; v2 `evidence_quality_factor` narrows risk range
+- **Priority gate enforce-only** — `--fail-on-priority-min` aligned with severity gates (inactive in `warn`)
+- **Trust alignment (2026-06)** — category gates, `score_breakdown`, machine-wide honor display under enforce; `--ignore-policy`; explicit `--findings-trust-mode off`; policy bool merge preserves explicit `False`
+- **SARIF GitHub alignment** — rule `security-severity` follows display when `display_severity` is set (matches `level`)
+- **`warn` mode consistency** — `--severity-filter` uses template unless `enforce`; dashboard score footnote uses template basis counts in warn
+- **Policy bool merge** — unset bronze flags inherit from `.mcts/policy.yaml`; explicit CLI `False` preserved
 - **`_has_proven_path`** — empty `finding_ids` no longer marks every chain as proven
 - **Compliance rows** — receive `rule_stability` after pipeline append
 

@@ -56,3 +56,28 @@ def build_analyzer_finding(
     if extra_evidence:
         builder = builder.evidence(**extra_evidence)
     return builder.build()
+
+
+def build_skip_finding(
+    *,
+    finding_id: str,
+    analyzer: str,
+    title: str,
+    description: str,
+    recommendation: str,
+    severity: Severity = Severity.LOW,
+) -> Finding:
+    """Coverage/hygiene row when an optional analyzer cannot run (no bronze facts)."""
+    return (
+        FindingBuilder(
+            finding_id=finding_id,
+            analyzer=analyzer,
+            title=title,
+            description=description,
+            severity=severity,
+            recommendation=recommendation,
+        )
+        .confidence(1.0)
+        .evidence(skipped=True, reason=description)
+        .build(require_fact=False)
+    )

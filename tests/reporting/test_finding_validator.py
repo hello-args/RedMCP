@@ -107,6 +107,46 @@ def test_empty_finding_ids_does_not_prove_path() -> None:
     assert out.display_severity == Severity.MEDIUM
 
 
+def test_missing_finding_ids_key_does_not_prove_path() -> None:
+    finding = _chain_finding()
+    graph = {
+        "paths": [
+            {
+                "hop_count": 3,
+                "tools_on_path": ["a", "b", "c"],
+            }
+        ]
+    }
+    ctx = ValidationContext(scan_scope="repository", tools=[], attack_graph=graph, mode="enforce")
+    out = validate_findings([finding], ctx)[0]
+    assert out.evidence_type == "capability_overlap"
+    assert out.display_severity == Severity.MEDIUM
+
+
+def test_evidence_hop_count_without_graph_does_not_prove_path() -> None:
+    finding = _chain_finding(hop_count=3)
+    ctx = ValidationContext(scan_scope="repository", tools=[], attack_graph={}, mode="enforce")
+    out = validate_findings([finding], ctx)[0]
+    assert out.evidence_type == "capability_overlap"
+    assert out.display_severity == Severity.MEDIUM
+
+
+def test_evidence_path_without_graph_association_does_not_prove_path() -> None:
+    finding = _chain_finding(path=["a", "b", "c"])
+    ctx = ValidationContext(scan_scope="repository", tools=[], attack_graph={}, mode="enforce")
+    out = validate_findings([finding], ctx)[0]
+    assert out.evidence_type == "capability_overlap"
+    assert out.display_severity == Severity.MEDIUM
+
+
+def test_stale_path_status_does_not_prove_without_graph() -> None:
+    finding = _chain_finding(path_status="proven", path=["a", "b", "c"])
+    ctx = ValidationContext(scan_scope="repository", tools=[], attack_graph={}, mode="enforce")
+    out = validate_findings([finding], ctx)[0]
+    assert out.evidence_type == "capability_overlap"
+    assert out.display_severity == Severity.MEDIUM
+
+
 def test_security_finding_gets_priority_score() -> None:
     finding = Finding(
         id="exec-1",

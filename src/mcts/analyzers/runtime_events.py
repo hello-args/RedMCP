@@ -11,6 +11,7 @@ from mcts.analyzers.authority_claim_tool import detect_authority_claim_tool
 from mcts.analyzers.autonomous_loop import detect_autonomous_loop_event
 from mcts.analyzers.backdoored_install import detect_backdoored_install_event
 from mcts.analyzers.base import BaseAnalyzer
+from mcts.analyzers.finding_facts import build_analyzer_finding
 from mcts.analyzers.behavioral_extraction import detect_behavioral_extraction
 from mcts.analyzers.bridge_hopping import detect_bridge_hopping
 from mcts.analyzers.capability_enumeration import detect_capability_enumeration
@@ -995,22 +996,27 @@ def _finding(
     *,
     mcp_tool: MCPTool | None = None,
 ) -> Finding:
+    event_type = str(evidence.get("type") or "runtime_event")
     loc = SourceLocation(
         file=(mcp_tool.source_file if mcp_tool else "") or "",
         line=mcp_tool.source_line if mcp_tool else None,
     )
-    return Finding(
-        id=finding_id,
+    rule_id = f"RULE_RUNTIME_{event_type.upper().replace('-', '_')}"
+    return build_analyzer_finding(
+        finding_id=finding_id,
         analyzer="runtime_events",
         title=title,
         description=title,
         severity=severity,
-        tool=tool,
         recommendation="Review runtime telemetry and tighten tool input validation.",
+        rule_id=rule_id,
+        match=event_type,
+        field="runtime_events",
+        tool=tool,
+        location=loc if loc.file else None,
         technique_id=technique_id,
         confidence=0.85,
-        location=loc,
-        evidence=evidence,
+        extra_evidence=evidence,
     )
 
 

@@ -23,3 +23,7 @@ def test_sarif_level_uses_display_severity_when_capped() -> None:
         assert result["properties"]["display_severity"] == "medium"
         assert result["properties"]["severity"] == "critical"
         assert result["properties"]["evidence_type"] == "capability_overlap"
+    rules = {rule["id"]: rule for rule in sarif["runs"][0]["tool"]["driver"]["rules"]}
+    for result in chain_results:
+        rule = rules[result["ruleId"]]
+        assert rule["properties"]["security-severity"] == "5.0"

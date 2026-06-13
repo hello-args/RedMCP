@@ -234,7 +234,11 @@ class Scanner:
 
         compliance_rows = [
             apply_rule_stability(row)
-            for row in self.compliance.check(findings, tools_discovered=len(server_info.tools))
+            for row in self.compliance.check(
+                findings,
+                tools_discovered=len(server_info.tools),
+                findings_trust_mode=self.config.findings_trust_mode,
+            )
         ]
         findings.extend(compliance_rows)
         analyzers_executed.append("compliance")
@@ -296,7 +300,7 @@ class Scanner:
             attack_graph=report_attack_graph,
             scan_scope=scan_scope,
             scan_notes=scan_notes,
-            score_breakdown=score_partitioned(findings),
+            score_breakdown=score_partitioned(findings, use_display=use_display_score),
             tool_discovery_notice=tool_discovery_notice_text(server_info, scan_scope=scan_scope),
             analyzers_executed=analyzers_executed,
         )
@@ -358,7 +362,7 @@ class Scanner:
             rows = [f for f in rows if f.analyzer in allowed]
         if self.config.severity_filter:
             allowed = {s.lower() for s in self.config.severity_filter}
-            if self.config.findings_trust_mode != "off":
+            if self.config.findings_trust_mode == "enforce":
                 from mcts.reporting.display import effective_severity
 
                 rows = [f for f in rows if effective_severity(f).value in allowed]

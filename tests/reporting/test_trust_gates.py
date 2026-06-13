@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 from mcts.core.config import ScanConfig
 from mcts.core.scanner import Scanner
-from mcts.governance.policy import GovernancePolicy, evaluate_policy
 from mcts.governance.scan_gates import evaluate_scan_gate_violations
 from mcts.reporting.finding_builder import FindingBuilder
-from mcts.reporting.models import Finding, Severity
+from mcts.reporting.models import Finding, RiskScore, ScanSummary, ScoreBasis, Severity
 from mcts.reporting.rule_stability import apply_rule_stability, default_rule_stability
 from mcts.reporting.trust_gates import (
     findings_over_priority_threshold,
@@ -102,16 +102,101 @@ def test_policy_priority_gate() -> None:
         evidence_strength="strong",
         finding_kind="security",
     )
-    policy = GovernancePolicy(fail_on_priority_min=80, min_evidence_strength="strong")
-    violations = evaluate_policy(
-        policy=policy,
-        score=90,
-        critical=0,
-        high=1,
-        servers=["demo"],
+    report = SimpleNamespace(
         findings=[finding],
+        score=RiskScore(
+            overall=90,
+            risk_index=0,
+            raw_risk=0,
+            penalty=0,
+            basis=ScoreBasis(
+                critical=0,
+                high=0,
+                medium=0,
+                low=0,
+                scorable_total=0,
+                excluded_non_scorable=0,
+            ),
+        ),
+        display_summary=None,
     )
+    config = ScanConfig(
+        target=SINGLE_TOOL,
+        findings_trust_mode="enforce",
+        fail_on_priority_min=80,
+        min_evidence_strength="strong",
+    )
+    violations = evaluate_scan_gate_violations(report, config)
     assert any("priority 80" in item for item in violations)
+
+
+def test_policy_priority_gate_inactive_without_enforce() -> None:
+    finding = Finding(
+        id="x",
+        analyzer="command_execution",
+        title="Shell",
+        description="d",
+        severity=Severity.CRITICAL,
+        recommendation="fix",
+        priority_score=90,
+        evidence_strength="strong",
+        finding_kind="security",
+    )
+    report = SimpleNamespace(
+        findings=[finding],
+        score=RiskScore(
+            overall=90,
+            risk_index=0,
+            raw_risk=0,
+            penalty=0,
+            basis=ScoreBasis(
+                critical=0,
+                high=0,
+                medium=0,
+                low=0,
+                scorable_total=0,
+                excluded_non_scorable=0,
+            ),
+        ),
+        summary=ScanSummary(critical=0, high=1, medium=0, low=0),
+    )
+    config = ScanConfig(
+        target=SINGLE_TOOL,
+        findings_trust_mode="warn",
+        fail_on_priority_min=80,
+    )
+    violations = evaluate_scan_gate_violations(report, config)
+    assert not any("priority 80" in item for item in violations)
+
+
+def test_bronze_gate_inactive_in_warn_mode() -> None:
+    from types import SimpleNamespace
+
+    from mcts.core.config import ScanConfig
+    from mcts.reporting.trust_gates import bronze_gate_violations
+
+    finding = Finding(
+        id="judge-1",
+        analyzer="llm_judge",
+        title="Judge flagged issue",
+        description="d",
+        severity=Severity.HIGH,
+        recommendation="r",
+        rule_stability="experimental",
+        finding_kind="security",
+    )
+    config = ScanConfig(target="demo", findings_trust_mode="warn", enforce_bronze_facts=True)
+    assert bronze_gate_violations(SimpleNamespace(findings=[finding]), config) == []
+
+
+def test_priority_gate_inactive_in_warn_mode() -> None:
+    report = Scanner(ScanConfig(target=SINGLE_TOOL, findings_trust_mode="warn")).run()
+    config = ScanConfig(
+        target=SINGLE_TOOL,
+        findings_trust_mode="warn",
+        fail_on_priority_min=1,
+    )
+    assert priority_gate_violations(report, config) == []
 
 
 def test_normalize_evidence_strength_rejects_unknown() -> None:

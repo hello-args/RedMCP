@@ -77,6 +77,18 @@ inputs:
       (weak, moderate, strong, verified).
     required: false
     default: ""
+  max-high:
+    description: Fail when high-severity findings exceed this count (enforce uses display counts).
+    required: false
+    default: ""
+  max-critical:
+    description: Fail when critical findings exceed this count (enforce uses display counts).
+    required: false
+    default: ""
+  ignore-policy:
+    description: Skip merging .mcts/policy.yaml into scan gates for this run.
+    required: false
+    default: "false"
 
 runs:
   using: composite
@@ -162,6 +174,15 @@ runs:
         fi
         if [ -n "${{ inputs.min-evidence-strength }}" ]; then
           ARGS+=(--min-evidence-strength "${{ inputs.min-evidence-strength }}")
+        fi
+        if [ -n "${{ inputs.max-high }}" ]; then
+          ARGS+=(--max-high "${{ inputs.max-high }}")
+        fi
+        if [ -n "${{ inputs.max-critical }}" ]; then
+          ARGS+=(--max-critical "${{ inputs.max-critical }}")
+        fi
+        if [ "${{ inputs.ignore-policy }}" = "true" ]; then
+          ARGS+=(--ignore-policy)
         fi
 
         uv run mcts "${ARGS[@]}"

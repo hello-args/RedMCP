@@ -76,7 +76,7 @@ def findings_missing_bronze_facts(findings: list[Finding]) -> list[Finding]:
 
 
 def bronze_gate_violations(report: ScanReport, config: ScanConfig) -> list[str]:
-    if not config.enforce_bronze_facts or config.findings_trust_mode == "off":
+    if not (config.enforce_bronze_facts or False) or config.findings_trust_mode != "enforce":
         return []
     missing = findings_missing_bronze_facts(report.findings)
     if not missing:
@@ -91,8 +91,11 @@ def bronze_gate_violations(report: ScanReport, config: ScanConfig) -> list[str]:
 
 
 def priority_gate_violations(report: ScanReport, config: ScanConfig) -> list[str]:
-    """Fail when security findings exceed priority threshold (Option B CI)."""
-    if config.fail_on_priority_min is None:
+    """Fail when security findings exceed priority threshold (Option B CI).
+
+    Active only under ``findings_trust_mode=enforce`` — same contract as severity gates.
+    """
+    if config.fail_on_priority_min is None or config.findings_trust_mode != "enforce":
         return []
     matched = findings_over_priority_threshold(
         report.findings,

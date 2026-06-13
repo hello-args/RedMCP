@@ -90,8 +90,11 @@ def _validate_attack_chain(finding: Finding, ctx: ValidationContext, updates: di
     overlap_single, _ = _single_tool_overlap(finding.evidence)
 
     if proven_path:
-        chain_level = _chain_level_from_path(finding.evidence, ctx.attack_graph)
+        chain_level = _chain_level_from_path(finding.id, finding.evidence, ctx.attack_graph)
         impact = finding.impact or finding.severity
+        evidence = dict(finding.evidence or {})
+        evidence["path_status"] = "proven"
+        evidence.pop("single_tool_overlap", None)
         updates.update(
             {
                 "evidence_type": "graph_path",
@@ -101,6 +104,7 @@ def _validate_attack_chain(finding: Finding, ctx: ValidationContext, updates: di
                 "impact": impact,
                 "display_severity": finding.display_severity or finding.severity,
                 "priority_score": _priority_score(impact, "moderate", chain_level),
+                "evidence": evidence,
             }
         )
         return
@@ -158,40 +162,40 @@ def _single_tool_overlap(evidence: dict[str, Any]) -> tuple[bool, list[str]]:
 
 
 def _has_proven_path(finding: Finding, attack_graph: dict[str, Any]) -> bool:
-    evidence = finding.evidence or {}
-    if evidence.get("path_status") == "proven":
-        return True
-    hop = evidence.get("hop_count")
-    if isinstance(hop, int) and hop >= 2:
-        return True
     for path in attack_graph.get("paths") or []:
         if not isinstance(path, dict):
             continue
         finding_ids = path.get("finding_ids")
-        if isinstance(finding_ids, list):
-            if not finding_ids or finding.id not in finding_ids:
-                continue
+        if not isinstance(finding_ids, list):
+            continue
+        if not finding_ids or finding.id not in finding_ids:
+            continue
         hop_count = path.get("hop_count")
         if isinstance(hop_count, int) and hop_count >= 2:
             return True
         nodes = path.get("nodes") or path.get("tools_on_path") or []
         if isinstance(nodes, list) and len(nodes) >= 3:
             return True
-    raw_path = evidence.get("path")
-    if isinstance(raw_path, list) and len(raw_path) >= 3:
-        return True
     return False
 
 
-def _chain_level_from_path(evidence: dict[str, Any], attack_graph: dict[str, Any]) -> int:
+def _chain_level_from_path(
+    finding_id: str,
+    evidence: dict[str, Any],
+    attack_graph: dict[str, Any],
+) -> int:
     hop = evidence.get("hop_count")
     if isinstance(hop, int) and hop > 0:
         return min(hop, 3)
     for path in attack_graph.get("paths") or []:
-        if isinstance(path, dict):
-            hop_count = path.get("hop_count")
-            if isinstance(hop_count, int) and hop_count > 0:
-                return min(hop_count, 3)
+        if not isinstance(path, dict):
+            continue
+        finding_ids = path.get("finding_ids")
+        if isinstance(finding_ids, list) and finding_id not in finding_ids:
+            continue
+        hop_count = path.get("hop_count")
+        if isinstance(hop_count, int) and hop_count > 0:
+            return min(hop_count, 3)
     return 1
 
 
@@ -221,8 +225,13 @@ def _default_evidence_strength(finding: Finding) -> str:
     return "moderate"
 
 
-def _priority_score(impact: Severity, strength: str, chain_level: int) -> int:
+def compute_priority_score(impact: Severity, strength: str, chain_level: int) -> int:
+    """Public priority model (impact × strength × chain level). Used by validator and runtime boost."""
     base = _IMPACT_POINTS.get(impact, 50)
     mult = _STRENGTH_MULT.get(strength, 0.6)
     chain = _CHAIN_MULT.get(chain_level, 0.4)
     return max(0, min(100, round(base * mult * chain)))
+
+
+def _priority_score(impact: Severity, strength: str, chain_level: int) -> int:
+    return compute_priority_score(impact, strength, chain_level)

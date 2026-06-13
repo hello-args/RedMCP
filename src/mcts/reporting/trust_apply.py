@@ -34,7 +34,7 @@ def collapse_template_severity_if_requested(
     config: ScanConfig,
 ) -> list[Finding]:
     """Phase B3 opt-in: copy display_severity into template severity under enforce."""
-    if not config.collapse_template_severity or config.findings_trust_mode != "enforce":
+    if not (config.collapse_template_severity or False) or config.findings_trust_mode != "enforce":
         return findings
     collapsed: list[Finding] = []
     for finding in findings:
@@ -64,7 +64,18 @@ def finding_severity_label(finding: Finding, config: ScanConfig) -> str:
 def merge_scan_config_defaults(
     config: ScanConfig,
     *,
-    findings_trust_mode: str = "off",
+    findings_trust_mode: str | None = None,
 ) -> ScanConfig:
-    merged = config.model_copy(update={"findings_trust_mode": findings_trust_mode.lower()})
+    """Merge auxiliary CLI config with governance policy.
+
+    When ``findings_trust_mode`` is omitted, policy may inherit trust mode.
+    When set (including explicit ``off``), ``findings_trust_mode_explicit`` is True.
+    """
+    trust_mode = (findings_trust_mode or "off").lower()
+    merged = config.model_copy(
+        update={
+            "findings_trust_mode": trust_mode,
+            "findings_trust_mode_explicit": findings_trust_mode is not None,
+        }
+    )
     return resolve_config_with_policy(merged)

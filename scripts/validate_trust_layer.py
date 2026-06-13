@@ -66,9 +66,30 @@ def main() -> int:
     check("policy-only scan: display critical 0", policy_report.display_summary and policy_report.display_summary.critical == 0)
     check("policy-only scan: gate summary critical 0", gs.critical == 0)
     explicit = merge_scan_config_with_policy(
-        ScanConfig(target=SINGLE_TOOL, findings_trust_mode="warn"), policy
+        ScanConfig(target=SINGLE_TOOL, findings_trust_mode="warn", findings_trust_mode_explicit=True), policy
     )
     check("CLI warn overrides policy enforce", explicit.findings_trust_mode == "warn")
+    explicit_off = merge_scan_config_with_policy(
+        ScanConfig(target=SINGLE_TOOL, findings_trust_mode="off", findings_trust_mode_explicit=True),
+        policy,
+    )
+    check("CLI explicit off overrides policy enforce", explicit_off.findings_trust_mode == "off")
+
+    # --- Category gates under enforce ---
+    print("\n[Alignment] Category gates + score breakdown")
+    cat_cfg = ScanConfig(
+        target=SINGLE_TOOL,
+        findings_trust_mode="enforce",
+        fail_on_category={"attack_chains": 10},
+    )
+    check(
+        "fail_on_category attack_chains:10 passes under enforce",
+        evaluate_scan_gate_violations(report, cat_cfg) == [],
+    )
+    check(
+        "score_breakdown mcp_surface matches enforce overall",
+        report.score_breakdown is not None and report.score_breakdown.mcp_surface == report.score.overall,
+    )
 
     # --- Phase 1 provenance ---
     print("\n[Phase 1] Evidence provenance")
@@ -137,10 +158,24 @@ def main() -> int:
     print("\n[SARIF] Export")
     sarif = build_sarif(report)
     results = sarif["runs"][0]["results"]
-    chain_results = [r for r in results if r.get("ruleId", "").startswith("attack")]
+    chain_results = [
+        r
+        for r in results
+        if r.get("properties", {}).get("analyzer") == "attack_chains"
+    ]
     if chain_results:
         props = chain_results[0].get("properties", {})
+        rule_id = chain_results[0].get("ruleId")
+        rule_props = next(
+            (
+                rule.get("properties", {})
+                for rule in sarif["runs"][0]["tool"]["driver"]["rules"]
+                if rule.get("id") == rule_id
+            ),
+            {},
+        )
         check("SARIF level from display", chain_results[0].get("level") == "warning")  # medium → warning
+        check("SARIF security-severity from display", rule_props.get("security-severity") == "5.0")
         check("SARIF mcts/facts", "mcts/facts" in props or "mcts/factCount" in props)
 
     # --- Proven path edge case ---
@@ -165,6 +200,22 @@ def main() -> int:
     )[0]
     check("empty finding_ids does not prove", out.evidence_type == "capability_overlap")
 
+    missing_key_graph = {"paths": [{"hop_count": 3, "nodes": ["a", "b", "c"]}]}
+    out_missing = validate_findings(
+        [overlap],
+        ValidationContext(scan_scope="repository", tools=[], attack_graph=missing_key_graph, mode="enforce"),
+    )[0]
+    check("missing finding_ids key does not prove", out_missing.evidence_type == "capability_overlap")
+
+    path_only = overlap.model_copy(
+        update={"evidence": {**(overlap.evidence or {}), "path": ["a", "b", "c"]}}
+    )
+    out_path = validate_findings(
+        [path_only],
+        ValidationContext(scan_scope="repository", tools=[], attack_graph={}, mode="enforce"),
+    )[0]
+    check("evidence.path alone does not prove", out_path.evidence_type == "capability_overlap")
+
     # --- Phase 3 runtime validation ---
     print("\n[Phase 3] Runtime / taint evidence")
     from mcts.analyzers.behavioral_static import BehavioralStaticAnalyzer
@@ -187,6 +238,34 @@ def main() -> int:
         "taint runtime_validation tag",
         (trusted_taint.evidence or {}).get("runtime_validation") == "taint_param_sink",
     )
+    check("validated taint boosts priority", trusted_taint.finding_type == "validated")
+    check(
+        "validated taint priority_score raised",
+        trusted_taint.priority_score is not None and trusted_taint.priority_score >= 40,
+    )
+    check(
+        "validated taint sets handler_traced risk tag",
+        "handler_traced" in (trusted_taint.evidence or {}).get("risk_tags", []),
+    )
+
+    from mcts.analyzers.runtime_events import _finding
+
+    runtime_row = _finding(
+        "runtime-cmd-inject-0",
+        "Command injection pattern in tool invocation",
+        "run_cmd",
+        "MCTS-T-1023",
+        Severity.CRITICAL,
+        {"event_index": 0, "type": "command_injection"},
+    )
+    trusted_runtime = apply_trust_layer(
+        [runtime_row],
+        build_trust_context(mode="enforce", scan_scope="live"),
+    )[0]
+    check(
+        "runtime_events live_proxy tag",
+        (trusted_runtime.evidence or {}).get("runtime_validation") == "live_proxy",
+    )
 
     # --- B3 collapse template severity ---
     print("\n[B3] collapse_template_severity")
@@ -203,6 +282,29 @@ def main() -> int:
             "collapse copies display into severity",
             collapsed_chains[0].severity == collapsed_chains[0].display_severity,
         )
+    collapsed_cfg = ScanConfig(
+        target=SINGLE_TOOL,
+        findings_trust_mode="enforce",
+        collapse_template_severity=True,
+        fail_on_critical=True,
+    )
+    check(
+        "collapse: template summary critical 0",
+        collapsed.summary.critical == 0,
+    )
+    check(
+        "collapse: score basis critical 0",
+        collapsed.score.basis.critical == 0,
+    )
+    check(
+        "collapse: score_breakdown matches overall",
+        collapsed.score_breakdown is not None
+        and collapsed.score_breakdown.mcp_surface == collapsed.score.overall,
+    )
+    check(
+        "collapse: fail_on_critical passes",
+        evaluate_scan_gate_violations(collapsed, collapsed_cfg) == [],
+    )
 
     # --- Vulnerable server still works ---
     print("\n[Regression] Vulnerable fixture")

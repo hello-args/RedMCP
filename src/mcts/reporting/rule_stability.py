@@ -24,7 +24,7 @@ RULE_STABILITY_BY_ANALYZER: dict[str, str] = {
     "command_execution": "mature",
     "tool_abuse": "mature",
     "sigma_metadata": "mature",
-    "semgrep": "mature",
+    "semgrep_sast": "mature",
 }
 
 

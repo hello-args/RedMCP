@@ -48,6 +48,40 @@ def test_compliance_emits_mcp_gaps_with_tools_and_scorable_findings() -> None:
     assert gap.evidence.get("missing_mcp_categories")
 
 
+def test_compliance_critical_count_uses_template_in_warn() -> None:
+    rows = [
+        Finding(
+            id=f"c-{i}",
+            analyzer="command_execution",
+            title="Shell",
+            description="d",
+            severity=Severity.CRITICAL,
+            recommendation="fix",
+            display_severity=Severity.MEDIUM,
+        )
+        for i in range(3)
+    ]
+    meta = ComplianceChecker().check(rows, tools_discovered=1, findings_trust_mode="warn")
+    assert any(f.id == "compliance-multiple-critical" for f in meta)
+
+
+def test_compliance_critical_count_uses_display_in_enforce() -> None:
+    rows = [
+        Finding(
+            id=f"c-{i}",
+            analyzer="command_execution",
+            title="Shell",
+            description="d",
+            severity=Severity.CRITICAL,
+            recommendation="fix",
+            display_severity=Severity.MEDIUM,
+        )
+        for i in range(3)
+    ]
+    meta = ComplianceChecker().check(rows, tools_discovered=1, findings_trust_mode="enforce")
+    assert not any(f.id == "compliance-multiple-critical" for f in meta)
+
+
 def test_mcp_owasp_mappings_hide_gaps_without_tools() -> None:
     mappings = mcp_owasp_mappings([_skill_finding()], tools_discovered=0)
 

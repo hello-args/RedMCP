@@ -33,7 +33,7 @@ When you enable **`--findings-trust-mode enforce`** (or `warn`), MCTS runs a pos
 
 **Default (`off`):** behavior is unchanged from pre–Phase 0 releases.
 
-**Governance policy:** Copy `.mcts/policy.yaml.example` to `.mcts/policy.yaml`. Unset CLI flags inherit policy values (e.g. `findings_trust_mode: enforce`). Explicit CLI flags override policy.
+**Governance policy:** Copy `.mcts/policy.yaml.example` to `.mcts/policy.yaml`. Unset CLI flags inherit policy values. Use **`--findings-trust-mode off`** (explicit) or **`--ignore-policy`** to run legacy behavior when a repo policy sets `enforce`. See [policy merge](findings-trust-phase0.md#governance-policy-merge).
 
 **Single-tool overlap:** With enforce, attack chains that are only capability overlap show as **medium** with titles like *“Potential capability overlap (…)”* and `evidence_type: capability_overlap`. Template `severity` may still read `critical` in raw JSON; **scoring and gates under enforce use display severity** (Phase A½ + B2).
 
@@ -41,15 +41,17 @@ See **[Findings trust (Phase 0)](findings-trust-phase0.md)** for CI flags, integ
 
 ### `warn` vs `enforce`
 
-| Mode | Display fields | Title rewrite | CI gates (`--fail-on-critical`, priority) | Scoring under enforce |
-|------|----------------|---------------|-------------------------------------------|------------------------|
+| Mode | Display fields | Title rewrite | CI gates (severity + priority) | Scoring under enforce |
+|------|----------------|---------------|--------------------------------|------------------------|
 | `off` | No | No | Template severity | Template |
 | `warn` | Yes | No | **Template** (preview only) | Template |
-| `enforce` | Yes | Yes (overlap chains) | **Display** severity | Display (A½ + B2) |
+| `enforce` | Yes | Yes (overlap chains) | **Display** severity; priority gate active | Display (A½ + B2) |
 
 Use **`warn`** to preview honest badges and JSON fields without changing CI exit codes. Use **`enforce`** (or `--ci-trust`) when gates, scoring, and triage should match dashboard severity.
 
-Optional **B3:** `--collapse-template-severity` copies `display_severity` into `finding.severity` under enforce — only for integrators ready to drop dual-severity JSON.
+**`--severity-filter`** uses template severity under `off` and `warn`; only **`enforce`** filters on display severity (aligned with CI gates).
+
+Optional **B3:** `--collapse-template-severity` copies `display_severity` into `finding.severity` under enforce — only for integrators ready to drop dual-severity JSON. Policy YAML can set `collapse_template_severity: true` when CLI omits the flag.
 
 ---
 
@@ -377,18 +379,26 @@ Use this ordering when triaging reports like the worked example:
 
 ## Known limitations
 
+See **[Findings trust — alignment fixes](findings-trust-phase0.md#alignment-fixes-2026-06)** for maintainer audit history.
+
 ### With findings trust **off** (default)
 
 - Attack chain findings do not state **single-tool collapse** in the UI.
 - Template severity may show **critical** for capability overlap.
 - `format_evidence_summary()` omits some evidence keys (`credential_tools`, `path`, matched keywords).
 
-### With findings trust **on** (enforce)
+### With findings trust **warn**
 
-- **Score and `--min-score`** still use template severity — display can show 0 critical while score stays low. See [Phase 0 status](findings-trust-phase0.md#partial-migration--still-on-template-severity).
-- **History/trend** and **CLI stdout** still use template counts.
-- **Category / OWASP tiles** still reflect template severity.
-- **`warn` mode** populates display fields and SARIF but **does not** relax `--fail-on-critical` — use **`enforce`** or **`--ci-trust`** for CI.
+- Display fields and SARIF levels are populated (overlap chains capped to medium in SARIF).
+- **CI gates, legacy score, and `--severity-filter` still use template severity** — do not use `warn` expecting CI relief.
+- Dashboard **category tiles** use template; **analyzer severity chips** use display — counts can disagree within the same report.
+- `inventory` / `fuzz` exit codes use display severity — can diverge from scan gates in the same run.
+
+### With findings trust **enforce**
+
+- **Aligned:** `--fail-on-critical`, `max_critical`, `--fail-on-category`, `min_category_score_v2`, legacy `score`/`score.basis`, v2 scoring, `score_breakdown`, SARIF, dashboard summary/categories, `--severity-filter`, machine-wide exit/export, history `display_critical`.
+- **Dual severity in JSON:** `finding.severity` stays template unless `--collapse-template-severity` (B3).
+- **Compliance rows** appended post-trust; excluded from `display_summary.total`.
 
 ### General
 
@@ -396,7 +406,7 @@ Use this ordering when triaging reports like the worked example:
 - Capability inference is **regex-based**, not semantic LLM review.
 - Static scan may under-discover tools (see `static-discovery-incomplete` meta-finding when languages are enabled but zero tools are found).
 
-Regression fixture: `examples/single-tool-agent-server/server.py` (CI: `tests/reporting/test_scanner_trust.py`).
+Regression fixture: `examples/single-tool-agent-server/server.py` · Acceptance: `scripts/validate_trust_layer.py` · Tests: `tests/reporting/test_consistency_wedge.py`
 
 ---
 

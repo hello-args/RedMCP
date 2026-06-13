@@ -7,10 +7,12 @@ from pathlib import Path
 
 from mcts.core.config import ScanConfig
 from mcts.core.scanner import Scanner
+from mcts.governance.scan_gates import evaluate_scan_gate_violations
 from mcts.mcp.models import MCPServerInfo
 from mcts.output.history import record_scan_run, trend_points_for_target
 from mcts.report.data import category_scores, llm_owasp_mappings
 from mcts.reporting.models import Finding, ScanReport, ScanSummary, Severity
+from mcts.reporting.sarif import build_sarif
 from mcts.scoring.engine import RiskScoringEngine
 
 SINGLE_TOOL = Path("examples/single-tool-agent-server/server.py")
@@ -82,7 +84,7 @@ def test_scanner_sets_findings_trust_mode_on_report() -> None:
     assert report.findings_trust_mode == "enforce"
 
 
-def test_severity_filter_uses_display_when_trust_on() -> None:
+def test_severity_filter_uses_display_when_enforce() -> None:
     from mcts.reporting.display import effective_severity
 
     report = Scanner(
@@ -95,6 +97,20 @@ def test_severity_filter_uses_display_when_trust_on() -> None:
     security = [f for f in report.findings if f.analyzer not in {"compliance", "live_discovery", "static_discovery"}]
     assert all(effective_severity(f) == Severity.CRITICAL for f in security)
     assert not any(f.analyzer == "attack_chains" for f in security)
+
+
+def test_severity_filter_uses_template_when_warn() -> None:
+    report = Scanner(
+        ScanConfig(
+            target=SINGLE_TOOL,
+            findings_trust_mode="warn",
+            severity_filter=["critical"],
+        )
+    ).run()
+    security = [f for f in report.findings if f.analyzer not in {"compliance", "live_discovery", "static_discovery"}]
+    assert security
+    assert all(f.severity == Severity.CRITICAL for f in security)
+    assert any(f.analyzer == "attack_chains" for f in security)
 
 
 def _minimal_report(**kwargs) -> ScanReport:
@@ -130,3 +146,54 @@ def test_score_trend_fallback_uses_display_when_enforce() -> None:
     points = score_trend(report)
     assert points[0]["critical"] == 0
     assert points[0]["display_critical"] == 0
+
+
+def test_warn_mode_sarif_capped_gates_still_use_template() -> None:
+    report = Scanner(ScanConfig(target=SINGLE_TOOL, findings_trust_mode="warn")).run()
+    sarif = build_sarif(report)
+    chain_results = [
+        r
+        for r in sarif["runs"][0]["results"]
+        if r.get("properties", {}).get("analyzer") == "attack_chains"
+    ]
+    assert chain_results
+    assert chain_results[0]["level"] == "warning"
+    assert report.summary.critical >= 1
+    violations = evaluate_scan_gate_violations(
+        report,
+        ScanConfig(target=SINGLE_TOOL, findings_trust_mode="warn", fail_on_critical=True),
+    )
+    assert any("critical findings present" in item for item in violations)
+
+
+def test_warn_mode_sarif_security_severity_capped() -> None:
+    report = Scanner(ScanConfig(target=SINGLE_TOOL, findings_trust_mode="warn")).run()
+    sarif = build_sarif(report)
+    chain_results = [
+        r
+        for r in sarif["runs"][0]["results"]
+        if r.get("properties", {}).get("analyzer") == "attack_chains"
+    ]
+    assert chain_results
+    rule_id = chain_results[0]["ruleId"]
+    rule_props = next(
+        rule["properties"]
+        for rule in sarif["runs"][0]["tool"]["driver"]["rules"]
+        if rule["id"] == rule_id
+    )
+    assert rule_props.get("security-severity") == "5.0"
+
+
+def test_warn_mode_dashboard_category_tiles_use_template() -> None:
+    from mcts.report.data import build_dashboard_payload, category_scores
+
+    report = Scanner(ScanConfig(target=SINGLE_TOOL, findings_trust_mode="warn")).run()
+    template_rows = category_scores(report.findings, use_display=False)
+    payload = build_dashboard_payload(report)
+    attack_template = next(r for r in template_rows if r["key"] == "attack_chains")
+    attack_payload = next(c for c in payload["categories"] if c["key"] == "attack_chains")
+    assert attack_template["score"] > 0
+    assert attack_payload["score"] == attack_template["score"]
+    assert report.summary.critical >= 1
+    assert report.display_summary is not None
+    assert report.display_summary.critical == 0

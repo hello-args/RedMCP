@@ -94,3 +94,27 @@ def test_summary_for_gates_uses_display_when_enforced() -> None:
     )
     config = ScanConfig(target=Path("server.py"), findings_trust_mode="enforce")
     assert summary_for_gates(report, config).critical == 0
+
+
+def test_summary_for_gates_uses_template_when_warn() -> None:
+    report = ScanReport(
+        version="0.0.0",
+        target="t",
+        scanned_at=datetime.now(UTC),
+        server=MCPServerInfo(),
+        findings=[_finding()],
+        summary=ScanSummary(critical=1, total=1),
+        display_summary=ScanSummary(critical=0, medium=1, total=1),
+        findings_trust_mode="warn",
+        score=RiskScore(
+            overall=0,
+            risk_index=100,
+            raw_risk=100,
+            penalty=100,
+            basis=ScoreBasis(
+                critical=1, high=0, medium=0, low=0, scorable_total=1, excluded_non_scorable=0
+            ),
+        ),
+    )
+    config = ScanConfig(target=Path("server.py"), findings_trust_mode="warn")
+    assert summary_for_gates(report, config).critical == 1

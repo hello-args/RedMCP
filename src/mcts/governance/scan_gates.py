@@ -11,6 +11,10 @@ from mcts.reporting.models import ScanReport
 _LEVEL_ORDER = {"low": 0, "medium": 1, "high": 2, "critical": 3}
 
 
+def _gate_use_display(config: ScanConfig) -> bool:
+    return config.findings_trust_mode == "enforce"
+
+
 def _level_exceeds(actual: str, maximum: str) -> bool:
     return _LEVEL_ORDER.get(actual, 0) > _LEVEL_ORDER.get(maximum, 0)
 
@@ -69,9 +73,24 @@ def evaluate_scan_gate_violations(report: ScanReport, config: ScanConfig) -> lis
             f"critical findings ({gate_summary.critical}) exceed maximum ({config.max_critical})"
         )
 
-    violations.extend(category_gate_failures(report.findings, config.fail_on_category))
+    if config.max_high is not None and gate_summary.high > config.max_high:
+        violations.append(f"high findings ({gate_summary.high}) exceed max {config.max_high}")
+
+    violations.extend(
+        category_gate_failures(
+            report.findings,
+            config.fail_on_category,
+            use_display=_gate_use_display(config),
+        )
+    )
     if config.min_category_score_v2 and report.score_v2 is not None:
-        violations.extend(category_scores_v2_gate_failures(report.findings, config.min_category_score_v2))
+        violations.extend(
+            category_scores_v2_gate_failures(
+                report.findings,
+                config.min_category_score_v2,
+                use_display=_gate_use_display(config),
+            )
+        )
     violations.extend(priority_gate_violations(report, config))
     violations.extend(bronze_gate_violations(report, config))
     return violations

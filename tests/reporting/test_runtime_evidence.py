@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from mcts.analyzers.behavioral_static import BehavioralStaticAnalyzer
+from mcts.analyzers.runtime_events import _finding
 from mcts.core.config import ScanConfig
 from mcts.core.scanner import Scanner
 from mcts.mcp.models import MCPServerInfo, MCPTool
@@ -69,6 +70,52 @@ def test_validate_runtime_evidence_tags_description_mismatch() -> None:
     assert validated.finding_type == "validated"
 
 
+def test_validate_runtime_evidence_tags_live_proxy_runtime_events() -> None:
+    finding = _finding(
+        "runtime-cmd-inject-0",
+        "Command injection pattern in tool invocation",
+        "run_cmd",
+        "MCTS-T-1023",
+        Severity.CRITICAL,
+        {"event_index": 0, "type": "command_injection"},
+    )
+    validated = validate_runtime_evidence([finding])[0]
+    assert validated.evidence.get("runtime_validation") == "live_proxy"
+    assert validated.finding_type == "validated"
+
+
+def test_validated_runtime_findings_boost_priority_score() -> None:
+    finding = Finding(
+        id="behavioral-taint-demo-subprocess",
+        analyzer="behavioral_static",
+        title="Untrusted input may reach sink on demo",
+        description="Handler parameters ['cmd'] may flow to security-sensitive calls: subprocess",
+        severity=Severity.HIGH,
+        recommendation="Validate inputs",
+        evidence={
+            "facts": [
+                {
+                    "rule_id": "RULE_TAINT_PARAM_SINK",
+                    "match": "subprocess",
+                    "field": "handler_body",
+                    "tool": "demo",
+                    "snippet": "subprocess.call(cmd)",
+                }
+            ],
+            "sinks": ["subprocess"],
+            "tainted_params": ["cmd"],
+        },
+        priority_score=30,
+        evidence_strength="moderate",
+    )
+    ctx = build_trust_context(mode="enforce", scan_scope="repository")
+    out = apply_trust_layer([finding], ctx)[0]
+    assert out.finding_type == "validated"
+    assert out.priority_score is not None
+    assert out.priority_score > 30
+    assert out.evidence_strength == "strong"
+
+
 def test_collapse_template_severity_on_single_tool_fixture() -> None:
     collapsed = Scanner(
         ScanConfig(
@@ -94,3 +141,23 @@ def test_collapse_template_severity_on_single_tool_fixture() -> None:
     assert raw_chains[0].severity == Severity.CRITICAL
     assert raw_chains[0].display_severity == Severity.MEDIUM
     assert raw.summary.critical >= 1
+
+
+def test_b3_collapse_pipeline_gates_and_breakdown() -> None:
+    from pathlib import Path
+
+    from mcts.governance.scan_gates import evaluate_scan_gate_violations
+
+    target = Path("examples/single-tool-agent-server/server.py")
+    config = ScanConfig(
+        target=target,
+        findings_trust_mode="enforce",
+        collapse_template_severity=True,
+        fail_on_critical=True,
+    )
+    report = Scanner(config).run()
+    assert report.summary.critical == 0
+    assert report.score.basis.critical == 0
+    assert report.score_breakdown is not None
+    assert report.score_breakdown.mcp_surface == report.score.overall
+    assert evaluate_scan_gate_violations(report, config) == []

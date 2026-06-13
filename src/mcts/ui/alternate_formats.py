@@ -66,9 +66,9 @@ def _filter_findings(
     hide_safe: bool,
 ) -> list[Finding]:
     rows = report.findings
-    use_display = report.findings_trust_mode != "off"
+    use_display_filter = report.findings_trust_mode == "enforce"
     if severity_filter:
-        if use_display:
+        if use_display_filter:
             rows = [f for f in rows if effective_severity(f) in severity_filter]
         else:
             rows = [f for f in rows if f.severity in severity_filter]

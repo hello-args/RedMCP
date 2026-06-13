@@ -474,11 +474,18 @@
     const detailEl = document.getElementById("score-detail");
     const basis = DATA.score?.basis;
     if (detailEl && basis) {
-      const counts = trustEnforced() ? basis : DATA.display_summary ? activeSummary() : basis;
-      const countLabel = trustEnforced() ? "severity" : DATA.display_summary ? "display severity" : "severity";
+      const counts = basis;
+      const countLabel = trustEnforced()
+        ? "display severity"
+        : DATA.meta?.findings_trust_mode === "warn"
+          ? "template severity"
+          : "severity";
       detailEl.textContent =
         `Calculated from ${basis.scorable_total} finding(s) by ${countLabel} — ` +
         `${counts.critical ?? 0} critical, ${counts.high ?? 0} high, ${counts.medium ?? 0} medium, ${counts.low ?? 0} low. ` +
+        (DATA.meta?.findings_trust_mode === "warn"
+          ? "Legacy score uses template counts; summary cards preview display severity. Use enforce for aligned CI. "
+          : "") +
         `This is a security rating, not a pass rate.`;
     }
   }

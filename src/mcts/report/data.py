@@ -558,11 +558,16 @@ def parse_min_category_score_v2(raw_values: list[str] | None) -> dict[str, int]:
     return gates
 
 
-def category_scores_v2_gate_failures(findings: list[Finding], gates: dict[str, int]) -> list[str]:
+def category_scores_v2_gate_failures(
+    findings: list[Finding],
+    gates: dict[str, int],
+    *,
+    use_display: bool = False,
+) -> list[str]:
     """Fail when OWASP v2 tile score falls below minimum (100 = good polarity)."""
     if not gates:
         return []
-    by_key = {row["key"]: row for row in category_scores_v2(findings)}
+    by_key = {row["key"]: row for row in category_scores_v2(findings, use_display=use_display)}
     failures: list[str] = []
     for category, minimum in gates.items():
         row = by_key.get(category)
@@ -606,11 +611,16 @@ def category_scores_v2(findings: list[Finding], *, use_display: bool = False) ->
     return rows
 
 
-def category_gate_failures(findings: list[Finding], gates: dict[str, int]) -> list[str]:
+def category_gate_failures(
+    findings: list[Finding],
+    gates: dict[str, int],
+    *,
+    use_display: bool = False,
+) -> list[str]:
     """Return human-readable failures when a category score meets/exceeds its gate."""
     if not gates:
         return []
-    by_key = {row["key"]: row for row in category_scores(findings)}
+    by_key = {row["key"]: row for row in category_scores(findings, use_display=use_display)}
     failures: list[str] = []
     for category, limit in gates.items():
         row = by_key.get(category)

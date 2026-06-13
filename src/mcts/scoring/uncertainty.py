@@ -39,8 +39,20 @@ def confidence_score(findings: list[Finding], per_finding_risks: list[int]) -> i
 
 
 def evidence_quality_factor(findings: list[Finding]) -> float:
-    tags = {t for f in findings for t in (f.evidence.get("risk_tags") or [])}
-    return 0.8 if {"live_probe", "handler_traced"} <= tags else 1.2
+    tags = {t for f in findings for t in ((f.evidence or {}).get("risk_tags") or [])}
+    if {"live_probe", "handler_traced"} <= tags:
+        return 0.8
+    for finding in findings:
+        if finding.finding_type != "validated":
+            continue
+        validation = (finding.evidence or {}).get("runtime_validation")
+        if validation in {"live_probe", "live_proxy"}:
+            return 0.8
+        if validation == "taint_param_sink":
+            facts = (finding.evidence or {}).get("facts") or []
+            if any(isinstance(row, dict) and row.get("snippet") for row in facts):
+                return 0.8
+    return 1.2
 
 
 def analyzer_disagreement_factor(findings: list[Finding], *, use_display: bool = False) -> float:
