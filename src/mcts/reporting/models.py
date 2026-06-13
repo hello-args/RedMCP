@@ -56,6 +56,7 @@ class Finding(BaseModel):
     evidence_type: str | None = None
     chain_level: int | None = Field(default=None, ge=0, le=3)
     finding_kind: str | None = None
+    rule_stability: str | None = None
 
 
 class ScanSummary(BaseModel):

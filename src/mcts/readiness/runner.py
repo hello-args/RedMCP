@@ -96,9 +96,16 @@ def run_readiness(config: ScanConfig) -> ReadinessReport:
             )
         )
 
-    score = readiness_score(findings)
-    production_ready = (
-        bool(server.tools) and score >= 70 and not any(f.severity == Severity.CRITICAL for f in findings)
+    from mcts.reporting.display import effective_severity
+    from mcts.reporting.trust_apply import apply_config_trust_layer
+
+    findings = apply_config_trust_layer(
+        findings, config, scan_scope="readiness", tools=server.tools
+    )
+    use_display = config.findings_trust_mode == "enforce"
+    score = readiness_score(findings, use_display=use_display)
+    production_ready = bool(server.tools) and score >= 70 and not any(
+        (effective_severity(f) if use_display else f.severity) == Severity.CRITICAL for f in findings
     )
     for finding in findings:
         finding.evidence.setdefault("readiness_score", score)

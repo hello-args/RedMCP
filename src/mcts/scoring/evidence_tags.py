@@ -173,7 +173,10 @@ def tag_static_discovery_finding(finding: Finding) -> Finding:
 
 
 def tag_attack_chain_finding(finding: Finding) -> Finding:
-    evidence = merge_evidence(finding.evidence, {"confidence": 0.70})
+    evidence = merge_evidence(
+        finding.evidence,
+        {"confidence": 0.70, "analysis_mode": "static_heuristic"},
+    )
     confidence = finding.confidence if finding.confidence is not None else 0.70
     return finding.model_copy(update={"evidence": evidence, "confidence": confidence})
 

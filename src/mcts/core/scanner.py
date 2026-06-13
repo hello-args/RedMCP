@@ -216,20 +216,24 @@ class Scanner:
         findings = enrich_scoring_evidence(findings, attack_graph=raw_graph, scan_scope=scan_scope)
         _trace_pipeline("scope")
 
-        from mcts.reporting.finding_validator import ValidationContext, validate_findings
+        from mcts.reporting.trust_pipeline import apply_trust_layer, build_trust_context
 
-        findings = validate_findings(
-            findings,
-            ValidationContext(
-                scan_scope=scan_scope,
-                tools=server_info.tools,
-                attack_graph=raw_graph,
-                mode=self.config.findings_trust_mode,
-            ),
+        trust_ctx = build_trust_context(
+            mode=self.config.findings_trust_mode,
+            scan_scope=scan_scope,
+            tools=server_info.tools,
+            attack_graph=raw_graph,
         )
+        findings = apply_trust_layer(findings, trust_ctx)
 
         findings = self._apply_filters(findings)
-        findings.extend(self.compliance.check(findings, tools_discovered=len(server_info.tools)))
+        from mcts.reporting.rule_stability import apply_rule_stability
+
+        compliance_rows = [
+            apply_rule_stability(row)
+            for row in self.compliance.check(findings, tools_discovered=len(server_info.tools))
+        ]
+        findings.extend(compliance_rows)
         analyzers_executed.append("compliance")
         scan_notes = build_scan_notes(self.config)
 

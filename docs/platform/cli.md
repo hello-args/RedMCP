@@ -86,6 +86,8 @@ When `-o` is set, format determines serialization. SARIF uses `reporting/sarif.p
 |------|---------|-------------|
 | `--findings-trust-mode` | `off` | Findings trust layer: `off`, `warn`, or `enforce`. **Enforce** caps overlap chain display severity and aligns gates, score basis, history, and CLI with display severity. **`warn` does not relax CI** — use `enforce` or `--ci-trust`. See [Findings trust Phase 0](../reporting/findings-trust-phase0.md). |
 | `--ci-trust` | off | CI preset: `findings-trust-mode enforce`, `--fail-on-critical`, `--min-score 70`. |
+| `--fail-on-priority-min` | — | Exit 1 when any security finding `priority_score` ≥ threshold (use with `--min-evidence-strength strong` for Option B). |
+| `--min-evidence-strength` | — | Filter for `--fail-on-priority-min`: `weak`, `moderate`, `strong`, or `verified`. |
 | `--fail-on-critical` | false | Exit **1** if any critical finding |
 | `--min-score` | — | Exit **1** if legacy `score.overall` < N (0–100) |
 | `--max-critical` | — | Exit **1** if critical count > N |
@@ -288,7 +290,7 @@ Discovered markdown becomes prompt/instruction surfaces for `prompt_injection`, 
 Production readiness checks (separate from security score).
 
 ```bash
-mcts readiness <target> [--output, -o] [--opa] [--llm-judge]
+mcts readiness <target> [--output, -o] [--opa] [--llm-judge] [--findings-trust-mode off|warn|enforce]
 ```
 
 See [Readiness Scanning](../scanning/readiness.md).
@@ -399,7 +401,7 @@ Structured red-team orchestration: static recon, metadata/attack-chain review, a
 
 ```bash
 mcts pentest examples/vulnerable-mcp-server/server.py
-mcts pentest ./server.py --live --i-understand-live-risk
+mcts pentest ./server.py --live --i-understand-live-risk --findings-trust-mode enforce
 mcts pentest ./repo --json -o pentest-report.json
 ```
 

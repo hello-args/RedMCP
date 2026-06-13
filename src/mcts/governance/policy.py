@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class GovernancePolicy(BaseModel):
@@ -17,9 +17,32 @@ class GovernancePolicy(BaseModel):
     min_category_score_v2: dict[str, int] = Field(default_factory=dict)
     max_critical: int | None = Field(default=None, ge=0)
     max_high: int | None = Field(default=None, ge=0)
+    fail_on_priority_min: int | None = Field(default=None, ge=0, le=100)
+    min_evidence_strength: str | None = None
+    enforce_bronze_facts: bool = False
+    findings_trust_mode: str | None = None
     allowed_servers: list[str] = Field(default_factory=list)
     blocked_servers: list[str] = Field(default_factory=list)
     require_auth_env_for_sensitive: bool = False
+
+    @field_validator("min_evidence_strength")
+    @classmethod
+    def _validate_policy_evidence_strength(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        from mcts.reporting.trust_gates import normalize_evidence_strength
+
+        return normalize_evidence_strength(value)
+
+    @field_validator("findings_trust_mode")
+    @classmethod
+    def _validate_policy_trust_mode(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.lower().strip()
+        if normalized not in {"off", "warn", "enforce"}:
+            raise ValueError("findings_trust_mode must be off, warn, or enforce")
+        return normalized
 
 
 def load_policy(path: Path | None) -> GovernancePolicy | None:
@@ -86,6 +109,25 @@ def evaluate_policy(
         violations.append(f"critical findings {critical} exceed max {policy.max_critical}")
     if policy.max_high is not None and high > policy.max_high:
         violations.append(f"high findings {high} exceed max {policy.max_high}")
+    if policy.fail_on_priority_min is not None and findings is not None:
+        from mcts.reporting.trust_gates import findings_over_priority_threshold
+
+        matched = findings_over_priority_threshold(
+            findings,
+            minimum_priority=policy.fail_on_priority_min,
+            minimum_evidence_strength=policy.min_evidence_strength,
+        )
+        if matched:
+            strength_note = (
+                f" with evidence_strength>={policy.min_evidence_strength}"
+                if policy.min_evidence_strength
+                else ""
+            )
+            top = matched[0]
+            violations.append(
+                f"{len(matched)} finding(s) at or above priority {policy.fail_on_priority_min}{strength_note} "
+                f"(highest: {top.title!r} priority={top.priority_score})"
+            )
     if policy.allowed_servers:
         for server in servers:
             if server not in policy.allowed_servers:
@@ -103,3 +145,39 @@ def _normalize(payload: dict[str, Any]) -> dict[str, Any]:
     if "blocklist" in row and "blocked_servers" not in row:
         row["blocked_servers"] = row.pop("blocklist")
     return row
+
+
+def merge_scan_config_with_policy(config: Any, policy: GovernancePolicy | None) -> Any:
+    """Fill unset scan config fields from governance policy (CLI flags take precedence).
+
+    Policy applies when the scan config still holds defaults (e.g. findings_trust_mode=off,
+    optional gates None). Explicit CLI values are never overwritten.
+    """
+    if policy is None:
+        return config
+
+    updates: dict[str, Any] = {}
+
+    if config.findings_trust_mode == "off" and policy.findings_trust_mode is not None:
+        updates["findings_trust_mode"] = policy.findings_trust_mode
+
+    for field in (
+        "min_score",
+        "max_critical",
+        "fail_on_priority_min",
+        "min_evidence_strength",
+        "min_security_score",
+        "max_absolute_risk",
+        "max_risk_level",
+        "enforce_bronze_facts",
+    ):
+        if getattr(config, field) is None and getattr(policy, field) is not None:
+            updates[field] = getattr(policy, field)
+
+    if not config.min_category_score_v2 and policy.min_category_score_v2:
+        updates["min_category_score_v2"] = dict(policy.min_category_score_v2)
+
+    if not updates:
+        return config
+
+    return config.model_copy(update=updates)

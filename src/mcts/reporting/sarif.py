@@ -160,6 +160,16 @@ def _finding_to_result(finding: Finding, rules: dict[str, dict[str, Any]], targe
     }
     if finding.evidence_type:
         result["properties"]["evidence_type"] = finding.evidence_type
+    evidence = finding.evidence or {}
+    facts = evidence.get("facts")
+    if isinstance(facts, list) and facts:
+        result["properties"]["mcts/factCount"] = len(facts)
+        result["properties"]["mcts/facts"] = facts[:5]
+    factors = evidence.get("confidence_factors")
+    if isinstance(factors, list) and factors:
+        result["properties"]["mcts/confidenceFactors"] = factors
+    if finding.rule_stability:
+        result["properties"]["mcts/ruleStability"] = finding.rule_stability
     taxa = _result_taxa(finding)
     if taxa:
         result["taxa"] = taxa

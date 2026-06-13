@@ -90,6 +90,12 @@
     return `<span class="evidence-maturity-chip evidence-maturity-${escapeHtml(f.evidence_type)}" title="Evidence maturity">${escapeHtml(label)}</span>`;
   }
 
+  function ruleStabilityChip(f) {
+    if (!f.rule_stability) return "";
+    const label = String(f.rule_stability);
+    return `<span class="rule-stability-chip rule-stability-${escapeHtml(label)}" title="Rule stability">${escapeHtml(label)}</span>`;
+  }
+
   function trustEnforced() {
     return (DATA.meta && DATA.meta.findings_trust_mode === "enforce") || false;
   }
@@ -1463,11 +1469,57 @@
       .join(" · ");
   }
 
-  function formatEvidenceBlock(evidence) {
-    if (!evidence || !Object.keys(evidence).length) {
+  function formatFactsTable(facts) {
+    if (!facts || !facts.length) return "";
+    const rows = facts
+      .map(
+        (fact) => `
+        <tr>
+          <td><code>${escapeHtml(fact.rule_id || "—")}</code></td>
+          <td>${escapeHtml(fact.tool || "—")}</td>
+          <td>${escapeHtml(fact.field || "—")}</td>
+          <td><code>${escapeHtml(fact.match || "—")}</code></td>
+          <td>${escapeHtml(fact.file || "—")}${fact.line ? `:${fact.line}` : ""}</td>
+        </tr>
+        ${fact.snippet ? `<tr class="finding-fact-snippet"><td colspan="5"><pre>${escapeHtml(fact.snippet)}</pre></td></tr>` : ""}`
+      )
+      .join("");
+    return `
+      <table class="finding-facts-table">
+        <thead><tr><th>Rule</th><th>Tool</th><th>Field</th><th>Match</th><th>Location</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+
+  function formatEvidenceBlock(finding) {
+    const evidence = finding.evidence || {};
+    const facts = finding.facts || evidence.facts || [];
+    const factors = finding.confidence_factors || evidence.confidence_factors || [];
+    const interpretation = finding.interpretation || evidence.interpretation;
+    if (!Object.keys(evidence).length && !facts.length) {
       return '<p class="finding-evidence-empty">No structured evidence recorded.</p>';
     }
-    return `<pre class="finding-evidence-json">${escapeHtml(JSON.stringify(evidence, null, 2))}</pre>`;
+    let html = "";
+    if (facts.length) {
+      html += `<div class="finding-evidence-section"><strong>Matched signals</strong>${formatFactsTable(facts)}</div>`;
+    }
+    if (factors.length) {
+      html += `<div class="finding-evidence-section"><strong>Confidence factors</strong><ul class="finding-confidence-list">${factors
+        .map((item) => `<li>${escapeHtml(item)}</li>`)
+        .join("")}</ul></div>`;
+    }
+    if (interpretation && interpretation.mcp_context) {
+      const ctx = interpretation.mcp_context;
+      html += `<div class="finding-evidence-section"><strong>MCP context</strong><p class="finding-mcp-context">${escapeHtml(
+        Object.entries(ctx)
+          .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(", ") : value}`)
+          .join(" · ")
+      )}</p></div>`;
+    }
+    html += `<details class="finding-evidence-raw"><summary>Raw evidence JSON</summary><pre class="finding-evidence-json">${escapeHtml(
+      JSON.stringify(evidence, null, 2)
+    )}</pre></details>`;
+    return html;
   }
 
   function renderFindingsTable() {
@@ -1497,10 +1549,10 @@
     tbody.innerHTML = rows
       .map(
         (f) => `
-      <tr class="finding-row${f.has_evidence ? " finding-row--expandable" : ""}" data-finding-id="${escapeHtml(f.id)}"${f.has_evidence ? ' tabindex="0" role="button" aria-expanded="false"' : ""}>
-        <td><span class="sev-badge ${findingSeverity(f)}">${findingSeverity(f)}</span>${evidenceMaturityChip(f)}</td>
+      <tr class="finding-row${f.has_evidence || f.has_provenance ? " finding-row--expandable" : ""}" data-finding-id="${escapeHtml(f.id)}"${f.has_evidence || f.has_provenance ? ' tabindex="0" role="button" aria-expanded="false"' : ""}>
+        <td><span class="sev-badge ${findingSeverity(f)}">${findingSeverity(f)}</span>${evidenceMaturityChip(f)}${ruleStabilityChip(f)}</td>
         <td><strong>${escapeHtml(f.title)}</strong><br><span style="color:var(--muted);font-size:12px">${escapeHtml(f.description)}</span>${
-          f.has_evidence
+          f.has_evidence || f.has_provenance
             ? `<div class="finding-expand-hint">${escapeHtml(f.evidence_summary || "View evidence")} <span class="row-cta">Details ↓</span></div>`
             : ""
         }</td>
@@ -1525,12 +1577,12 @@
             : ""
         }</td>
       </tr>${
-        f.has_evidence
+        f.has_evidence || f.has_provenance
           ? `<tr class="finding-detail-row" data-detail-for="${escapeHtml(f.id)}" hidden>
         <td colspan="10">
           <div class="finding-detail-panel">
             <strong>Evidence</strong> · confidence ${escapeHtml(f.confidence_display || "—")}
-            ${formatEvidenceBlock(f.evidence)}
+            ${formatEvidenceBlock(f)}
           </div>
         </td>
       </tr>`

@@ -5,6 +5,7 @@ from __future__ import annotations
 from mcts.core.config import ScanConfig
 from mcts.report.data import category_gate_failures, category_scores_v2_gate_failures
 from mcts.reporting.display import summary_for_gates
+from mcts.reporting.trust_gates import bronze_gate_violations, priority_gate_violations
 from mcts.reporting.models import ScanReport
 
 _LEVEL_ORDER = {"low": 0, "medium": 1, "high": 2, "critical": 3}
@@ -71,4 +72,6 @@ def evaluate_scan_gate_violations(report: ScanReport, config: ScanConfig) -> lis
     violations.extend(category_gate_failures(report.findings, config.fail_on_category))
     if config.min_category_score_v2 and report.score_v2 is not None:
         violations.extend(category_scores_v2_gate_failures(report.findings, config.min_category_score_v2))
+    violations.extend(priority_gate_violations(report, config))
+    violations.extend(bronze_gate_violations(report, config))
     return violations

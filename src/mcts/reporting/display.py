@@ -40,3 +40,8 @@ def summary_for_gates(report: ScanReport, config: ScanConfig) -> ScanSummary:
 def report_trust_enforced(report: ScanReport) -> bool:
     """True when the scan used findings trust enforcement."""
     return report.findings_trust_mode == "enforce"
+
+
+def severity_for_scoring(finding: Finding, *, use_display: bool) -> Severity:
+    """Severity input for v1/v2 scoring when trust enforcement is active."""
+    return effective_severity(finding) if use_display else finding.severity

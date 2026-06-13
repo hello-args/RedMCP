@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Findings trust Phases 1–B2** — evidence provenance (`evidence.facts`, `confidence_factors`), `rule_stability` + `FindingBuilder`, priority gates (`--fail-on-priority-min`, `--min-evidence-strength`), v2 scoring on display severity under enforce
+- **Governance policy merge** — `.mcts/policy.yaml` fills unset scan flags before scan; CLI overrides policy
+- **Priority model** — `priority_score` and `evidence_strength` on all security findings when trust is on
+- **Shared trust pipeline** — fuzz/inventory honor `--findings-trust-mode`; bronze gate for experimental analyzers
+- **FindingBuilder adoption** — `command_execution`, `prompt_injection`, and `data_leakage` emit bronze facts
+- **Auxiliary trust wiring** — readiness, pentest (fuzz), inventory, fuzz CLI/API paths
+- **API policy merge** — REST scans load `.mcts/policy.yaml` like CLI
+- **Global thin-evidence caps** — low-confidence findings without facts default to `weak` strength
+- **B2 residual paths** — disagreement factor and readiness score honor display severity under enforce
+
+### Fixed
+
+- **`_has_proven_path`** — empty `finding_ids` no longer marks every chain as proven
+- **Compliance rows** — receive `rule_stability` after pipeline append
+
 ## [0.1.4] - 2026-06-12
 
 ### Security

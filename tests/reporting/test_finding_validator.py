@@ -88,3 +88,37 @@ def test_multi_tool_overlap_capped_without_proven_path() -> None:
     assert out.display_severity == Severity.MEDIUM
     assert out.severity == Severity.CRITICAL
     assert "Potential capability overlap" in out.title
+
+
+def test_empty_finding_ids_does_not_prove_path() -> None:
+    finding = _chain_finding()
+    graph = {
+        "paths": [
+            {
+                "hop_count": 3,
+                "tools_on_path": ["a", "b", "c"],
+                "finding_ids": [],
+            }
+        ]
+    }
+    ctx = ValidationContext(scan_scope="repository", tools=[], attack_graph=graph, mode="enforce")
+    out = validate_findings([finding], ctx)[0]
+    assert out.evidence_type == "capability_overlap"
+    assert out.display_severity == Severity.MEDIUM
+
+
+def test_security_finding_gets_priority_score() -> None:
+    finding = Finding(
+        id="exec-1",
+        analyzer="command_execution",
+        title="Shell invocation",
+        description="d",
+        severity=Severity.HIGH,
+        recommendation="fix",
+        tool="run_cmd",
+    )
+    ctx = ValidationContext(scan_scope="repository", tools=[], attack_graph={}, mode="enforce")
+    out = validate_findings([finding], ctx)[0]
+    assert out.priority_score is not None
+    assert out.evidence_strength == "moderate"
+    assert out.priority_score > 0

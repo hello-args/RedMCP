@@ -23,16 +23,19 @@ A finding means: *“This pattern matches a risk class we watch for.”* You sti
 
 ### Findings trust mode (Phase 0)
 
-When you enable **`--findings-trust-mode enforce`** (or `warn`), MCTS runs a post-scan **validator** that adjusts **display** fields without changing template severity used for legacy scoring:
+When you enable **`--findings-trust-mode enforce`** (or `warn`), MCTS runs a post-scan **validator** that adjusts **display** fields. Template `severity` is preserved in JSON for audit compatibility. With trust enabled, attack-chain findings also include **matched capability signals** (`evidence.facts`) from the inferrer so you can see which rules fired (e.g. `CAP_CREDENTIAL_KEYWORD`, `CAP_EGRESS_HANDLER`).
 
 | Field | Role |
 |-------|------|
-| `severity` / `summary` | **Template** — legacy score, default CI, JSON `summary.critical` |
+| `severity` / `summary` | **Template** — audit trail; unchanged in JSON |
 | `display_severity` / `display_summary` | **Trust-adjusted** — dashboard badges, SARIF `level`, gates when enforce |
+| `priority_score` / `evidence_strength` | **CI priority** — populated by validator for security findings when trust is on |
 
 **Default (`off`):** behavior is unchanged from pre–Phase 0 releases.
 
-**Single-tool overlap:** With enforce, attack chains that are only capability overlap show as **medium** with titles like *“Potential capability overlap (…)”* and `evidence_type: capability_overlap`. Template severity may still be `critical` for scoring compatibility.
+**Governance policy:** Copy `.mcts/policy.yaml.example` to `.mcts/policy.yaml`. Unset CLI flags inherit policy values (e.g. `findings_trust_mode: enforce`). Explicit CLI flags override policy.
+
+**Single-tool overlap:** With enforce, attack chains that are only capability overlap show as **medium** with titles like *“Potential capability overlap (…)”* and `evidence_type: capability_overlap`. Template `severity` may still read `critical` in raw JSON; **scoring and gates under enforce use display severity** (Phase A½ + B2).
 
 See **[Findings trust (Phase 0)](findings-trust-phase0.md)** for CI flags, integrator fields, and what is not migrated yet.
 
@@ -62,7 +65,8 @@ flowchart LR
   D --> E[Finding list]
   E --> F[Evidence enrichment]
   F --> V[validate_findings]
-  V --> G[Scoring]
+  V --> P[enrich_provenance]
+  P --> G[Scoring]
   G --> H[HTML / JSON report]
 ```
 
@@ -70,9 +74,10 @@ flowchart LR
 2. **Capability inference** — Each tool gets a `CapabilityProfile` (read, egress, credentials, exec, mutate) from name, description, schema, and handler snippet.
 3. **Analyzers** — Independent modules (`attack_chains`, `prompt_injection`, `supply_chain`, …) each return zero or more `Finding` objects.
 4. **Evidence enrichment** — Post-pass adds tags (e.g. `reachability_tag`, graph `path`/`hop_count` when a real path exists).
-5. **Findings validation** (when `findings_trust_mode` ≠ `off`) — Caps overlap chain **display** severity, sets `evidence_type`, rewrites titles in enforce mode, strips misleading path/hop on overlap.
-6. **Scoring** — Legacy `score.overall` and/or `score_v2` computed from **template** severity (Phase A).
-7. **Dashboard** — Uses **display** severity when trust is on; payload includes both `summary` and `display_summary`.
+5. **Findings validation** (when `findings_trust_mode` ≠ `off`) — Caps overlap chain **display** severity, sets `evidence_type`, `priority_score`, rewrites titles in enforce mode, strips misleading path/hop on overlap.
+6. **Provenance enrichment** (when trust on) — Attack chains get `evidence.facts`, `confidence_factors`, counterfactual remediation.
+7. **Scoring** — Under **`enforce`**, legacy `score.basis` and v2 `absolute_risk` use **display** severity (Phase A½ + B2). Under `warn` or `off`, scoring uses template severity; gates use template unless enforce.
+8. **Dashboard** — Uses **display** severity when trust is on; payload includes both `summary` and `display_summary`.
 
 Implementation references:
 
@@ -198,7 +203,7 @@ Ideal evidence would also include:
 }
 ```
 
-The dashboard shows `evidence_type` and honest overlap titles when trust is on; rule-level **`signals[]`** and matched regex provenance are **Phase 1** ([roadmap](findings-trust-phase0.md#what-was-not-implemented-expected-deferrals)).
+The dashboard shows `evidence_type`, matched **signals** (rule ID + match + snippet when trust is on), and honest overlap titles. Expand a finding row for the signals table and confidence factors.
 
 ---
 

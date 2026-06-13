@@ -10,6 +10,7 @@ from mcts.mcp.models import CapabilityProfile
 from mcts.report.analyzer_catalog import analyzer_info
 from mcts.report.scan_meta import tool_discovery_context
 from mcts.reporting.display import effective_impact, effective_severity, report_trust_enforced
+from mcts.reporting.evidence_provenance import fact_coverage
 from mcts.reporting.models import Finding, ScanReport, ScanSummary, Severity, SourceLocation
 from mcts.scoring.engine import RISK_WEIGHTS
 from mcts.taxonomy.mapper import technique_catalog
@@ -152,7 +153,14 @@ RISK_GUIDE = (
 
 
 def sort_findings(findings: list[Finding]) -> list[Finding]:
-    return sorted(findings, key=lambda f: (SEVERITY_ORDER[effective_severity(f)], f.title))
+    return sorted(
+        findings,
+        key=lambda f: (
+            -(f.priority_score if f.priority_score is not None else -1),
+            SEVERITY_ORDER[effective_severity(f)],
+            f.title,
+        ),
+    )
 
 
 def format_location(location: SourceLocation | None) -> str:
@@ -173,6 +181,19 @@ def format_evidence_summary(evidence: dict[str, Any]) -> str:
     """One-line preview for findings table."""
     if not evidence:
         return ""
+    facts = evidence.get("facts")
+    if isinstance(facts, list) and facts:
+        first = facts[0]
+        if isinstance(first, dict):
+            rule = first.get("rule_id", "")
+            match = first.get("match", "")
+            tool = first.get("tool", "")
+            lead = f"{rule}: {match}" if rule else str(match)
+            if tool:
+                lead = f"{tool} — {lead}"
+            if len(facts) > 1:
+                lead += f" (+{len(facts) - 1} signal(s))"
+            return lead
     parts: list[str] = []
     for key in ("rule_id", "matched", "missing_mcp_categories", "read_tools", "exfil_tools"):
         if key in evidence and evidence[key]:
@@ -286,6 +307,8 @@ def build_executive_summary(findings: list[Finding], summary: ScanSummary) -> di
     bullets: list[str] = []
 
     chain_findings = [f for f in findings if f.analyzer == "attack_chains"]
+    has_proven = False
+    has_overlap = False
     if chain_findings:
         has_proven = any(f.evidence_type == "graph_path" for f in chain_findings)
         has_overlap = any(f.evidence_type == "capability_overlap" for f in chain_findings)
@@ -350,7 +373,10 @@ def build_executive_summary(findings: list[Finding], summary: ScanSummary) -> di
         ("injection", "Sanitize tool inputs and enforce instruction boundaries"),
     ]
     seen_bullets: set[str] = set()
+    suppress_chain_recs = bool(chain_findings) and has_overlap and not has_proven
     for rec in recs:
+        if suppress_chain_recs and rec.get("analyzer") == "attack_chains":
+            continue
         text = rec["recommendation"]
         if text not in seen_bullets and len(bullets) < 5:
             seen_bullets.add(text)
@@ -1122,6 +1148,7 @@ def build_dashboard_payload(report: ScanReport) -> dict[str, Any]:
     analyzer_results = build_analyzer_results(report.findings, executed, report=report)
     use_display = report_trust_enforced(report)
     categories = category_scores(report.findings, use_display=use_display)
+    fact_cov = fact_coverage(report.findings) if report.findings_trust_mode != "off" else None
     checks_summary = build_checks_summary(analyzer_results, categories)
     analyzers_run = checks_summary["analyzers_run"] or max(len({f.analyzer for f in report.findings}), 6)
     exec_summary = report.display_summary or report.summary
@@ -1147,6 +1174,7 @@ def build_dashboard_payload(report: ScanReport) -> dict[str, Any]:
                 "evidence_strength": finding.evidence_strength,
                 "evidence_type": finding.evidence_type,
                 "finding_type": finding.finding_type,
+                "rule_stability": finding.rule_stability,
                 "priority_score": finding.priority_score,
                 "title": finding.title,
                 "description": finding.description,
@@ -1159,8 +1187,18 @@ def build_dashboard_payload(report: ScanReport) -> dict[str, Any]:
                 "confidence": finding.confidence,
                 "confidence_display": format_confidence(finding.confidence),
                 "evidence": evidence,
+                "facts": evidence.get("facts") if isinstance(evidence.get("facts"), list) else [],
+                "confidence_factors": (
+                    evidence.get("confidence_factors")
+                    if isinstance(evidence.get("confidence_factors"), list)
+                    else []
+                ),
+                "interpretation": evidence.get("interpretation")
+                if isinstance(evidence.get("interpretation"), dict)
+                else None,
                 "evidence_summary": format_evidence_summary(evidence),
                 "has_evidence": bool(evidence),
+                "has_provenance": bool(evidence.get("facts")),
                 "recommendation": finding.recommendation,
                 "technique_id": tid or "—",
                 "technique_url": technique_url(tid) if tid else None,
@@ -1195,6 +1233,7 @@ def build_dashboard_payload(report: ScanReport) -> dict[str, Any]:
             "scan_scope_label": scope_label,
             "tool_discovery_notice": report.tool_discovery_notice,
             "findings_trust_mode": report.findings_trust_mode,
+            **({"fact_coverage": fact_cov} if fact_cov is not None else {}),
         },
         "scan_notes": list(report.scan_notes),
         "tool_discovery": tool_ctx,

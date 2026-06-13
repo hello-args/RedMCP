@@ -31,6 +31,7 @@ _STRENGTH_MULT: dict[str, float] = {
 _CHAIN_MULT: dict[int, float] = {0: 0.4, 1: 0.7, 2: 0.9, 3: 1.0}
 
 _HYGIENE_ANALYZERS = frozenset({"live_discovery", "static_discovery"})
+_HEURISTIC_ANALYZERS = frozenset({"attack_chains", "behavioral_static", "jailbreak", "llm_judge", "llm_metadata_triage"})
 
 
 @dataclass
@@ -45,7 +46,9 @@ def validate_findings(findings: list[Finding], ctx: ValidationContext) -> list[F
     """Populate trust fields; optionally cap display severity and rewrite titles."""
     if ctx.mode == "off":
         return findings
-    return [_validate_one(finding, ctx) for finding in findings]
+    from mcts.reporting.rule_stability import apply_rule_stability
+
+    return [apply_rule_stability(_validate_one(finding, ctx)) for finding in findings]
 
 
 def _validate_one(finding: Finding, ctx: ValidationContext) -> Finding:
@@ -55,6 +58,21 @@ def _validate_one(finding: Finding, ctx: ValidationContext) -> Finding:
 
     if finding.analyzer == "attack_chains":
         _validate_attack_chain(finding, ctx, updates)
+    elif updates["finding_kind"] == "security":
+        impact = finding.impact or finding.severity
+        strength = finding.evidence_strength or _default_evidence_strength(finding)
+        display = finding.display_severity or finding.severity
+        if strength == "weak":
+            display = _cap_display_severity(finding.severity, Severity.MEDIUM)
+        updates.update(
+            {
+                "impact": impact,
+                "evidence_strength": strength,
+                "display_severity": display,
+                "chain_level": 0,
+                "priority_score": _priority_score(impact, strength, 0),
+            }
+        )
     else:
         if finding.impact is None:
             updates["impact"] = finding.severity
@@ -116,7 +134,7 @@ def _classify_kind(finding: Finding) -> str:
         return finding.finding_kind
     if finding.analyzer == "compliance":
         return "coverage"
-    if finding.analyzer in _HYGIENE_ANALYZERS:
+    if finding.analyzer in _HYGIENE_ANALYZERS or finding.analyzer in {"readiness", "vet"}:
         return "hygiene"
     return "security"
 
@@ -149,9 +167,10 @@ def _has_proven_path(finding: Finding, attack_graph: dict[str, Any]) -> bool:
     for path in attack_graph.get("paths") or []:
         if not isinstance(path, dict):
             continue
-        finding_ids = path.get("finding_ids") or []
-        if finding_ids and finding.id not in finding_ids:
-            continue
+        finding_ids = path.get("finding_ids")
+        if isinstance(finding_ids, list):
+            if not finding_ids or finding.id not in finding_ids:
+                continue
         hop_count = path.get("hop_count")
         if isinstance(hop_count, int) and hop_count >= 2:
             return True
@@ -181,6 +200,25 @@ def _cap_display_severity(template: Severity, cap: Severity) -> Severity:
     if order.index(template) > order.index(cap):
         return cap
     return template
+
+
+def _default_evidence_strength(finding: Finding) -> str:
+    evidence = finding.evidence or {}
+    facts = evidence.get("facts")
+    if isinstance(facts, list) and facts:
+        if any(isinstance(row, dict) and row.get("snippet") for row in facts):
+            return "strong"
+        return "moderate"
+    if finding.analyzer in _HEURISTIC_ANALYZERS:
+        return "weak"
+    has_location = finding.location is not None and bool(getattr(finding.location, "file", None))
+    has_line_evidence = bool(evidence.get("line") or evidence.get("snippet"))
+    confidence = finding.confidence if finding.confidence is not None else 0.75
+    if not has_location and not has_line_evidence and confidence < 0.72:
+        return "weak"
+    if confidence < 0.55:
+        return "weak"
+    return "moderate"
 
 
 def _priority_score(impact: Severity, strength: str, chain_level: int) -> int:

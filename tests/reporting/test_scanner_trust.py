@@ -10,6 +10,13 @@ SINGLE_TOOL = Path("examples/single-tool-agent-server/server.py")
 VULNERABLE = Path("examples/vulnerable-mcp-server/server.py")
 
 
+def test_scanner_compliance_gets_rule_stability() -> None:
+    report = Scanner(ScanConfig(target=SINGLE_TOOL, findings_trust_mode="enforce")).run()
+    compliance = [f for f in report.findings if f.analyzer == "compliance"]
+    assert compliance
+    assert compliance[0].rule_stability == "mature"
+
+
 def test_scanner_populates_display_summary_when_trust_enforced() -> None:
     report = Scanner(ScanConfig(target=VULNERABLE, findings_trust_mode="enforce")).run()
     assert report.summary.critical >= 1

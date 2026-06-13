@@ -134,6 +134,16 @@ class ScanConfig(BaseModel):
     findings_trust_mode: str = "off"
     fail_on_priority_min: int | None = Field(default=None, ge=0, le=100)
     min_evidence_strength: str | None = None
+    enforce_bronze_facts: bool = False
+
+    @field_validator("min_evidence_strength")
+    @classmethod
+    def _validate_min_evidence_strength(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        from mcts.reporting.trust_gates import normalize_evidence_strength
+
+        return normalize_evidence_strength(value)
 
     @field_validator("findings_trust_mode")
     @classmethod

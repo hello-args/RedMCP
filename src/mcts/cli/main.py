@@ -323,6 +323,32 @@ def scan(
             case_sensitive=False,
         ),
     ] = "off",
+    fail_on_priority_min: Annotated[
+        int | None,
+        typer.Option(
+            "--fail-on-priority-min",
+            help=(
+                "Exit 1 when any security finding has priority_score at or above this (0-100). "
+                "Use with --min-evidence-strength for Option B CI (e.g. 80 + strong)."
+            ),
+        ),
+    ] = None,
+    min_evidence_strength: Annotated[
+        str | None,
+        typer.Option(
+            "--min-evidence-strength",
+            help="With --fail-on-priority-min, only count findings at or above this strength "
+            "(weak, moderate, strong, verified)",
+            case_sensitive=False,
+        ),
+    ] = None,
+    enforce_bronze_facts: Annotated[
+        bool,
+        typer.Option(
+            "--enforce-bronze-facts",
+            help="Fail when experimental analyzers emit security findings without evidence.facts",
+        ),
+    ] = False,
     fail_on_category: Annotated[
         list[str] | None,
         typer.Option(
@@ -682,7 +708,7 @@ def scan(
 
     from mcts.cli.auto import AutoScanError, resolve_auto_scan
     from mcts.cli.machine_wide import run_machine_wide_cli
-    from mcts.governance import evaluate_policy, load_policy
+    from mcts.governance import evaluate_policy, load_policy, merge_scan_config_with_policy
     from mcts.probe.consent import LiveProbeConsentError, live_consent_granted
     from mcts.probe.session import MCPProbeError
     from mcts.probe.startup_errors import MCPStartupError
@@ -824,6 +850,9 @@ def scan(
         min_score=min_score,
         max_critical=max_critical,
         findings_trust_mode=findings_trust_mode.lower(),
+        fail_on_priority_min=fail_on_priority_min,
+        min_evidence_strength=min_evidence_strength.lower() if min_evidence_strength else None,
+        enforce_bronze_facts=enforce_bronze_facts,
         fail_on_category=category_gates,
         theme=resolved_theme.name.value,
         no_progress=no_progress,
@@ -894,6 +923,8 @@ def scan(
     except (FileNotFoundError, ValueError) as exc:
         console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
+
+    config_obj = merge_scan_config_with_policy(config_obj, gov)
 
     if machine_wide:
         try:
@@ -1062,18 +1093,29 @@ def inventory(
         str,
         typer.Option("--theme", help="Terminal theme: cyber, minimal, github"),
     ] = ThemeName.CYBER.value,
+    findings_trust_mode: Annotated[
+        str,
+        typer.Option(
+            "--findings-trust-mode",
+            help="Apply findings trust validator to inventory findings (off, warn, enforce)",
+            case_sensitive=False,
+        ),
+    ] = "off",
 ) -> None:
     """Discover MCP servers configured across 12+ agent clients."""
     from mcts.analyzers.cross_server import CrossServerAnalyzer
     from mcts.analyzers.skill_md import analyze_skills
     from mcts.analyzers.toxic_flows import analyze_inventory as analyze_toxic_flows
     from mcts.core.config import ScanConfig
+    from mcts.governance import load_policy, merge_scan_config_with_policy
     from mcts.inventory.runner import enrich_with_tool_names, run_inventory
     from mcts.inventory.scan_all import (
         default_output_path,
         run_inventory_scan_all,
         write_inventory_scan_all,
     )
+    from mcts.reporting.display import effective_severity
+    from mcts.reporting.trust_apply import apply_config_trust_layer
     from mcts.taxonomy.mapper import enrich_findings
 
     try:
@@ -1082,8 +1124,13 @@ def inventory(
         console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
+    inv_config = merge_scan_config_with_policy(
+        ScanConfig(target=Path("."), findings_trust_mode=findings_trust_mode.lower()),
+        load_policy(None),
+    )
+
     if scan_all:
-        inventory_report, scan_rows = run_inventory_scan_all(ScanConfig(target=Path(".")))
+        inventory_report, scan_rows = run_inventory_scan_all(inv_config)
         console.print(
             f"[bold]Inventory scan-all[/bold] — {len(scan_rows)} server(s), "
             f"{inventory_report.config_files_found} config file(s)"
@@ -1109,6 +1156,10 @@ def inventory(
     toxic_findings: list = []
     if full_toxic_flows or len(entries) >= 2:
         toxic_findings = enrich_findings(analyze_toxic_flows(entries))
+
+    shadow_findings = apply_config_trust_layer(shadow_findings, inv_config, scan_scope="inventory")
+    skill_findings = apply_config_trust_layer(skill_findings, inv_config, scan_scope="inventory")
+    toxic_findings = apply_config_trust_layer(toxic_findings, inv_config, scan_scope="inventory")
 
     console.print(f"[bold]MCP inventory[/bold] — {report.config_files_found} config file(s)")
     for client in report.clients_scanned:
@@ -1154,7 +1205,11 @@ def inventory(
     ReportRenderer(resolved_theme, console=console).render_saved_notice(str(output_path))
 
     combined = shadow_findings + skill_findings + toxic_findings
-    if combined and any(f.severity.value in ("critical", "high") for f in combined):
+    if combined and any(
+        (effective_severity(f) if inv_config.findings_trust_mode != "off" else f.severity).value
+        in ("critical", "high")
+        for f in combined
+    ):
         raise typer.Exit(code=1)
 
 
@@ -1368,6 +1423,14 @@ def fuzz(
         str,
         typer.Option("--theme", help="Terminal theme: cyber, minimal, github"),
     ] = ThemeName.CYBER.value,
+    findings_trust_mode: Annotated[
+        str,
+        typer.Option(
+            "--findings-trust-mode",
+            help="Apply findings trust validator to fuzz findings (off, warn, enforce)",
+            case_sensitive=False,
+        ),
+    ] = "off",
 ) -> None:
     """Run safe read-only MCP protocol fuzz probes against a stdio or remote server."""
     import json
@@ -1375,8 +1438,11 @@ def fuzz(
     from mcts.analyzers.runtime_events import events_from_fuzz_findings
     from mcts.fuzz.payloads import FuzzLevel
     from mcts.fuzz.runner import FuzzRunner
+    from mcts.governance import load_policy, merge_scan_config_with_policy
     from mcts.probe.consent import live_consent_granted
     from mcts.probe.startup_errors import MCPStartupError
+    from mcts.reporting.display import effective_severity
+    from mcts.reporting.trust_apply import apply_config_trust_layer
     from mcts.taxonomy.mapper import enrich_findings
 
     is_remote = bool(url)
@@ -1416,21 +1482,25 @@ def fuzz(
         console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
-    fuzz_config = ScanConfig(
-        target=scan_target,
-        live_command=command,
-        live_args=live_args,
-        config_path=config,
-        config_server=server,
-        live_consent=understand_live_risk,
-        fuzz_level=level,
-        fuzz_consent=understand_fuzz_risk,
-        theme=resolved_theme.name.value,
-        remote_url=url,
-        remote_transport=transport,
-        bearer_token=bearer_token,
-        remote_headers=remote_headers,
-        no_progress=no_progress,
+    fuzz_config = merge_scan_config_with_policy(
+        ScanConfig(
+            target=scan_target,
+            live_command=command,
+            live_args=live_args,
+            config_path=config,
+            config_server=server,
+            live_consent=understand_live_risk,
+            fuzz_level=level,
+            fuzz_consent=understand_fuzz_risk,
+            theme=resolved_theme.name.value,
+            remote_url=url,
+            remote_transport=transport,
+            bearer_token=bearer_token,
+            remote_headers=remote_headers,
+            no_progress=no_progress,
+            findings_trust_mode=findings_trust_mode.lower(),
+        ),
+        load_policy(None),
     )
     _validate_live_launch(fuzz_config)
 
@@ -1460,6 +1530,11 @@ def fuzz(
         raise typer.Exit(code=2) from exc
 
     findings = enrich_findings(result.findings)
+    findings = apply_config_trust_layer(
+        findings,
+        fuzz_config,
+        scan_scope="live" if (url or command) else "repository",
+    )
     runtime_event_rows = events_from_fuzz_findings(findings)
     target_label = url or str(scan_target)
     console.print(f"[bold]MCTS fuzz[/bold] — level={result.level.value}, probes={result.probes_run}")
@@ -1467,7 +1542,12 @@ def fuzz(
         console.print("[green]No fuzz findings — server handled probes cleanly.[/green]")
     else:
         for finding in findings:
-            console.print(f"  [{finding.severity.value}] {finding.title}")
+            severity = (
+                effective_severity(finding)
+                if fuzz_config.findings_trust_mode != "off"
+                else finding.severity
+            )
+            console.print(f"  [{severity.value}] {finding.title}")
 
     payload = {
         "target": target_label,
@@ -1510,17 +1590,29 @@ def readiness(
         bool,
         typer.Option("--llm-judge", help="Enable opt-in LLM readiness review"),
     ] = False,
+    findings_trust_mode: Annotated[
+        str,
+        typer.Option(
+            "--findings-trust-mode",
+            help="Apply findings trust validator to readiness notes (off, warn, enforce)",
+            case_sensitive=False,
+        ),
+    ] = "off",
 ) -> None:
     """Run production readiness checks (separate from security score)."""
     import json
 
     from mcts.readiness.runner import run_readiness
+    from mcts.reporting.trust_apply import finding_severity_label, merge_scan_config_defaults
 
-    config = ScanConfig(
-        target=target,
-        readiness_opa=enable_opa,
-        readiness_llm=enable_llm,
-        no_progress=no_progress,
+    config = merge_scan_config_defaults(
+        ScanConfig(
+            target=target,
+            readiness_opa=enable_opa,
+            readiness_llm=enable_llm,
+            no_progress=no_progress,
+        ),
+        findings_trust_mode=findings_trust_mode,
     )
     report = run_readiness(config)
     console.print(
@@ -1528,7 +1620,7 @@ def readiness(
         f"{report.tools_checked} tool(s), {len(report.findings)} note(s)"
     )
     for finding in report.findings[:20]:
-        console.print(f"  [{finding.severity.value}] {finding.title}")
+        console.print(f"  [{finding_severity_label(finding, config)}] {finding.title}")
     output_path = resolve_output_path(output, "readiness-report.json")
     output_path.write_text(
         json.dumps(
@@ -1949,6 +2041,14 @@ def pentest(
         bool,
         typer.Option("--no-progress", help="Skip progress animation"),
     ] = False,
+    findings_trust_mode: Annotated[
+        str,
+        typer.Option(
+            "--findings-trust-mode",
+            help="Apply findings trust validator (off, warn, enforce)",
+            case_sensitive=False,
+        ),
+    ] = "off",
 ) -> None:
     """Run structured MCP red-team phases (static recon, attack chains, optional fuzz)."""
     import json
@@ -1957,6 +2057,7 @@ def pentest(
     from mcts.probe.consent import live_consent_granted
     from mcts.probe.session import MCPProbeError
     from mcts.probe.startup_errors import MCPStartupError
+    from mcts.reporting.trust_apply import merge_scan_config_defaults
     from mcts.ui.progress import run_with_progress
 
     if live and not live_consent_granted(flag=understand_live_risk):
@@ -1966,11 +2067,14 @@ def pentest(
         )
         raise typer.Exit(code=2)
 
-    config = ScanConfig(
-        target=target,
-        live=live,
-        live_consent=understand_live_risk,
-        no_progress=no_progress,
+    config = merge_scan_config_defaults(
+        ScanConfig(
+            target=target,
+            live=live,
+            live_consent=understand_live_risk,
+            no_progress=no_progress,
+        ),
+        findings_trust_mode=findings_trust_mode,
     )
 
     def _execute() -> object:

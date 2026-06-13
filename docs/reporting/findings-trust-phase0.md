@@ -2,7 +2,7 @@
 
 > [Documentation](../index.md) → [Reporting](README.md) → **Findings trust (Phase 0)**
 
-**Status:** Implemented in tree (Phase A / Phase 0) · **612 tests passing** · Tracks [#258](https://github.com/MCP-Audit/MCTS/issues/258)
+**Status:** Implemented in tree (Phase 0 → B2) · **637+ tests** (reporting/scoring) · Tracks [#258](https://github.com/MCP-Audit/MCTS/issues/258)
 
 This document is the **maintainer-facing record** of what Phase 0 delivered, what was intentionally deferred, known operational risks, and the mitigation plan for follow-up work.
 
@@ -142,15 +142,17 @@ These were **explicitly out of Phase 0** — documented in the roadmap and issue
 
 | Item | Planned phase | Notes |
 |------|---------------|-------|
-| Mutate `finding.severity` / full v2 scoring on display | Phase B / PR 13 | Preserves `verify()` and corpus |
+| Mutate `finding.severity` | Phase B | Still deferred — display fields only |
+| Full v2 scoring on display severity | Phase B2 | **Done** — enforce mode; `finding.severity` unchanged |
+| Corpus Spearman recalibration after B2 | Phase B2 | Deferred until corpus run |
 | `--ci-trust` preset + GitHub Action input | PR 8 / Phase A½ | **Done** — `--ci-trust`, `findings-trust-mode`, `ci-trust` inputs |
-| `fail_on_priority_min`, `min_evidence_strength` gates | PR 8 | Config fields exist; **unwired** |
-| `GovernancePolicy` / `.mcts/policy.yaml` trust fields | PR 8 | |
-| Inferrer `signals[]` + facts on chains | Phase 1 / PR 9 | |
+| `fail_on_priority_min`, `min_evidence_strength` gates | Phase 2 | **Done** — CLI, API, Action, policy YAML |
+| `GovernancePolicy` / `.mcts/policy.yaml` trust fields | Phase 2 | **Done** — `.mcts/policy.yaml.example` |
+| Inferrer `signals[]` + facts on chains | Phase 1 / PR 10 | **Done** — inferrer signals + `evidence.facts` when trust on |
 | Full 23-consumer migration | Phased | See table below |
 | History/trend `display_critical` | Consumer step 12 | **Done (A½)** |
 | Category tiles / OWASP badges on display | Phase A½ | **Done (A½)** |
-| CLI printed finding lists on display | Phase A½ | **Done (A½)** |
+| CLI printed finding lists on display | Phase A½ | **Done** for `mcts scan` / `mcts report`; fuzz/readiness/vet/pentest still template |
 | `severity_filter` on display severity | Consumer step 5 | **Done (A½)** |
 | Legacy score + `score.basis` on display | Phase A½ narrow B | **Done (A½)** — enforce only; v2 unchanged |
 | Pentest / fuzz / inventory validator | §K bypass paths | |
@@ -176,7 +178,7 @@ Still on **template** severity when enforce:
 | Surface | Field used | User-visible effect |
 |---------|------------|---------------------|
 | `summary` / `finding.severity` in JSON | template | Audit trail preserved |
-| v2 `absolute_risk` | v2 factors (template) | Unchanged by trust layer |
+| v2 `absolute_risk` | display when enforce | **B2** — `ScoringContext.use_display_severity` |
 | Pentest / fuzz / inventory | template | Out of scope A½ |
 
 ---
@@ -202,12 +204,12 @@ Still on **template** severity when enforce:
 
 | Risk | Mitigation (plan) | Status |
 |------|-------------------|--------|
-| Two severities in one report confuses users | Phase A½ single story under enforce; Phase B for v2 | **A½ done** for v1 surfaces |
-| Score unchanged when display improves | Phase A½ narrow B + full Phase B | **A½ done** for legacy score basis |
+| Two severities in one report confuses users | Phase A½ + B2 v2 alignment | **Done** for v1/v2 under enforce |
+| Score unchanged when display improves | Phase A½ narrow B + Phase B2 | **Done** — legacy basis + v2 under enforce |
 | SARIF/JSON consumers read `severity` only | Export `display_severity`, `evidence_type`; integrator guide | Fields yes; guide partial |
 | GitHub Action stays noisy | Phase A½ PR 8 | **Done** — `findings-trust-mode`, `ci-trust` |
 | `warn` mistaken for CI relief | Document; steer to `enforce` | **Done** — CLI help + docs |
-| Rule churn unknown to users | **`rule_stability`** (Phase 1.5) | Schema planned |
+| Rule churn unknown to users | **`rule_stability`** (Phase 1.5) | **Done** — catalog + chip |
 | Proven-path heuristic too loose | Roadmap §L; tighten edge validation | Documented only |
 | Report/config gate mismatch | Use same config for scan and gate evaluation | Operational note |
 
@@ -219,7 +221,7 @@ Still on **template** severity when enforce:
 | **10** | Phase 1 | inferrer `signals[]`, facts |
 | **11** | Phase 1.5 | `rule_stability`, FindingBuilder |
 | **12** | Phase 2 | `priority_score` gates, policy YAML |
-| **13** | Phase B | full v1/v2 display scoring + corpus |
+| **13** | Phase B2 | ✅ v2 display severity + chain factors; corpus recalibration deferred |
 
 Legacy mapping: old “PR 8” CI trust is now **PR 8–9 (Phase A½)**; provenance is **PR 10+**.
 
@@ -239,6 +241,17 @@ mcts scan examples/single-tool-agent-server/server.py \
 mcts scan examples/single-tool-agent-server/server.py --fail-on-critical
 # → exits 1 (template critical)
 ```
+
+### Governance policy merge
+
+`merge_scan_config_with_policy()` fills unset CLI defaults from `.mcts/policy.yaml` before the scan runs:
+
+- `findings_trust_mode` when CLI is still `off`
+- `max_critical`, `min_score`, `fail_on_priority_min`, `min_evidence_strength`, v2 gate fields when unset
+
+Explicit CLI flags always override policy. Post-scan `evaluate_policy()` uses the same merged config for gate counts via `summary_for_gates()`.
+
+Copy `.mcts/policy.yaml.example` → `.mcts/policy.yaml` to opt in without repeating flags on every scan.
 
 ### API
 
@@ -283,31 +296,66 @@ mcts scan examples/single-tool-agent-server/server.py --fail-on-critical
 | Terminal UI | `src/mcts/ui/dashboard.py` |
 | SARIF | `src/mcts/reporting/sarif.py` |
 | Gates | `src/mcts/governance/scan_gates.py` |
+| Trust gates (priority) | `src/mcts/reporting/trust_gates.py` |
+| Evidence provenance | `src/mcts/reporting/evidence_provenance.py` |
+| Rule stability | `src/mcts/reporting/rule_stability.py` |
+| FindingBuilder SDK | `src/mcts/reporting/finding_builder.py` |
+| V2 scoring (B2) | `src/mcts/scoring/context.py`, `engine_v2.py`, `chains.py`, `factors.py` |
 | Config / CLI / API | `config.py`, `cli/main.py`, `api/app.py` |
 | Fixture | `examples/single-tool-agent-server/server.py` |
-| Tests | `tests/reporting/` |
+| Tests | `tests/reporting/`, `tests/scoring/test_scoring_v2_trust.py` |
 
 ---
 
 ## Verification
 
-- Full suite: `uv run pytest` (612 tests)
-- Reporting trust tests: `uv run pytest tests/reporting/ -q`
-- Manual: scan single-tool fixture with enforce; confirm `display_summary.critical == 0`
+- Reporting + scoring trust: `uv run pytest tests/reporting/ tests/scoring/ -q` (111+ tests)
+- B2 only: `uv run pytest tests/scoring/test_scoring_v2_trust.py -q`
+- Full suite: `uv run pytest` (requires optional extras: `uv sync --extra mcp`)
+- Manual: scan single-tool fixture with enforce; confirm `display_summary.critical == 0` and v2 `verify()` passes
 
 ---
 
-## Next priority — Phase A½ (consistency wedge) ✅
+## Phase B2 — v2 scoring on display severity
 
-Phase A½ shipped:
+When `findings_trust_mode=enforce`, v2 scoring reads **display** severity for:
 
-1. `--ci-trust` + GitHub Action `findings-trust-mode` / `ci-trust`
-2. CLI / history / category tiles aligned with display when enforce
-3. Narrow scoring basis on `effective_severity()` when enforce
-4. Dashboard maturity chip for `evidence_type` (overlap vs graph path)
-5. **`rule_stability`** schema (Phase 1.5) — next
+| Component | Behavior |
+|-----------|----------|
+| `base_risk()` / `ScoreV2Basis` counts | `severity_for_scoring(..., use_display=True)` |
+| `classify_business_impact()` | Falls back to display severity when no explicit hints |
+| `resolve_chain_factors()` | Skips unproven paths (`path_is_proven`) |
+| `build_top_contributors()` | Omits overlap-only attack-chain rows |
 
-Full checklist: `local/findings-quality-evidence-roadmap.md` § *Revised maintainer plan (consistency first)*.
+`finding.severity` (template) is **unchanged** — `RiskScoringEngineV2.verify()` still passes.
+
+Corpus Spearman recalibration is **deferred** until a maintainer run confirms score drift.
+
+---
+
+## Next priority — Phase 3 + adoption
+
+Phases 0, A½, 1, 1.5, 2, B2, and pre-Phase-3 adoption are shipped in-tree:
+
+- Shared `apply_trust_layer()` for scan, fuzz, and inventory entry points
+- Bronze CI gate (`--enforce-bronze-facts`) for experimental analyzers without `evidence.facts`
+- `command_execution` emits findings via `FindingBuilder` (reference adoption)
+
+**Next:** optional taint/runtime validation (Phase 3); adopt `FindingBuilder` in remaining analyzers; flip GitHub Action default to `--ci-trust` after opt-in period.
+
+### Gap fixes (pre-Phase 3)
+
+| Gap | Status |
+|-----|--------|
+| FindingBuilder in mature analyzers | **Done** — `command_execution`, `prompt_injection`, `data_leakage` |
+| Pentest / readiness trust pipeline | **Done** — fuzz rows + readiness notes via `apply_trust_layer` |
+| Fuzz / inventory trust | **Done** (prior slice) |
+| API policy loader | **Done** — `_merge_policy()` on REST scan/readiness |
+| Global weak-evidence caps | **Done** — thin evidence + low confidence → `weak` |
+| B2 residual template paths | **Done** — disagreement factor + readiness score use display under enforce |
+| Vet trust pipeline | **Deferred** — `VetFinding` model separate from `Finding` |
+| Mutate `finding.severity` (B3) | **Deferred** — breaking change |
+| `warn` gate vs display split | **By design** — document in [interpreting-findings](interpreting-findings.md) |
 
 ---
 
@@ -316,4 +364,4 @@ Full checklist: `local/findings-quality-evidence-roadmap.md` § *Revised maintai
 - [#258 — Phase 0 feature issue](https://github.com/MCP-Audit/MCTS/issues/258)
 - [Interpreting findings](interpreting-findings.md) — user-facing overlap explanation
 - [CI integration](../platform/ci-integration.md) — legacy gates (Phase A½ pending)
-- [Scoring developer guide](scoring-guide.md) — score uses template severity until Phase A½/B
+- [Scoring developer guide](scoring-guide.md) — v2 uses display severity when trust enforce (B2)

@@ -66,6 +66,17 @@ inputs:
       Shorthand for findings-trust-mode enforce with fail-on-critical (same as mcts --ci-trust).
     required: false
     default: "false"
+  fail-on-priority-min:
+    description: >
+      Fail when any security finding priority_score is at or above this value (0-100).
+    required: false
+    default: ""
+  min-evidence-strength:
+    description: >
+      With fail-on-priority-min, only count findings at or above this strength
+      (weak, moderate, strong, verified).
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -145,6 +156,12 @@ runs:
           ARGS+=(--ci-trust)
         elif [ -n "${{ inputs.findings-trust-mode }}" ] && [ "${{ inputs.findings-trust-mode }}" != "off" ]; then
           ARGS+=(--findings-trust-mode "${{ inputs.findings-trust-mode }}")
+        fi
+        if [ -n "${{ inputs.fail-on-priority-min }}" ]; then
+          ARGS+=(--fail-on-priority-min "${{ inputs.fail-on-priority-min }}")
+        fi
+        if [ -n "${{ inputs.min-evidence-strength }}" ]; then
+          ARGS+=(--min-evidence-strength "${{ inputs.min-evidence-strength }}")
         fi
 
         uv run mcts "${ARGS[@]}"
