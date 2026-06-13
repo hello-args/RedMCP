@@ -100,7 +100,7 @@ def run_readiness(config: ScanConfig) -> ReadinessReport:
     from mcts.reporting.trust_apply import apply_config_trust_layer
 
     findings = apply_config_trust_layer(findings, config, scan_scope="readiness", tools=server.tools)
-    use_display = config.findings_trust_mode == "enforce"
+    use_display = config.findings_trust_mode != "off"
     score = readiness_score(findings, use_display=use_display)
     production_ready = (
         bool(server.tools)

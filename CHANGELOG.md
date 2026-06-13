@@ -36,6 +36,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Validator hardening** — removed standalone `evidence.hop_count` and `evidence.path` proven-path bypasses; chain level matches associated graph path
 - **Auxiliary trust explicit parity** — vet/fuzz/inventory/readiness/pentest set `findings_trust_mode_explicit` when `--findings-trust-mode` is passed; API readiness adds `ignore_policy` + explicit flag
 - **Pentest warn parity** — verdict and ranking use display severity when trust ≠ off (aligned with fuzz/vet exit)
+- **Pentest warn recommendations** — remediation text matches display severity (no false “remediate critical” on overlap)
+- **Readiness warn scoring** — `readiness_score` and `production_ready` use display severity when trust ≠ off
+- **Acceptance script lint** — `scripts/validate_trust_layer.py` passes `ruff check .` (CI blocker)
 - **Validator `path_status`** — stale `evidence.path_status=proven` no longer bypasses graph checks
 - **Compliance coverage kind** — compliance meta-findings tagged `finding_kind=coverage` (excluded from security priority/bronze gates)
 - **`require_auth_env_for_sensitive`** — policy gate fails when sensitive analyzers enabled without API env vars

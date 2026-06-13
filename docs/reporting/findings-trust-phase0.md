@@ -201,8 +201,8 @@ When `findings_trust_mode=enforce`, these surfaces are **aligned** with display 
 | SARIF `level` + rule `security-severity` | `effective_severity()` / `_sarif_security_severity()` | `sarif.py` |
 | Compliance `multiple-critical` | `effective_severity()` on scorable | `compliance/checks.py` |
 | Priority / bronze gates | trust pipeline fields | `trust_gates.py` |
-| Pentest verdict + fuzz critical checks | enforce-only `use_display` | `pentest/runner.py` |
-| Readiness `production_ready` | enforce-only display critical check | `readiness/runner.py` |
+| Pentest verdict + recommendations | display when trust ≠ off; gate summary under enforce | `pentest/runner.py` |
+| Readiness `production_ready` + score | display when trust ≠ off | `readiness/runner.py` |
 | History recording | `display_critical`, `display_high`, `findings_trust_mode` | `output/history.py` |
 | Vet CLI labels / exit (enforce) | `vet_trust.py` | `cli/main.py` |
 | `--fail-on-category` / `min_category_score_v2` | `use_display` in gate helpers | `scan_gates.py`, `report/data.py` |
@@ -573,11 +573,11 @@ Shipped in-tree:
 | Gap | Status |
 |-----|--------|
 | FindingBuilder in mature analyzers | **Done** — all analyzer paths (see [adoption](#findingbuilder--bronze-adoption)) |
-| Pentest / readiness trust pipeline | **Done** — fuzz rows + readiness notes via `apply_trust_layer` |
+| Pentest / readiness trust pipeline | **Done** — fuzz rows + readiness notes; warn display parity for verdict + recommendations + readiness score |
 | Fuzz / inventory trust | **Done** (prior slice) |
 | API policy loader | **Done** — `_merge_policy()` on REST scan/readiness |
 | Global weak-evidence caps | **Done** — thin evidence + low confidence → `weak` |
-| B2 residual template paths | **Done** — disagreement factor + readiness score use display under enforce |
+| B2 residual template paths | **Done** — disagreement factor + readiness score use display when trust ≠ off |
 | Vet trust pipeline | **Done** — `vet_trust.py` + CLI `--findings-trust-mode` |
 | Phase 3 runtime/taint validation | **Done** — tags, priority boost, v2 `evidence_quality_factor` wire-up |
 | Mutate `finding.severity` (B3) | **Opt-in** — `--collapse-template-severity` under enforce |

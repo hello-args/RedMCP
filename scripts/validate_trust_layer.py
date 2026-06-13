@@ -45,7 +45,8 @@ def main() -> int:
     report = Scanner(ScanConfig(target=SINGLE_TOOL, findings_trust_mode="enforce")).run()
     chains = [f for f in report.findings if f.analyzer == "attack_chains"]
     check("attack chains present", bool(chains))
-    check("display_summary.critical == 0", report.display_summary is not None and report.display_summary.critical == 0)
+    disp_crit_ok = report.display_summary is not None and report.display_summary.critical == 0
+    check("display_summary.critical == 0", disp_crit_ok)
     check("template summary still has critical", report.summary.critical >= 1)
     for f in chains:
         check(
@@ -63,10 +64,12 @@ def main() -> int:
     check("policy sets max_critical", merged.max_critical == 0)
     policy_report = Scanner(merged).run()
     gs = summary_for_gates(policy_report, merged)
-    check("policy-only scan: display critical 0", policy_report.display_summary and policy_report.display_summary.critical == 0)
+    pol_disp_ok = policy_report.display_summary and policy_report.display_summary.critical == 0
+    check("policy-only scan: display critical 0", pol_disp_ok)
     check("policy-only scan: gate summary critical 0", gs.critical == 0)
     explicit = merge_scan_config_with_policy(
-        ScanConfig(target=SINGLE_TOOL, findings_trust_mode="warn", findings_trust_mode_explicit=True), policy
+        ScanConfig(target=SINGLE_TOOL, findings_trust_mode="warn", findings_trust_mode_explicit=True),
+        policy,
     )
     check("CLI warn overrides policy enforce", explicit.findings_trust_mode == "warn")
     explicit_off = merge_scan_config_with_policy(
@@ -86,10 +89,11 @@ def main() -> int:
         "fail_on_category attack_chains:10 passes under enforce",
         evaluate_scan_gate_violations(report, cat_cfg) == [],
     )
-    check(
-        "score_breakdown mcp_surface matches enforce overall",
-        report.score_breakdown is not None and report.score_breakdown.mcp_surface == report.score.overall,
+    breakdown_ok = (
+        report.score_breakdown is not None
+        and report.score_breakdown.mcp_surface == report.score.overall
     )
+    check("score_breakdown mcp_surface matches enforce overall", breakdown_ok)
 
     # --- Phase 1 provenance ---
     print("\n[Phase 1] Evidence provenance")
@@ -97,11 +101,13 @@ def main() -> int:
     if chain:
         ev = chain.evidence or {}
         check("facts present on chain", isinstance(ev.get("facts"), list) and len(ev["facts"]) > 0)
-        check("confidence_factors present", isinstance(ev.get("confidence_factors"), list) and len(ev["confidence_factors"]) > 0)
+        cf = ev.get("confidence_factors")
+        check("confidence_factors present", isinstance(cf, list) and len(cf) > 0)
         check("counterfactual present", isinstance(ev.get("counterfactual_remediation"), dict))
     payload = build_dashboard_payload(report)
     check("dashboard meta.fact_coverage", "fact_coverage" in payload["meta"])
-    check("dashboard has_provenance on chain row", any(r.get("has_provenance") for r in payload["findings"] if r["analyzer"] == "attack_chains"))
+    prov_rows = [r for r in payload["findings"] if r["analyzer"] == "attack_chains"]
+    check("dashboard has_provenance on chain row", any(r.get("has_provenance") for r in prov_rows))
 
     # --- Phase 1.5 rule stability ---
     print("\n[Phase 1.5] Rule stability")
@@ -127,7 +133,9 @@ def main() -> int:
     check("Option B gate passes on overlap fixture", evaluate_scan_gate_violations(report, opt_b) == [])
     low_gate = ScanConfig(target=SINGLE_TOOL, findings_trust_mode="enforce", fail_on_priority_min=5)
     check("low priority gate fails", bool(evaluate_scan_gate_violations(report, low_gate)))
-    matched = findings_over_priority_threshold(report.findings, minimum_priority=80, minimum_evidence_strength="strong")
+    matched = findings_over_priority_threshold(
+        report.findings, minimum_priority=80, minimum_evidence_strength="strong"
+    )
     check("no strong findings >= 80 on fixture", len(matched) == 0)
 
     # --- Phase B2 v2 scoring ---
@@ -159,9 +167,7 @@ def main() -> int:
     sarif = build_sarif(report)
     results = sarif["runs"][0]["results"]
     chain_results = [
-        r
-        for r in results
-        if r.get("properties", {}).get("analyzer") == "attack_chains"
+        r for r in results if r.get("properties", {}).get("analyzer") == "attack_chains"
     ]
     if chain_results:
         props = chain_results[0].get("properties", {})
@@ -288,10 +294,7 @@ def main() -> int:
         collapse_template_severity=True,
         fail_on_critical=True,
     )
-    check(
-        "collapse: template summary critical 0",
-        collapsed.summary.critical == 0,
-    )
+    check("collapse: template summary critical 0", collapsed.summary.critical == 0)
     check(
         "collapse: score basis critical 0",
         collapsed.score.basis.critical == 0,
@@ -310,17 +313,18 @@ def main() -> int:
     print("\n[Regression] Vulnerable fixture")
     vuln = Scanner(ScanConfig(target=VULNERABLE, findings_trust_mode="enforce")).run()
     check("vulnerable scan completes", vuln.summary.total > 0)
-    check("vulnerable v2 verify", vuln.score_v2 is None or RiskScoringEngineV2.verify(
-        build_scoring_context(
+    if vuln.score_v2:
+        vuln_ctx = build_scoring_context(
             findings=vuln.findings,
             server=vuln.server,
             attack_graph=vuln.attack_graph,
             scan_scope=vuln.scan_scope,
             config=ScanConfig(target=VULNERABLE, findings_trust_mode="enforce", scoring_mode="both"),
             chain_factor_mode="paths_v1",
-        ),
-        vuln.score_v2,
-    ) if vuln.score_v2 else True)
+        )
+        check("vulnerable v2 verify", RiskScoringEngineV2.verify(vuln_ctx, vuln.score_v2))
+    else:
+        check("vulnerable v2 verify", True)
 
     print(f"\n=== {len(FAILURES)} failure(s) ===")
     for f in FAILURES:
