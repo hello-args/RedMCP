@@ -23,6 +23,7 @@ findings_trust_mode: enforce
 # min_security_score: 50
 # max_absolute_risk: 400
 # max_risk_level: high
+# max_worst_absolute_risk: 500
 # min_category_score_v2:
 #   injection: 80
 

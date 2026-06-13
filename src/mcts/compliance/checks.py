@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from mcts.analyzers.finding_facts import build_hygiene_finding
 from mcts.reporting.display import effective_severity
 from mcts.reporting.models import Finding, Severity
 
@@ -61,6 +62,32 @@ MCP_ANALYZER_MAP: dict[str, str] = {
 OWASP_ANALYZER_MAP = OWASP_LLM_ANALYZER_MAP
 
 
+def _coverage_finding(
+    *,
+    finding_id: str,
+    title: str,
+    description: str,
+    severity: Severity,
+    recommendation: str,
+    rule_id: str,
+    match: str,
+    extra_evidence: dict | None = None,
+) -> Finding:
+    return build_hygiene_finding(
+        finding_id=finding_id,
+        analyzer="compliance",
+        title=title,
+        description=description,
+        severity=severity,
+        recommendation=recommendation,
+        rule_id=rule_id,
+        match=match,
+        field="compliance_coverage",
+        extra_evidence=extra_evidence,
+        finding_kind="coverage",
+    )
+
+
 class ComplianceChecker:
     """Maps findings to OWASP LLM + MCP Top 10 coverage gaps (meta-findings only)."""
 
@@ -85,30 +112,33 @@ class ComplianceChecker:
 
         if missing_llm and not scorable:
             compliance_findings.append(
-                Finding(
-                    id="compliance-no-findings",
-                    analyzer="compliance",
+                _coverage_finding(
+                    finding_id="compliance-no-findings",
                     title="No scorable findings recorded",
                     description="Scan completed without security findings — verify discovery scope.",
                     severity=Severity.LOW,
                     recommendation="Confirm the target contains MCP tool definitions.",
-                    finding_kind="coverage",
+                    rule_id="COMPLIANCE-NO-FINDINGS",
+                    match="no scorable findings",
                 )
             )
 
         if missing_mcp and scorable and tools_discovered > 0:
             compliance_findings.append(
-                Finding(
-                    id="compliance-mcp-top10-gaps",
-                    analyzer="compliance",
+                _coverage_finding(
+                    finding_id="compliance-mcp-top10-gaps",
                     title="OWASP MCP Top 10 coverage gaps remain",
                     description=f"Uncovered MCP categories: {', '.join(sorted(missing_mcp))}",
                     severity=Severity.LOW,
                     recommendation=(
                         "Expand scan scope or enable additional analyzers for full MCP Top 10 coverage."
                     ),
-                    evidence={"missing_mcp_categories": sorted(missing_mcp), "covered": sorted(covered_mcp)},
-                    finding_kind="coverage",
+                    rule_id="COMPLIANCE-MCP-GAPS",
+                    match=f"{len(missing_mcp)} uncovered MCP categories",
+                    extra_evidence={
+                        "missing_mcp_categories": sorted(missing_mcp),
+                        "covered": sorted(covered_mcp),
+                    },
                 )
             )
 
@@ -117,21 +147,21 @@ class ComplianceChecker:
         )
         if critical_count >= 3:
             compliance_findings.append(
-                Finding(
-                    id="compliance-multiple-critical",
-                    analyzer="compliance",
+                _coverage_finding(
+                    finding_id="compliance-multiple-critical",
                     title="Multiple critical findings — deployment blocked",
                     description=(
                         f"{critical_count} critical findings exceed recommended deployment threshold."
                     ),
                     severity=Severity.MEDIUM,
                     recommendation="Resolve critical findings before production deployment.",
-                    evidence={
+                    rule_id="COMPLIANCE-MULTI-CRITICAL",
+                    match=f"{critical_count} critical findings",
+                    extra_evidence={
                         "critical_count": critical_count,
                         "owasp_llm_gaps": sorted(missing_llm),
                         "owasp_mcp_gaps": sorted(missing_mcp),
                     },
-                    finding_kind="coverage",
                 )
             )
 

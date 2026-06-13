@@ -1089,6 +1089,7 @@ def _score_v2_payload(report: ScanReport) -> dict[str, Any] | None:
     if report.score_v2 is None:
         return None
     score = report.score_v2
+    grade_score = score.security_score if score.security_score is not None else report.score.overall
     return {
         "absolute_risk": score.absolute_risk,
         "risk_range": list(score.risk_range),
@@ -1104,6 +1105,7 @@ def _score_v2_payload(report: ScanReport) -> dict[str, Any] | None:
         "chain_factor_mode": score.chain_factor_mode,
         "benchmark_corpus_version": score.benchmark_corpus_version,
         "basis": score.basis.model_dump(),
+        "grade": security_grade(grade_score),
     }
 
 
@@ -1221,6 +1223,9 @@ def build_dashboard_payload(report: ScanReport) -> dict[str, Any]:
         report.scan_scope,
         report.scan_scope.replace("_", " ").title(),
     )
+    grade_score = report.score.overall
+    if report.score_v2 is not None and report.score_v2.security_score is not None:
+        grade_score = report.score_v2.security_score
 
     return {
         "meta": {
@@ -1245,7 +1250,7 @@ def build_dashboard_payload(report: ScanReport) -> dict[str, Any]:
             "risk_index": report.score.risk_index,
             "raw_risk": report.score.raw_risk,
             "basis": report.score.basis.model_dump(),
-            "grade": security_grade(report.score.overall),
+            "grade": security_grade(grade_score),
             "breakdown": breakdown_payload,
         },
         **({"score_v2": _score_v2_payload(report)} if report.score_v2 is not None else {}),

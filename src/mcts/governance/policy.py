@@ -15,6 +15,7 @@ class GovernancePolicy(BaseModel):
     max_absolute_risk: int | None = Field(default=None, ge=0)
     max_risk_level: str | None = Field(default=None)
     min_category_score_v2: dict[str, int] = Field(default_factory=dict)
+    max_worst_absolute_risk: int | None = Field(default=None, ge=0)
     max_critical: int | None = Field(default=None, ge=0)
     max_high: int | None = Field(default=None, ge=0)
     fail_on_priority_min: int | None = Field(default=None, ge=0, le=100)
@@ -117,6 +118,7 @@ def merge_scan_config_with_policy(config: Any, policy: GovernancePolicy | None) 
         "min_security_score",
         "max_absolute_risk",
         "max_risk_level",
+        "max_worst_absolute_risk",
     ):
         policy_value = getattr(policy, field)
         if policy_value is None:

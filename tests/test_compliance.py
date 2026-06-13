@@ -57,6 +57,10 @@ def test_compliance_rows_are_coverage_kind() -> None:
     )
     assert meta
     assert all(row.finding_kind == "coverage" for row in meta)
+    gap = next(f for f in meta if f.id == "compliance-mcp-top10-gaps")
+    facts = (gap.evidence or {}).get("facts")
+    assert isinstance(facts, list) and facts
+    assert gap.evidence.get("evidence_tier") == "bronze"
 
 
 def test_compliance_critical_count_uses_template_in_warn() -> None:

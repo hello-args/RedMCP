@@ -132,6 +132,7 @@ class ScanConfig(BaseModel):
     max_absolute_risk: int | None = Field(default=None, ge=0)
     max_risk_level: str | None = None
     min_category_score_v2: dict[str, int] = Field(default_factory=dict)
+    max_worst_absolute_risk: int | None = Field(default=None, ge=0)
     findings_trust_mode: str = "off"
     findings_trust_mode_explicit: bool = False
     ignore_policy: bool = False
@@ -140,6 +141,11 @@ class ScanConfig(BaseModel):
     enforce_bronze_facts: bool | None = None
     collapse_template_severity: bool | None = None
     require_auth_env_for_sensitive: bool = False
+    max_json_findings: int | None = Field(
+        default=None,
+        ge=1,
+        description="Truncate JSON report findings to this count (scan_notes records truncation)",
+    )
 
     @classmethod
     def _validate_min_evidence_strength(cls, value: str | None) -> str | None:

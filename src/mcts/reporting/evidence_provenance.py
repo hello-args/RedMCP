@@ -55,23 +55,68 @@ def _enrich_one(
     ctx: ValidationContext,
     tools_by_name: dict[str, MCPTool],
 ) -> Finding:
-    if finding.analyzer != "attack_chains":
-        return finding
+    if finding.analyzer == "attack_chains":
+        evidence = dict(finding.evidence or {})
+        tool_names = _chain_tool_names(evidence)
+        matched_tools = [tools_by_name[name] for name in tool_names if name in tools_by_name]
+        facts = _facts_from_tools(matched_tools)
+        interpretation = _interpretation(finding, evidence, matched_tools, tool_names)
+        confidence_factors = _confidence_factors(finding, evidence, matched_tools, facts)
+        counterfactual = _counterfactual_remediation(matched_tools, facts)
+
+        evidence["facts"] = facts
+        evidence["interpretation"] = interpretation
+        evidence["confidence_factors"] = confidence_factors
+        evidence["counterfactual_remediation"] = counterfactual
+        evidence["evidence_tier"] = "silver" if any(f.get("snippet") for f in facts) else "bronze"
+
+        return finding.model_copy(update={"evidence": evidence})
+
     evidence = dict(finding.evidence or {})
-    tool_names = _chain_tool_names(evidence)
-    matched_tools = [tools_by_name[name] for name in tool_names if name in tools_by_name]
-    facts = _facts_from_tools(matched_tools)
-    interpretation = _interpretation(finding, evidence, matched_tools, tool_names)
-    confidence_factors = _confidence_factors(finding, evidence, matched_tools, facts)
-    counterfactual = _counterfactual_remediation(matched_tools, facts)
+    facts = evidence.get("facts")
+    if isinstance(facts, list) and facts:
+        evidence = _enrich_bronze_counterfactual(finding, evidence, facts)
+        return finding.model_copy(update={"evidence": evidence})
+    return finding
 
-    evidence["facts"] = facts
-    evidence["interpretation"] = interpretation
-    evidence["confidence_factors"] = confidence_factors
-    evidence["counterfactual_remediation"] = counterfactual
-    evidence["evidence_tier"] = "silver" if any(f.get("snippet") for f in facts) else "bronze"
 
-    return finding.model_copy(update={"evidence": evidence})
+def _enrich_bronze_counterfactual(
+    finding: Finding,
+    evidence: dict[str, Any],
+    facts: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Attach counterfactual + confidence factors for analyzer-emitted bronze facts (R17 partial)."""
+    if not evidence.get("counterfactual_remediation"):
+        triggered: list[str] = []
+        actions: list[dict[str, str]] = []
+        for fact in facts[:8]:
+            rule_id = str(fact.get("rule_id", ""))
+            match = str(fact.get("match", ""))
+            tool = str(fact.get("tool", finding.tool or ""))
+            triggered.append(f"{tool}: {rule_id} matched {match!r}")
+            actions.append(
+                {
+                    "action": f"Address {match!r} ({rule_id}) on {tool}".strip(),
+                    "removes": rule_id,
+                }
+            )
+        evidence["counterfactual_remediation"] = {
+            "triggered_by": triggered,
+            "removing_any_one_eliminates_finding": len(facts) > 1,
+            "actions": actions,
+        }
+    if not evidence.get("confidence_factors"):
+        factors: list[str] = []
+        for fact in facts[:6]:
+            rule_id = str(fact.get("rule_id", "signal"))
+            match = str(fact.get("match", ""))
+            line = f"{rule_id}: {match}" if match else rule_id
+            if line not in factors:
+                factors.append(line)
+        evidence["confidence_factors"] = factors
+    if not evidence.get("evidence_tier"):
+        evidence["evidence_tier"] = "silver" if any(f.get("snippet") for f in facts) else "bronze"
+    return evidence
 
 
 def _chain_tool_names(evidence: dict[str, Any]) -> list[str]:

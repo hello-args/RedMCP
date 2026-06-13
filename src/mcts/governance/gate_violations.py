@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from mcts.core.config import ScanConfig
 from mcts.governance.auth_env import evaluate_auth_env_violations
 from mcts.governance.policy import evaluate_policy, load_policy
-from mcts.governance.scan_gates import evaluate_scan_gate_violations
+from mcts.governance.scan_gates import _any_v2_gate, evaluate_scan_gate_violations
 from mcts.mcp.models import MCPServerInfo
 from mcts.reporting.models import Finding, RiskScore, ScanReport, ScanSummary, ScoreBasis
 
@@ -40,6 +40,36 @@ def collect_gate_violations(report: ScanReport, config: ScanConfig) -> list[str]
     return violations
 
 
+def _attach_score_v2_for_gates(
+    report: ScanReport,
+    config: ScanConfig,
+    findings: list[Finding],
+    scan_scope: str,
+) -> ScanReport:
+    """Score v2 on auxiliary finding lists so YAML/CLI v2 gates are evaluable."""
+    if config.scoring_mode not in {"v2", "both"} or not _any_v2_gate(config):
+        return report
+    from mcts.scoring.context import build_scoring_context
+    from mcts.scoring.engine_v2 import RiskScoringEngineV2
+
+    chain_factor_mode = "paths_v1" if config.enable_attack_chains else "disabled"
+    ctx = build_scoring_context(
+        findings=findings,
+        server=report.server,
+        attack_graph={},
+        scan_scope=scan_scope,
+        config=config,
+        chain_factor_mode=chain_factor_mode,
+    )
+    score_v2 = RiskScoringEngineV2().score(ctx, legacy_overall=report.score.overall)
+    return report.model_copy(
+        update={
+            "score_v2": score_v2,
+            "scoring_version": config.scoring_mode,
+        }
+    )
+
+
 def build_gate_scan_report(
     findings: list[Finding],
     config: ScanConfig,
@@ -64,7 +94,7 @@ def build_gate_scan_report(
         excluded_non_scorable=max(0, len(findings) - summary.total),
     )
     score = RiskScore(overall=100, risk_index=0, raw_risk=0, penalty=0, basis=basis)
-    return ScanReport(
+    report = ScanReport(
         version="0.0.0",
         target=report_target,
         scanned_at=datetime.now(UTC),
@@ -76,6 +106,7 @@ def build_gate_scan_report(
         score=score,
         scan_scope=scan_scope,
     )
+    return _attach_score_v2_for_gates(report, config, findings, scan_scope)
 
 
 def collect_findings_gate_violations(
@@ -93,3 +124,15 @@ def collect_findings_gate_violations(
         scan_scope=scan_scope,
     )
     return collect_gate_violations(report, config)
+
+
+def collect_fleet_absolute_risk_violations(
+    worst_absolute_risk: int | None,
+    config: ScanConfig,
+) -> list[str]:
+    """Fleet/machine-wide gate on peak absolute_risk across scanned servers."""
+    if config.max_worst_absolute_risk is None or worst_absolute_risk is None:
+        return []
+    if worst_absolute_risk > config.max_worst_absolute_risk:
+        return [f"worst absolute_risk {worst_absolute_risk} exceeds maximum {config.max_worst_absolute_risk}"]
+    return []

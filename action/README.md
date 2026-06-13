@@ -105,7 +105,7 @@ If the action lives in your repo under `action/`:
 | `weights-profile` | `manual_v1` | v2 weights profile when `scoring` is `v2` or `both` |
 | `assets-path` | — | Optional `.mcts/assets.yaml` for v2 asset-value overrides |
 | `findings-trust-mode` | `off` | Trust layer: `off`, `warn`, or `enforce` |
-| `ci-trust` | `false` | Shorthand for enforce + aligned gates (same as `mcts --ci-trust`) |
+| `ci-trust` | `true` | Shorthand for enforce + aligned gates (same as `mcts --ci-trust`). Set `false` for template-mode scans. |
 | `fail-on-priority-min` | — | Fail when any finding priority_score ≥ threshold (enforce only) |
 | `min-evidence-strength` | — | With priority gate: minimum evidence strength |
 | `max-high` | — | Fail when high findings exceed count (display under enforce) |

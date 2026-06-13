@@ -6,6 +6,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from mcts.analyzers.finding_facts import build_hygiene_finding
 from mcts.mcp.models import MCPTool
 from mcts.reporting.models import Finding, Severity
 
@@ -66,17 +67,18 @@ def _tool_def(tool: MCPTool) -> dict[str, Any]:
 
 
 def _finding(tool_name: str, rule_id: str, title: str, severity: Severity, **evidence: Any) -> Finding:
-    return Finding(
-        id=f"readiness-{rule_id.lower()}-{tool_name}",
+    return build_hygiene_finding(
+        finding_id=f"readiness-{rule_id.lower()}-{tool_name}",
         analyzer="readiness",
         title=f"{title} ({tool_name})",
         description=title,
         severity=severity,
-        tool=tool_name,
         recommendation="Improve MCP tool operational documentation and configuration.",
-        technique_id=None,
-        confidence=0.7,
-        evidence={"readiness_rule": rule_id.upper(), **evidence},
+        rule_id=rule_id.upper(),
+        match=title,
+        field="tool_metadata",
+        tool=tool_name,
+        extra_evidence={"readiness_rule": rule_id.upper(), **evidence},
     )
 
 

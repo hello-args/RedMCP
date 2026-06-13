@@ -215,6 +215,19 @@ def _check_gates(report, config: ScanConfig) -> None:
     _exit_on_gate_violations(collect_gate_violations(report, config), report, config)
 
 
+def _print_v2_gate_context(report) -> None:
+    if report.score_v2 is None:
+        return
+    v2 = report.score_v2
+    console.print("[yellow]v2 score context:[/yellow]")
+    console.print(
+        f"  absolute_risk={v2.absolute_risk}, security_score={v2.security_score}, risk_level={v2.risk_level}"
+    )
+    for contrib in v2.top_contributors[:5]:
+        if contrib.finding_id and contrib.risk_contribution is not None:
+            console.print(f"  • {contrib.finding_id}: risk_contribution={contrib.risk_contribution}")
+
+
 def _exit_on_gate_violations(violations: list[str], report, config: ScanConfig) -> None:
     if not violations:
         return
@@ -223,6 +236,14 @@ def _exit_on_gate_violations(violations: list[str], report, config: ScanConfig) 
     if min_score_failures and config.min_score is not None:
         _print_min_score_gate_failure(report, config.min_score)
         violations = [item for item in violations if not item.startswith("legacy overall score")]
+
+    v2_failures = [
+        item
+        for item in violations
+        if "absolute risk" in item or "security score" in item or "risk level" in item
+    ]
+    if v2_failures:
+        _print_v2_gate_context(report)
 
     policy_failures = [
         item for item in violations if "allowlist" in item or item.startswith("blocked server")
@@ -665,6 +686,14 @@ def scan(
             help=f"Skip writing JSON/HTML artifacts to {ANALYSIS_DIR_NAME}/",
         ),
     ] = False,
+    max_json_findings: Annotated[
+        int | None,
+        typer.Option(
+            "--max-json-findings",
+            help="Truncate JSON report findings to this count (scan_notes records truncation)",
+            min=1,
+        ),
+    ] = None,
     technique: Annotated[
         list[str] | None,
         typer.Option("--technique", help="Limit scan to MCTS-T technique id (repeatable)"),
@@ -673,7 +702,10 @@ def scan(
         bool,
         typer.Option(
             "--ci",
-            help="Apply CI gate preset (fail-on-critical, min-score 70) and print score breakdown on failure",
+            help=(
+                "CI gate preset (fail-on-critical, min-score 70, scoring both). "
+                "Add --min-security-score or --max-absolute-risk for v2 gates."
+            ),
         ),
     ] = False,
     ci_trust: Annotated[
@@ -767,6 +799,13 @@ def scan(
             "--max-risk-level",
             help="Exit 1 when v2 risk_level exceeds threshold (low|medium|high|critical)",
             case_sensitive=False,
+        ),
+    ] = None,
+    max_worst_absolute_risk: Annotated[
+        int | None,
+        typer.Option(
+            "--max-worst-absolute-risk",
+            help="Exit 1 when fleet/machine-wide worst absolute_risk exceeds this (v2/both)",
         ),
     ] = None,
     min_category_score_v2: Annotated[
@@ -1010,10 +1049,12 @@ def scan(
         min_security_score=min_security_score,
         max_absolute_risk=max_absolute_risk,
         max_risk_level=max_risk_level.lower() if max_risk_level else None,
+        max_worst_absolute_risk=max_worst_absolute_risk,
         min_category_score_v2=category_gates_v2,
         weights_profile=weights_profile,
         corpus_stats_path=corpus_stats_path,
         assets_path=assets_path,
+        max_json_findings=max_json_findings,
     )
 
     try:
@@ -1125,6 +1166,7 @@ def scan(
             json_path=resolve_output_path(output if output_format == "json" else None, "scan-report.json"),
             html_path=resolve_output_path(html, "scan-report.html"),
             sarif_path=resolve_output_path(output if output_format == "sarif" else None, "scan-report.sarif"),
+            max_json_findings=config_obj.max_json_findings,
         )
         if output_format == "raw":
             raw_path = resolve_output_path(output, "scan-report.raw.json")
@@ -1365,6 +1407,23 @@ def vet(
     use_display = config.findings_trust_mode != "off"
 
     payload = report.model_dump(mode="json")
+    gate_findings = [vet_finding_to_finding(finding) for finding in report.findings]
+    if config.scoring_mode in ("v2", "both") and gate_findings:
+        from mcts.governance.gate_violations import build_gate_scan_report
+
+        snap = build_gate_scan_report(
+            gate_findings,
+            config,
+            target=package,
+            scan_scope="vet",
+        )
+        if snap.score_v2 is not None:
+            payload["scan_score_snapshot"] = {
+                "absolute_risk": snap.score_v2.absolute_risk,
+                "security_score": snap.score_v2.security_score,
+                "risk_level": snap.score_v2.risk_level,
+                "note": "Synthetic v2 score from vet findings; run mcts scan for full benchmark context.",
+            }
     if json_output:
         console.print(json.dumps(payload, indent=2))
     else:
@@ -1373,6 +1432,12 @@ def vet(
             f"Verdict: [bold]{report.verdict}[/bold]  "
             f"Risk: {report.compute_risk_score(use_display=use_display)}/100"
         )
+        if payload.get("scan_score_snapshot"):
+            snap = payload["scan_score_snapshot"]
+            console.print(
+                f"  v2 snapshot: absolute_risk={snap['absolute_risk']}, "
+                f"security_score={snap.get('security_score')}, risk_level={snap.get('risk_level')}"
+            )
         if report.findings:
             for finding in report.findings:
                 console.print(f"  [{vet_severity_label(finding, config)}] {finding.title}")
@@ -1384,7 +1449,6 @@ def vet(
     if not json_output:
         console.print(f"[green]Saved[/green] {output_path}")
 
-    gate_findings = [vet_finding_to_finding(finding) for finding in report.findings]
     _check_auxiliary_finding_gates(
         gate_findings,
         config,
@@ -1773,6 +1837,10 @@ def readiness(
                 "tools_checked": report.tools_checked,
                 "readiness_score": report.readiness_score,
                 "production_ready": report.production_ready,
+                "scoring_mode": config.scoring_mode,
+                "score_v2_note": report.score_v2_note,
+                "absolute_risk_snapshot": report.absolute_risk_snapshot,
+                "security_score_snapshot": report.security_score_snapshot,
                 "findings": [f.model_dump() for f in report.findings],
             },
             indent=2,
@@ -1868,6 +1936,7 @@ def _surface_scan(
     json_path, html_path, sarif_path = persist_scan_artifacts(
         report,
         json_path=resolve_output_path(output, artifact_name),
+        max_json_findings=config.max_json_findings,
     )
     console.print(f"[green]Saved[/green] {json_path}, {html_path}, {sarif_path}")
 

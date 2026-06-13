@@ -73,9 +73,7 @@ class EmbeddingSecretsAnalyzer(BaseAnalyzer):
                     finding_id="embedding-secrets-semantic-skipped",
                     analyzer="embedding_secrets",
                     title="Semantic credential detection skipped",
-                    description=(
-                        "Semantic embedding model unavailable; only regex and phrase fallback ran."
-                    ),
+                    description=("Semantic embedding model unavailable; only regex and phrase fallback ran."),
                     recommendation=(
                         "Install sentence-transformers and model weights, or disable semantic_secrets."
                     ),

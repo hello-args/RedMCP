@@ -101,7 +101,7 @@ Full reference: [action/README.md](../../action/README.md)
 | `max-risk-level` | — | v2 band gate (`low` … `critical`) |
 | `min-category-score-v2` | — | Comma-separated `category:min` for v2 OWASP tiles |
 | `findings-trust-mode` | `off` | Trust layer: `off`, `warn`, or `enforce` (prefer `enforce` / `ci-trust` for CI) |
-| `ci-trust` | `false` | Shorthand: enforce + aligned gates (same as `mcts --ci-trust`) |
+| `ci-trust` | `true` | Shorthand: enforce + aligned gates (same as `mcts --ci-trust`). Set `false` for template-mode scans. |
 | `fail-on-priority-min` | — | Fail when priority ≥ threshold (**enforce** only) |
 | `min-evidence-strength` | — | Optional filter for priority gate |
 | `extras` | `mcp,sast` | Optional extras to install (`all` for full set) |
@@ -191,7 +191,7 @@ mcts scan ./server.py \
   --min-score 70
 ```
 
-GitHub Action:
+GitHub Action (default `ci-trust: true`; set `false` to opt out):
 
 ```yaml
 - uses: MCP-Audit/MCTS@v1
@@ -376,6 +376,19 @@ Pair MCTS gates with required CI checks on `main`. See [CONTRIBUTING.md](../../C
 | SARIF contents | May include file paths and finding snippets — treat as security data |
 | HTML artifacts | Self-contained; no exfiltration, but contains full scan |
 | Secrets in repos | MCTS may flag secrets in scanned source — rotate if leaked in CI logs |
+
+### Fleet gates (`--machine-wide`, inventory `--scan-all`)
+
+Per-server gates run via `collect_gate_violations()`. Fleet-wide v2 cap:
+
+```bash
+mcts scan --machine-wide --scoring both --max-worst-absolute-risk 500
+mcts inventory --scan-all --scoring both --max-worst-absolute-risk 500
+```
+
+YAML: `max_worst_absolute_risk` in `.mcts/policy.yaml` (see `.mcts/policy.yaml.example`).
+
+**Dual exit heuristic:** If no explicit gate fires, machine-wide and inventory scan-all may still exit 1 when any server has critical/high display counts (or v2 `risk_level` high/critical). Prefer explicit `--max-critical` / `--max-worst-absolute-risk` for predictable CI.
 
 ---
 

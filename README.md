@@ -227,6 +227,8 @@ mcts scan . -o report.sarif --format sarif
 
 Gate cheat sheet: [scoring guide](docs/reporting/scoring-guide.md#ci-gates--pick-one-strategy) · [CI integration](docs/platform/ci-integration.md) · [GitHub Action](action/README.md)
 
+The GitHub Action defaults to `ci-trust: true` (display-aligned gates). Set `ci-trust: false` for legacy template-mode scans.
+
 ### Themes
 
 ```bash

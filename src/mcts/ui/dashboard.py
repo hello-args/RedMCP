@@ -120,10 +120,26 @@ def build_score_block(report: ScanReport, theme: Theme) -> Table:
     basis = report.score.basis
     rating, score_color = theme.score_rating(report.score.overall)
     risk_color = theme.risk_index_color(report.score.risk_index)
+    v2_first = report.score_v2 is not None and report.scoring_version == "both"
 
     grid = Table.grid(padding=(0, 1))
     grid.add_column(style=theme.style(p.white, bold=True), width=16, no_wrap=True)
     grid.add_column(justify="left")
+
+    if v2_first:
+        v2 = report.score_v2
+        grid.add_row(
+            "Absolute Risk:",
+            Text(
+                f"{v2.absolute_risk} ({v2.risk_level})",
+                style=theme.style(p.orange, bold=True),
+            ),
+        )
+        if v2.security_score is not None:
+            grid.add_row(
+                "Security Score:",
+                Text(f"{v2.security_score}/100", style=theme.style(p.yellow, bold=True)),
+            )
 
     grid.add_row(
         "Overall Score:",
@@ -142,7 +158,7 @@ def build_score_block(report: ScanReport, theme: Theme) -> Table:
             style=theme.style(p.white),
         ),
     )
-    if report.score_v2 is not None and report.scoring_version in {"v2", "both"}:
+    if report.score_v2 is not None and report.scoring_version in {"v2", "both"} and not v2_first:
         v2 = report.score_v2
         grid.add_row(
             "Absolute Risk:",

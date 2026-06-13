@@ -200,3 +200,37 @@ def test_collect_findings_gate_violations_enforce_overlap_passes() -> None:
         scan_scope="repository",
     )
     assert violations == []
+
+
+def test_collect_findings_gate_violations_scores_v2_for_policy_gates() -> None:
+    from mcts.core.scanner import Scanner
+    from mcts.governance.gate_violations import collect_findings_gate_violations
+
+    vulnerable = Path("examples/vulnerable-mcp-server/server.py")
+    report = Scanner(ScanConfig(target=vulnerable, scoring_mode="both")).run()
+    config = ScanConfig(
+        target=vulnerable,
+        scoring_mode="both",
+        min_security_score=99,
+        ignore_policy=True,
+    )
+    violations = collect_findings_gate_violations(
+        report.findings,
+        config,
+        target=str(vulnerable),
+        scan_scope="repository",
+    )
+    assert violations
+    assert any("security_score" in item for item in violations)
+    assert not any("v2 gate requires" in item for item in violations)
+
+
+def test_collect_fleet_absolute_risk_violation() -> None:
+    from mcts.governance.gate_violations import collect_fleet_absolute_risk_violations
+
+    config = ScanConfig(target=SINGLE_TOOL, max_worst_absolute_risk=100, ignore_policy=True)
+    assert collect_fleet_absolute_risk_violations(150, config) == [
+        "worst absolute_risk 150 exceeds maximum 100"
+    ]
+    assert collect_fleet_absolute_risk_violations(50, config) == []
+    assert collect_fleet_absolute_risk_violations(None, config) == []

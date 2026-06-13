@@ -45,9 +45,13 @@ def run_inventory_scan_all(base_config: ScanConfig) -> tuple[InventoryReport, li
 
 def collect_scan_all_gate_violations(base_config: ScanConfig, rows: list[dict]) -> list[str]:
     """Policy/CLI gate failures across inventory scan-all rows."""
-    from mcts.governance.gate_violations import collect_gate_violations
+    from mcts.governance.gate_violations import (
+        collect_fleet_absolute_risk_violations,
+        collect_gate_violations,
+    )
 
     violations: list[str] = []
+    worst_risk: int | None = None
     for row in rows:
         report_data = row.get("report")
         if not report_data or row.get("error"):
@@ -55,6 +59,13 @@ def collect_scan_all_gate_violations(base_config: ScanConfig, rows: list[dict]) 
         report = ScanReport.model_validate(report_data)
         scan_config = base_config.model_copy(update={"target": report.target})
         violations.extend(collect_gate_violations(report, scan_config))
+        if report.score_v2 is not None:
+            ar = report.score_v2.absolute_risk
+            worst_risk = ar if worst_risk is None else max(worst_risk, ar)
+        elif row.get("absolute_risk") is not None:
+            ar = int(row["absolute_risk"])
+            worst_risk = ar if worst_risk is None else max(worst_risk, ar)
+    violations.extend(collect_fleet_absolute_risk_violations(worst_risk, base_config))
     return violations
 
 

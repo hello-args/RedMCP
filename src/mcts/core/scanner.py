@@ -230,16 +230,18 @@ class Scanner:
         findings = collapse_template_severity_if_requested(findings, self.config)
 
         findings = self._apply_filters(findings)
+        from mcts.reporting.finding_validator import validate_findings
         from mcts.reporting.rule_stability import apply_rule_stability
 
-        compliance_rows = [
-            apply_rule_stability(row)
-            for row in self.compliance.check(
-                findings,
-                tools_discovered=len(server_info.tools),
-                findings_trust_mode=self.config.findings_trust_mode,
-            )
-        ]
+        compliance_raw = self.compliance.check(
+            findings,
+            tools_discovered=len(server_info.tools),
+            findings_trust_mode=self.config.findings_trust_mode,
+        )
+        if self.config.findings_trust_mode != "off":
+            compliance_rows = validate_findings(compliance_raw, trust_ctx)
+        else:
+            compliance_rows = [apply_rule_stability(row) for row in compliance_raw]
         findings.extend(compliance_rows)
         analyzers_executed.append("compliance")
         scan_notes = build_scan_notes(self.config)

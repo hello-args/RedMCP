@@ -1061,11 +1061,16 @@
   }
 
   function initGaugeChart() {
-    if (DATA.score_v2) return;
     const canvas = document.getElementById("gauge-chart");
     if (!canvas || typeof Chart === "undefined") return;
 
-    const score = DATA.score.overall;
+    const v2 = DATA.score_v2;
+    const score =
+      v2 && v2.security_score != null
+        ? v2.security_score
+        : DATA.score.overall;
+    if (v2 && v2.security_score == null) return;
+
     const color = scoreGaugeColor(score);
     const visualScore = Math.max(score, MIN_GAUGE_ARC);
     const remainder = Math.max(0, 100 - visualScore);

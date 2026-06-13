@@ -88,7 +88,14 @@ class MachineScanSummary:
     def exit_code(self) -> int:
         if self.scanned == 0:
             return 0
-        if self.gate_violations():
+        violations = self.gate_violations()
+        if self.base_config is not None:
+            from mcts.governance.gate_violations import collect_fleet_absolute_risk_violations
+
+            violations.extend(
+                collect_fleet_absolute_risk_violations(self.worst_absolute_risk, self.base_config)
+            )
+        if violations:
             return 1
         if self.has_high_severity():
             return 1

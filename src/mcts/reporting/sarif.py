@@ -35,10 +35,35 @@ def write_sarif_report(report: ScanReport) -> str:
     return json.dumps(payload, indent=2)
 
 
-def build_sarif(report: ScanReport) -> dict[str, Any]:
-    rules = _build_rules(report.findings)
-    results = [_finding_to_result(finding, rules, report.target) for finding in report.findings]
-    taxonomies = _build_taxonomies(report.findings)
+def build_sarif(report: ScanReport, *, include_coverage_findings: bool = False) -> dict[str, Any]:
+    export_findings = report.findings
+    if not include_coverage_findings:
+        export_findings = [
+            finding for finding in report.findings if (finding.finding_kind or "security") != "coverage"
+        ]
+
+    contributor_map: dict[str, dict[str, Any]] = {}
+    if report.score_v2 is not None:
+        for contrib in report.score_v2.top_contributors:
+            if contrib.finding_id:
+                contributor_map[contrib.finding_id] = {
+                    "risk_contribution": contrib.risk_contribution,
+                    "confidence": contrib.confidence,
+                    "chain_factor": contrib.chain_factor,
+                    "factors": contrib.factors,
+                }
+
+    rules = _build_rules(export_findings)
+    results = [
+        _finding_to_result(
+            finding,
+            rules,
+            report.target,
+            contributor_map.get(finding.id),
+        )
+        for finding in export_findings
+    ]
+    taxonomies = _build_taxonomies(export_findings)
 
     driver: dict[str, Any] = {
         "name": "MCTS",
@@ -67,6 +92,18 @@ def build_sarif(report: ScanReport) -> dict[str, Any]:
             "securityScore": report.score_v2.security_score,
             "riskLevel": report.score_v2.risk_level,
         }
+        top_rows = [
+            {
+                "findingId": c.finding_id,
+                "riskContribution": c.risk_contribution,
+                "confidence": c.confidence,
+                "chainFactor": c.chain_factor,
+            }
+            for c in report.score_v2.top_contributors
+            if c.finding_id and c.risk_contribution is not None
+        ]
+        if top_rows:
+            run_props["mcts/v2TopContributors"] = top_rows[:10]
 
     run: dict[str, Any] = {
         "tool": {"driver": driver},
@@ -151,7 +188,12 @@ def _build_rules(findings: list[Finding]) -> dict[str, dict[str, Any]]:
     return rules
 
 
-def _finding_to_result(finding: Finding, rules: dict[str, dict[str, Any]], target: str) -> dict[str, Any]:
+def _finding_to_result(
+    finding: Finding,
+    rules: dict[str, dict[str, Any]],
+    target: str,
+    v2_contrib: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     result: dict[str, Any] = {
         "ruleId": finding.id,
         "level": SARIF_SEVERITY[effective_severity(finding)],
@@ -189,6 +231,13 @@ def _finding_to_result(finding: Finding, rules: dict[str, dict[str, Any]], targe
         result["properties"]["technique_id"] = finding.technique_id
     if finding.mitigation_ids:
         result["properties"]["mitigation_ids"] = finding.mitigation_ids
+    if v2_contrib is not None:
+        if v2_contrib.get("risk_contribution") is not None:
+            result["properties"]["mcts/v2RiskContribution"] = v2_contrib["risk_contribution"]
+        if v2_contrib.get("confidence") is not None:
+            result["properties"]["mcts/v2Confidence"] = v2_contrib["confidence"]
+        if v2_contrib.get("chain_factor") is not None:
+            result["properties"]["mcts/v2ChainFactor"] = v2_contrib["chain_factor"]
     if finding.id not in rules:
         rules[finding.id] = {
             "id": finding.id,

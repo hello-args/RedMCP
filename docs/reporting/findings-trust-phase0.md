@@ -508,7 +508,7 @@ All mature analyzers including optional/metadata-heavy paths (`npm_audit`, `vuln
 
 ### Still raw `Finding()` outside analyzers
 
-Readiness, compliance, and probe/discovery helpers still construct raw `Finding()` rows. Compliance meta-findings set `finding_kind=coverage` and receive `rule_stability` after the trust pipeline (excluded from priority/bronze security gates). **`fuzz/classifier.py` is migrated** — fuzz findings emit bronze `evidence.facts` via `build_analyzer_finding`. Deferred paths pass through `apply_trust_layer()` but do not emit bronze facts unless migrated. The bronze gate applies only to **`experimental`** analyzers when `--enforce-bronze-facts` is set.
+Compliance meta-findings use `build_hygiene_finding()` with `finding_kind=coverage` (bronze facts, excluded from security gates). Readiness heuristics, OPA, LLM judge, live/static discovery meta, and protocol probe emit bronze facts via `build_hygiene_finding`. **`fuzz/classifier.py` is migrated** — fuzz findings emit bronze `evidence.facts` via `build_analyzer_finding`. The bronze gate applies only to **`experimental`** analyzers when `--enforce-bronze-facts` is set.
 
 Vulnerable fixture under enforce: **100%** of security findings have `evidence.facts`; **3 display critical** remain (real issues, not overlap noise).
 
@@ -554,7 +554,7 @@ When `findings_trust_mode=enforce`, v2 scoring reads **display** severity for:
 
 `finding.severity` (template) is **unchanged** — `RiskScoringEngineV2.verify()` still passes.
 
-Corpus Spearman recalibration is **deferred** until a maintainer run confirms score drift.
+Corpus Spearman gate passes at ρ=0.955 (maintainer `--write-package-stats` optional).
 
 ---
 
@@ -565,8 +565,11 @@ Shipped in-tree:
 - Shared `apply_trust_layer()` for scan, fuzz, and inventory entry points
 - Bronze CI gate (`--enforce-bronze-facts`) for experimental analyzers without `evidence.facts` (**enforce only**)
 - All `src/mcts/analyzers/` paths on `FindingBuilder` / bronze facts
+- SARIF excludes `finding_kind=coverage` by default (`build_sarif(..., include_coverage_findings=True)` to export)
+- GitHub Action `ci-trust` defaults to `true`
+- Hygiene bronze facts on readiness / live/static discovery / protocol probe paths
 
-**Next (product / soak):** flip GitHub Action default to `--ci-trust` after opt-in period; corpus Spearman recalibration post-B2; optional bronze migration for fuzz/readiness/compliance paths.
+**Next:** persona tabs; counterfactual on inferrer-only paths without bronze facts; ramp corpus QA.
 
 ### Gap fixes (pre-Phase 3)
 

@@ -30,6 +30,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Optional analyzer skip rows** — `npm_audit`, `yara_metadata`, `cloud_inspect`, `llm_judge`, `llm_metadata_triage`, `virustotal` emit hygiene findings when deps/keys missing
 - **`--ignore-policy` on pentest/readiness** — auxiliary CLI paths can opt out of policy merge
 - **GitHub Action** — `max-high`, `max-critical`, and `ignore-policy` inputs
+- **SARIF coverage filter** — compliance `finding_kind=coverage` rows excluded from SARIF by default (`include_coverage_findings=True` to export)
+- **SARIF v2 metadata** — per-finding `mcts/v2RiskContribution` for top contributors; run-level `mcts/v2TopContributors`
+- **Hygiene bronze facts** — readiness, live/static discovery meta, and protocol probe rows emit bronze `evidence.facts`
+- **Compliance trust validation** — compliance meta-findings pass through `validate_findings()` when trust is active
+- **Fact coverage CI gate** — enforce scans must meet ≥50% structured-fact coverage (ramp toward 80%)
+- **JSON truncation** — `max_json_findings` on `ScanConfig` truncates JSON export with scan note
+- **MCP IDE scan params** — `scan_mcp_target` accepts `scoring_mode`, trust mode, and v2 gate thresholds
+- **HTML letter grade** — dashboard grade uses v2 `security_score` when present
+- **GitHub Action default** — `ci-trust` defaults to `true` (display-aligned CI gates)
+- **Auxiliary v2 gates** — `build_gate_scan_report()` computes `score_v2` when v2 YAML/CLI gates are set
+- **Bronze facts completion** — compliance, readiness OPA/LLM judge via `build_hygiene_finding`
+- **CLI `--max-json-findings`** — truncates JSON export with scan note
+- **Readiness JSON** — exports `scoring_mode`, `score_v2_note`, and v2 snapshots when scoring is v2/both
+- **Vet v2 snapshot** — `scan_score_snapshot` in vet JSON from synthetic gate scoring
+- **Fleet `max_worst_absolute_risk`** — machine-wide and inventory `--scan-all` gate
+- **Bronze counterfactual (R17 partial)** — analyzer findings with facts get counterfactual under trust
+- **fact_coverage CI gate** — raised to **80%** on enforce scans
+- **v2 gauge chart** — uses `security_score` when v2 benchmark is available
+- **Terminal v2-first** — when `scoring_version=both`, Absolute Risk / Security Score appear first
+- **MCP IDE** — `min_category_score_v2` comma gates on `scan_mcp_target`
 
 ### Fixed
 

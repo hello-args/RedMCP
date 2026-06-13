@@ -321,6 +321,16 @@ def main() -> int:
     else:
         check("vulnerable v2 verify", True)
 
+    from mcts.reporting.evidence_provenance import fact_coverage
+
+    fc = fact_coverage(vuln.findings)
+    check("fact_coverage pct >= 80", fc.get("pct", 0) >= 80.0, str(fc))
+    vuln_sarif = build_sarif(vuln)
+    comp_results = [
+        r for r in vuln_sarif["runs"][0]["results"] if r.get("properties", {}).get("analyzer") == "compliance"
+    ]
+    check("SARIF excludes compliance coverage rows", len(comp_results) == 0)
+
     print(f"\n=== {len(FAILURES)} failure(s) ===")
     for f in FAILURES:
         print(f"  - {f}")
