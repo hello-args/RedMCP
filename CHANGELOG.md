@@ -48,6 +48,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Bronze counterfactual (R17 partial)** — analyzer findings with facts get counterfactual under trust
 - **fact_coverage CI gate** — raised to **80%** on enforce scans
 - **v2 gauge chart** — uses `security_score` when v2 benchmark is available
+- **Legacy evidence synthesis (R17)** — trust mode synthesizes bronze `facts` + counterfactual from legacy `evidence` keys
+- **Dashboard evidence UX** — expanded detail panel: counterfactual remediation, false-positive conditions, evidence tier
+- **Live scan fuzz merge** — safe protocol fuzz findings merged into static scan score when `--live` + consent
+- **v2 OWASP benchmarks** — `category_scores_v2` includes corpus reference scores; HTML tiles show benchmark hint
+- **v2 benchmark gauge** — doughnut gauge for `security_score` in v2 risk panel
 - **Terminal v2-first** — when `scoring_version=both`, Absolute Risk / Security Score appear first
 - **MCP IDE** — `min_category_score_v2` comma gates on `scan_mcp_target`
 

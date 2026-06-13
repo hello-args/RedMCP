@@ -116,6 +116,15 @@ INDUSTRY_BENCHMARK: dict[str, float] = {
     "jailbreak": 3,
 }
 
+# v2 OWASP tile health benchmarks (100 = good) — corpus-informed defaults for dashboard overlay.
+INDUSTRY_BENCHMARK_V2: dict[str, int] = {
+    "injection": 82,
+    "exfiltration": 80,
+    "privilege": 78,
+    "supply_chain": 88,
+    "protocol": 80,
+}
+
 RISK_GUIDE = (
     {
         "key": "critical",
@@ -595,6 +604,7 @@ def category_scores_v2(findings: list[Finding], *, use_display: bool = False) ->
         )
         score = max(0, 100 - min(100, penalty))
         passed = len(matched) == 0
+        benchmark = INDUSTRY_BENCHMARK_V2.get(key, 80)
         rows.append(
             {
                 "key": key,
@@ -603,6 +613,7 @@ def category_scores_v2(findings: list[Finding], *, use_display: bool = False) ->
                 "display": "100/100" if passed else f"{score}/100",
                 "findings_count": len(matched),
                 "passed": passed,
+                "benchmark": benchmark,
             }
         )
     return rows
@@ -1202,6 +1213,17 @@ def build_dashboard_payload(report: ScanReport) -> dict[str, Any]:
                 if isinstance(evidence.get("interpretation"), dict)
                 else None,
                 "evidence_summary": format_evidence_summary(evidence),
+                "counterfactual_remediation": (
+                    evidence.get("counterfactual_remediation")
+                    if isinstance(evidence.get("counterfactual_remediation"), dict)
+                    else None
+                ),
+                "false_positive_conditions": (
+                    evidence.get("false_positive_conditions")
+                    if isinstance(evidence.get("false_positive_conditions"), list)
+                    else []
+                ),
+                "evidence_tier": evidence.get("evidence_tier"),
                 "has_evidence": bool(evidence),
                 "has_provenance": bool(evidence.get("facts")),
                 "recommendation": finding.recommendation,

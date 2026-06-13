@@ -203,6 +203,9 @@ class Scanner:
         if self.config.protocol_probe and self.config.remote_url:
             findings.extend(probe_protocol_security(self.config.remote_url))
 
+        fuzz_note = self._merge_fuzz_findings(findings, analyzers_executed)
+        scan_notes_pre = [fuzz_note] if fuzz_note else []
+
         findings = dedupe_metadata_findings(findings)
         findings = dedupe_sigma_findings(findings)
         findings = enrich_findings(findings)
@@ -245,6 +248,7 @@ class Scanner:
         findings.extend(compliance_rows)
         analyzers_executed.append("compliance")
         scan_notes = build_scan_notes(self.config)
+        scan_notes = scan_notes_pre + scan_notes
 
         use_display_score = self.config.findings_trust_mode == "enforce"
         score = self.scoring.score(findings, use_display=use_display_score)
@@ -308,6 +312,41 @@ class Scanner:
         )
         append_chain_scan_notes(report.scan_notes, report, self.config)
         return report
+
+    def _merge_fuzz_findings(self, findings: list[Finding], analyzers_executed: list[str]) -> str | None:
+        """Run protocol fuzz on live scans and merge findings into the static score path."""
+        if not (self.config.live or self.config.remote_url):
+            return None
+        if not self.config.live_consent:
+            return None
+
+        from mcts.fuzz.payloads import FuzzLevel
+        from mcts.probe.startup_errors import MCPStartupError
+        from mcts.taxonomy.mapper import enrich_findings
+
+        level = FuzzLevel(self.config.fuzz_level)
+        if level == FuzzLevel.AGGRESSIVE and not self.config.fuzz_consent:
+            return None
+
+        try:
+            from mcts.fuzz.runner import FuzzRunner
+
+            result = FuzzRunner(self.config).run()
+        except MCPStartupError:
+            return "Protocol fuzz skipped — live server failed to start."
+        except (ValueError, RuntimeError):
+            return None
+
+        if not result.findings:
+            return f"Protocol fuzz ({result.level.value}): {result.probes_run} probes — no findings."
+
+        fuzz_rows = enrich_findings(list(result.findings))
+        findings.extend(fuzz_rows)
+        analyzers_executed.append("fuzz")
+        return (
+            f"Protocol fuzz ({result.level.value}): {result.probes_run} probes — "
+            f"{len(fuzz_rows)} finding(s) merged into scan score."
+        )
 
     def _attach_surface_options(self, server_info: MCPServerInfo) -> MCPServerInfo:
         cfg = self.config

@@ -73,11 +73,51 @@ def _enrich_one(
         return finding.model_copy(update={"evidence": evidence})
 
     evidence = dict(finding.evidence or {})
+    if evidence.get("skipped"):
+        return finding
+
     facts = evidence.get("facts")
     if isinstance(facts, list) and facts:
         evidence = _enrich_bronze_counterfactual(finding, evidence, facts)
         return finding.model_copy(update={"evidence": evidence})
+
+    legacy_facts = _legacy_facts_from_evidence(finding, evidence)
+    if legacy_facts:
+        evidence["facts"] = legacy_facts
+        evidence = _enrich_bronze_counterfactual(finding, evidence, legacy_facts)
+        return finding.model_copy(update={"evidence": evidence})
     return finding
+
+
+def _legacy_facts_from_evidence(finding: Finding, evidence: dict[str, Any]) -> list[dict[str, Any]]:
+    """Synthesize bronze facts from legacy evidence keys when analyzers omit facts[] (R17)."""
+    rule_id = evidence.get("rule_id") or evidence.get("matched") or finding.analyzer
+    match = (
+        evidence.get("match")
+        or evidence.get("pattern")
+        or evidence.get("matched")
+        or evidence.get("signal")
+        or ""
+    )
+    if not rule_id and not match:
+        return []
+
+    field = str(evidence.get("field") or evidence.get("corpus_field") or "tool_metadata")
+    fact: dict[str, Any] = {
+        "rule_id": str(rule_id),
+        "match": str(match),
+        "field": field,
+    }
+    if finding.tool:
+        fact["tool"] = finding.tool
+    if finding.location and finding.location.file:
+        fact["file"] = finding.location.file
+        if finding.location.line is not None:
+            fact["line"] = finding.location.line
+    snippet = evidence.get("snippet") or evidence.get("response_excerpt") or evidence.get("excerpt")
+    if snippet:
+        fact["snippet"] = str(snippet)[:200]
+    return [fact]
 
 
 def _enrich_bronze_counterfactual(

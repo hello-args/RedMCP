@@ -285,6 +285,7 @@
     fillV2Contributors(contributors);
     fillV2Categories(categories);
     initV2DimensionRadar(v2.dimension_scores || {});
+    initV2BenchmarkGauge(v2);
     const zoneRiskDetail = document.getElementById("zone-risk-detail");
     if (zoneRiskDetail) {
       zoneRiskDetail.hidden = !contributors.length && !categories.length;
@@ -304,16 +305,71 @@
     list.innerHTML = categories
       .map((c) => {
         const pct = Math.max(0, Math.min(100, Number(c.score) || 0));
+        const benchmark = Math.max(0, Math.min(100, Number(c.benchmark) || 0));
         const barColor = pct >= 80 ? COLORS.low : pct >= 50 ? COLORS.medium : COLORS.critical;
+        const benchHint = benchmark ? ` · corpus ~${benchmark}` : "";
         return `<li class="category-item">
           <div class="category-item-header">
             <span class="name">${escapeHtml(c.label)}</span>
-            <span class="score-val">${escapeHtml(c.display)}</span>
+            <span class="score-val">${escapeHtml(c.display)}${escapeHtml(benchHint)}</span>
           </div>
           <div class="category-bar"><span style="width:${pct}%;background:${barColor}"></span></div>
+          ${
+            benchmark
+              ? `<div class="category-benchmark-hint" style="font-size:11px;color:var(--muted);margin-top:4px">Benchmark reference: ${benchmark}/100 health</div>`
+              : ""
+          }
         </li>`;
       })
       .join("");
+  }
+
+  function initV2BenchmarkGauge(v2) {
+    const wrap = document.getElementById("v2-benchmark-gauge-wrap");
+    const canvas = document.getElementById("v2-gauge-chart");
+    const valueEl = document.getElementById("v2-gauge-score-value");
+    if (!wrap || !canvas || typeof Chart === "undefined") return;
+    if (v2.security_score == null) {
+      wrap.hidden = true;
+      return;
+    }
+    wrap.hidden = false;
+    const score = Number(v2.security_score);
+    if (valueEl) valueEl.textContent = String(score);
+    const color = scoreGaugeColor(score);
+    const visualScore = Math.max(score, MIN_GAUGE_ARC);
+    const remainder = Math.max(0, 100 - visualScore);
+    const gradient = canvas.getContext("2d");
+    let fillColor = color;
+    if (gradient) {
+      const g = gradient.createLinearGradient(0, 0, 0, canvas.height);
+      g.addColorStop(0, color);
+      g.addColorStop(1, "rgba(239,68,68,0.25)");
+      fillColor = g;
+    }
+    new Chart(canvas, {
+      type: "doughnut",
+      data: {
+        datasets: [
+          {
+            data: [visualScore, remainder],
+            backgroundColor: [fillColor, "rgba(255,255,255,0.05)"],
+            borderWidth: 0,
+            borderRadius: 6,
+            circumference: 180,
+            rotation: 270,
+            spacing: 2,
+          },
+        ],
+      },
+      options: {
+        responsive: false,
+        maintainAspectRatio: false,
+        cutout: "58%",
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        animation: { duration: 600 },
+      },
+    });
   }
 
   function fillV2Contributors(contributors) {
@@ -1527,6 +1583,34 @@
           .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(", ") : value}`)
           .join(" · ")
       )}</p></div>`;
+    }
+    const counterfactual = evidence.counterfactual_remediation || finding.counterfactual_remediation;
+    if (counterfactual && (counterfactual.triggered_by || counterfactual.actions)) {
+      const triggers = counterfactual.triggered_by || [];
+      const actions = counterfactual.actions || [];
+      html += `<div class="finding-evidence-section"><strong>What triggered this</strong><ul class="finding-confidence-list">${triggers
+        .map((item) => `<li>${escapeHtml(item)}</li>`)
+        .join("")}</ul>`;
+      if (actions.length) {
+        html += `<strong>Remediation options</strong><ul class="finding-confidence-list">${actions
+          .map((row) => `<li>${escapeHtml(row.action || row.removes || "")}</li>`)
+          .join("")}</ul>`;
+      }
+      if (counterfactual.removing_any_one_eliminates_finding) {
+        html += `<p class="finding-mcp-context">Removing any one signal may clear this finding.</p>`;
+      }
+      html += `</div>`;
+    }
+    const fpConditions = finding.false_positive_conditions || evidence.false_positive_conditions;
+    if (fpConditions && fpConditions.length) {
+      html += `<div class="finding-evidence-section"><strong>False positive when</strong><ul class="finding-confidence-list">${fpConditions
+        .map((item) => `<li>${escapeHtml(item)}</li>`)
+        .join("")}</ul></div>`;
+    }
+    if (finding.evidence_tier || evidence.evidence_tier) {
+      html += `<p class="finding-mcp-context">Evidence tier: ${escapeHtml(
+        finding.evidence_tier || evidence.evidence_tier
+      )}</p>`;
     }
     html += `<details class="finding-evidence-raw"><summary>Raw evidence JSON</summary><pre class="finding-evidence-json">${escapeHtml(
       JSON.stringify(evidence, null, 2)
