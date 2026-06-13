@@ -6,6 +6,7 @@ import ast
 import re
 
 from mcts.analyzers.base import BaseAnalyzer
+from mcts.analyzers.finding_facts import build_analyzer_finding
 from mcts.mcp.models import MCPServerInfo, MCPTool
 from mcts.reporting.models import Finding, Severity, SourceLocation
 from mcts.sast.go.sinks import detect_go_sinks
@@ -189,6 +190,7 @@ class BehavioralStaticAnalyzer(BaseAnalyzer):
         if not taint.sinks:
             return []
         loc = SourceLocation(file=tool.source_file or "", line=tool.source_line)
+        snippet = (tool.handler_snippet or "")[:160].replace("\n", " ").strip() or None
         if taint.tainted_params:
             description = (
                 f"Handler parameters {sorted(taint.tainted_params)} may flow to "
@@ -201,18 +203,22 @@ class BehavioralStaticAnalyzer(BaseAnalyzer):
             )
             confidence = 0.65
         return [
-            Finding(
-                id=f"behavioral-taint-{tool.name}-{'-'.join(taint.sinks[:2])}",
+            build_analyzer_finding(
+                finding_id=f"behavioral-taint-{tool.name}-{'-'.join(taint.sinks[:2])}",
                 analyzer=self.name,
                 title=f"Untrusted input may reach sink on {tool.name}",
                 description=description,
                 severity=max(sinks.get(s, Severity.HIGH) for s in taint.sinks),
-                tool=tool.name,
                 recommendation="Validate and sanitize tool inputs before dangerous operations.",
+                rule_id="RULE_TAINT_PARAM_SINK",
+                match=taint.sinks[0],
+                field="handler_body",
+                tool=tool.name,
+                location=loc,
                 technique_id="MCTS-T-1001",
                 confidence=confidence,
-                location=loc,
-                evidence={
+                snippet=snippet,
+                extra_evidence={
                     "sinks": taint.sinks,
                     "tainted_params": sorted(taint.tainted_params),
                 },

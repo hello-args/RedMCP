@@ -2,7 +2,7 @@
 
 > [Documentation](../index.md) → [Reporting](README.md) → **Findings trust (Phase 0)**
 
-**Status:** Implemented in tree (Phase 0 → B2) · **637+ tests** (reporting/scoring) · Tracks [#258](https://github.com/MCP-Audit/MCTS/issues/258)
+**Status:** Implemented in tree (Phase 0 → B2 + Phase 3 partial) · **662+ tests** (reporting/scoring) · Tracks [#258](https://github.com/MCP-Audit/MCTS/issues/258)
 
 This document is the **maintainer-facing record** of what Phase 0 delivered, what was intentionally deferred, known operational risks, and the mitigation plan for follow-up work.
 
@@ -155,7 +155,7 @@ These were **explicitly out of Phase 0** — documented in the roadmap and issue
 | CLI printed finding lists on display | Phase A½ | **Done** for `mcts scan` / `mcts report`; fuzz/readiness/vet/pentest use display under trust mode |
 | `severity_filter` on display severity | Consumer step 5 | **Done (A½)** |
 | Legacy score + `score.basis` on display | Phase A½ narrow B | **Done (A½)** — enforce only; v2 unchanged |
-| Pentest / fuzz / inventory validator | §K bypass paths | |
+| Pentest / fuzz / inventory validator | §K bypass paths | **Done** |
 | `canonical_attack_graph_from_scan` early-return fix | M5 deferred | |
 
 ---
@@ -173,13 +173,12 @@ When `findings_trust_mode=enforce`, these surfaces are **aligned** (Phase A½):
 | `history.json` `display_critical` | recorded |
 | `--severity-filter` | display |
 
-Still on **template** severity when enforce:
+Still on **template** severity when enforce (unless `--collapse-template-severity`):
 
 | Surface | Field used | User-visible effect |
 |---------|------------|---------------------|
-| `summary` / `finding.severity` in JSON | template | Audit trail preserved |
+| `summary` / `finding.severity` in JSON | template | Audit trail preserved (B3 opt-in collapses) |
 | v2 `absolute_risk` | display when enforce | **B2** — `ScoringContext.use_display_severity` |
-| Pentest / fuzz / inventory | template | Out of scope A½ |
 
 ---
 
@@ -341,21 +340,22 @@ Phases 0, A½, 1, 1.5, 2, B2, and pre-Phase-3 adoption are shipped in-tree:
 - Bronze CI gate (`--enforce-bronze-facts`) for experimental analyzers without `evidence.facts`
 - `command_execution` emits findings via `FindingBuilder` (reference adoption)
 
-**Next:** optional taint/runtime validation (Phase 3); adopt `FindingBuilder` in remaining analyzers; flip GitHub Action default to `--ci-trust` after opt-in period.
+**Next:** optional taint/runtime validation (Phase 3 — partial); adopt `FindingBuilder` in remaining analyzers; flip GitHub Action default to `--ci-trust` after opt-in period.
 
 ### Gap fixes (pre-Phase 3)
 
 | Gap | Status |
 |-----|--------|
-| FindingBuilder in mature analyzers | **Done** — `command_execution`, `prompt_injection`, `data_leakage` |
+| FindingBuilder in mature analyzers | **Done** — `command_execution`, `prompt_injection`, `data_leakage`, `path_validation`, `permissions`, `tool_abuse`, `schema_surface`, `jailbreak`, `tool_shadowing`, `behavioral_static` (taint) |
 | Pentest / readiness trust pipeline | **Done** — fuzz rows + readiness notes via `apply_trust_layer` |
 | Fuzz / inventory trust | **Done** (prior slice) |
 | API policy loader | **Done** — `_merge_policy()` on REST scan/readiness |
 | Global weak-evidence caps | **Done** — thin evidence + low confidence → `weak` |
 | B2 residual template paths | **Done** — disagreement factor + readiness score use display under enforce |
-| Vet trust pipeline | **Deferred** — `VetFinding` model separate from `Finding` |
-| Mutate `finding.severity` (B3) | **Deferred** — breaking change |
-| `warn` gate vs display split | **By design** — document in [interpreting-findings](interpreting-findings.md) |
+| Vet trust pipeline | **Done** — `vet_trust.py` + CLI `--findings-trust-mode` |
+| Phase 3 runtime/taint validation | **Partial** — `runtime_evidence.py` tags taint + live probe findings |
+| Mutate `finding.severity` (B3) | **Opt-in** — `--collapse-template-severity` under enforce |
+| `warn` gate vs display split | **By design** — see [interpreting-findings](interpreting-findings.md#warn-vs-enforce) |
 
 ---
 

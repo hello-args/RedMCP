@@ -39,6 +39,18 @@ When you enable **`--findings-trust-mode enforce`** (or `warn`), MCTS runs a pos
 
 See **[Findings trust (Phase 0)](findings-trust-phase0.md)** for CI flags, integrator fields, and what is not migrated yet.
 
+### `warn` vs `enforce`
+
+| Mode | Display fields | Title rewrite | CI gates (`--fail-on-critical`, priority) | Scoring under enforce |
+|------|----------------|---------------|-------------------------------------------|------------------------|
+| `off` | No | No | Template severity | Template |
+| `warn` | Yes | No | **Template** (preview only) | Template |
+| `enforce` | Yes | Yes (overlap chains) | **Display** severity | Display (A½ + B2) |
+
+Use **`warn`** to preview honest badges and JSON fields without changing CI exit codes. Use **`enforce`** (or `--ci-trust`) when gates, scoring, and triage should match dashboard severity.
+
+Optional **B3:** `--collapse-template-severity` copies `display_severity` into `finding.severity` under enforce — only for integrators ready to drop dual-severity JSON.
+
 ---
 
 ## Worked example: scan snapshot

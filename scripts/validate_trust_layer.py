@@ -147,6 +147,7 @@ def main() -> int:
     print("\n[Validator] _has_proven_path edge cases")
     from mcts.reporting.finding_validator import ValidationContext, validate_findings
     from mcts.reporting.models import Finding
+    from mcts.reporting.trust_pipeline import apply_trust_layer, build_trust_context
 
     overlap = Finding(
         id="chain-credential-theft",
@@ -163,6 +164,45 @@ def main() -> int:
         ValidationContext(scan_scope="repository", tools=[], attack_graph=empty_ids_graph, mode="enforce"),
     )[0]
     check("empty finding_ids does not prove", out.evidence_type == "capability_overlap")
+
+    # --- Phase 3 runtime validation ---
+    print("\n[Phase 3] Runtime / taint evidence")
+    from mcts.analyzers.behavioral_static import BehavioralStaticAnalyzer
+    from mcts.mcp.models import MCPServerInfo, MCPTool
+
+    taint_tool = MCPTool(
+        name="run_cmd",
+        description="Run a command",
+        handler_snippet="import subprocess\ndef run_cmd(cmd):\n    subprocess.call(cmd, shell=True)",
+        source_file="server.py",
+    )
+    taint_rows = BehavioralStaticAnalyzer().analyze(MCPServerInfo(tools=[taint_tool], source_files={}))
+    taint = next(f for f in taint_rows if f.id.startswith("behavioral-taint"))
+    trusted_taint = apply_trust_layer(
+        [taint],
+        build_trust_context(mode="enforce", scan_scope="repository"),
+    )[0]
+    check("taint finding has facts", bool((trusted_taint.evidence or {}).get("facts")))
+    check(
+        "taint runtime_validation tag",
+        (trusted_taint.evidence or {}).get("runtime_validation") == "taint_param_sink",
+    )
+
+    # --- B3 collapse template severity ---
+    print("\n[B3] collapse_template_severity")
+    collapsed = Scanner(
+        ScanConfig(
+            target=SINGLE_TOOL,
+            findings_trust_mode="enforce",
+            collapse_template_severity=True,
+        )
+    ).run()
+    collapsed_chains = [f for f in collapsed.findings if f.analyzer == "attack_chains"]
+    if collapsed_chains:
+        check(
+            "collapse copies display into severity",
+            collapsed_chains[0].severity == collapsed_chains[0].display_severity,
+        )
 
     # --- Vulnerable server still works ---
     print("\n[Regression] Vulnerable fixture")

@@ -30,5 +30,7 @@ def apply_trust_layer(findings: list[Finding], ctx: ValidationContext) -> list[F
     if ctx.mode == "off":
         return findings
     from mcts.reporting.evidence_provenance import enrich_provenance
+    from mcts.reporting.runtime_evidence import validate_runtime_evidence
 
-    return enrich_provenance(findings, ctx)
+    findings = enrich_provenance(findings, ctx)
+    return validate_runtime_evidence(findings)

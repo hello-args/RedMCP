@@ -16,6 +16,9 @@ findings_trust_mode: enforce
 # Bronze contract for experimental analyzers (requires evidence.facts):
 # enforce_bronze_facts: true
 
+# Phase B3 opt-in — collapse display into template severity (breaking for legacy JSON consumers):
+# collapse_template_severity: true
+
 # v2 gates (requires --scoring v2 or both):
 # min_security_score: 50
 # max_absolute_risk: 400

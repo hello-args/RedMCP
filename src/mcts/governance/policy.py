@@ -20,6 +20,7 @@ class GovernancePolicy(BaseModel):
     fail_on_priority_min: int | None = Field(default=None, ge=0, le=100)
     min_evidence_strength: str | None = None
     enforce_bronze_facts: bool = False
+    collapse_template_severity: bool = False
     findings_trust_mode: str | None = None
     allowed_servers: list[str] = Field(default_factory=list)
     blocked_servers: list[str] = Field(default_factory=list)
@@ -170,6 +171,7 @@ def merge_scan_config_with_policy(config: Any, policy: GovernancePolicy | None) 
         "max_absolute_risk",
         "max_risk_level",
         "enforce_bronze_facts",
+        "collapse_template_severity",
     ):
         if getattr(config, field) is None and getattr(policy, field) is not None:
             updates[field] = getattr(policy, field)

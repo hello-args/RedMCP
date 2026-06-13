@@ -10,10 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Findings trust Phases 1–B2** — evidence provenance (`evidence.facts`, `confidence_factors`), `rule_stability` + `FindingBuilder`, priority gates (`--fail-on-priority-min`, `--min-evidence-strength`), v2 scoring on display severity under enforce
+- **Phase 3 (partial)** — `runtime_evidence.py` tags taint-flow and live-probe findings with `runtime_validation` and evidence tier
+- **Phase B3 opt-in** — `--collapse-template-severity` copies display into template `severity` under enforce
+- **Vet trust adapter** — `mcts vet --findings-trust-mode` bridges `VetFinding` through shared trust pipeline
 - **Governance policy merge** — `.mcts/policy.yaml` fills unset scan flags before scan; CLI overrides policy
 - **Priority model** — `priority_score` and `evidence_strength` on all security findings when trust is on
-- **Shared trust pipeline** — fuzz/inventory honor `--findings-trust-mode`; bronze gate for experimental analyzers
-- **FindingBuilder adoption** — `command_execution`, `prompt_injection`, and `data_leakage` emit bronze facts
+- **Shared trust pipeline** — fuzz/inventory/vet/readiness/pentest honor `--findings-trust-mode`; bronze gate for experimental analyzers
+- **FindingBuilder adoption** — `command_execution`, `prompt_injection`, `data_leakage`, `path_validation`, `permissions`, `tool_abuse`, `schema_surface`, `jailbreak`, `tool_shadowing`, `behavioral_static` (taint)
 - **Auxiliary trust wiring** — readiness, pentest (fuzz), inventory, fuzz CLI/API paths
 - **API policy merge** — REST scans load `.mcts/policy.yaml` like CLI
 - **Global thin-evidence caps** — low-confidence findings without facts default to `weak` strength

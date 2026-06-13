@@ -25,7 +25,24 @@ def apply_config_trust_layer(
         tools=tools,
         attack_graph=attack_graph,
     )
-    return apply_trust_layer(findings, ctx)
+    findings = apply_trust_layer(findings, ctx)
+    return collapse_template_severity_if_requested(findings, config)
+
+
+def collapse_template_severity_if_requested(
+    findings: list[Finding],
+    config: ScanConfig,
+) -> list[Finding]:
+    """Phase B3 opt-in: copy display_severity into template severity under enforce."""
+    if not config.collapse_template_severity or config.findings_trust_mode != "enforce":
+        return findings
+    collapsed: list[Finding] = []
+    for finding in findings:
+        if finding.display_severity is not None:
+            collapsed.append(finding.model_copy(update={"severity": finding.display_severity}))
+        else:
+            collapsed.append(finding)
+    return collapsed
 
 
 def resolve_config_with_policy(config: ScanConfig) -> ScanConfig:

@@ -349,6 +349,16 @@ def scan(
             help="Fail when experimental analyzers emit security findings without evidence.facts",
         ),
     ] = False,
+    collapse_template_severity: Annotated[
+        bool,
+        typer.Option(
+            "--collapse-template-severity",
+            help=(
+                "Phase B3 opt-in: under enforce, copy display_severity into finding.severity "
+                "(breaking for legacy JSON consumers)"
+            ),
+        ),
+    ] = False,
     fail_on_category: Annotated[
         list[str] | None,
         typer.Option(
@@ -853,6 +863,7 @@ def scan(
         fail_on_priority_min=fail_on_priority_min,
         min_evidence_strength=min_evidence_strength.lower() if min_evidence_strength else None,
         enforce_bronze_facts=enforce_bronze_facts,
+        collapse_template_severity=collapse_template_severity,
         fail_on_category=category_gates,
         theme=resolved_theme.name.value,
         no_progress=no_progress,

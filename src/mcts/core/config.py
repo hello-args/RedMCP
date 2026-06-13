@@ -135,6 +135,7 @@ class ScanConfig(BaseModel):
     fail_on_priority_min: int | None = Field(default=None, ge=0, le=100)
     min_evidence_strength: str | None = None
     enforce_bronze_facts: bool = False
+    collapse_template_severity: bool = False
 
     @field_validator("min_evidence_strength")
     @classmethod

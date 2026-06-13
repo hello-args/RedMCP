@@ -225,6 +225,9 @@ class Scanner:
             attack_graph=raw_graph,
         )
         findings = apply_trust_layer(findings, trust_ctx)
+        from mcts.reporting.trust_apply import collapse_template_severity_if_requested
+
+        findings = collapse_template_severity_if_requested(findings, self.config)
 
         findings = self._apply_filters(findings)
         from mcts.reporting.rule_stability import apply_rule_stability
